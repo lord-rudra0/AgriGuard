@@ -9,13 +9,24 @@ const userSchema = new mongoose.Schema({
     minlength: [2, 'Name must be at least 2 characters long'],
     maxlength: [50, 'Name must be less than 50 characters']
   },
+  username: {
+    type: String,
+    required: [true, 'Username is required'],
+    unique: true,
+    trim: true,
+    minlength: [3, 'Username must be at least 3 characters'],
+    maxlength: [30, 'Username must be less than 30 characters'],
+    match: [/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'],
+    // index: true, // removed to avoid duplicate index
+  },
   email: {
     type: String,
     required: [true, 'Email is required'],
     unique: true,
     lowercase: true,
     trim: true,
-    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email'],
+    // index: true, // removed to avoid duplicate index
   },
   password: {
     type: String,
@@ -69,8 +80,9 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for better query performance
+// Index for better query performance (keep only these, not in schema fields)
 userSchema.index({ email: 1 });
+userSchema.index({ username: 1 });
 userSchema.index({ farmName: 1 });
 userSchema.index({ location: 1 });
 

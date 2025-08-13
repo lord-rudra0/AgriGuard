@@ -11,7 +11,7 @@ const Chat = () => {
   const [showNewChat, setShowNewChat] = useState(false);
   const [newChatName, setNewChatName] = useState('');
   const [newChatType, setNewChatType] = useState('one-to-one');
-  const [newChatUserEmail, setNewChatUserEmail] = useState('');
+  const [newChatUserInput, setNewChatUserInput] = useState('');
   const [creating, setCreating] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -116,12 +116,12 @@ const Chat = () => {
               </div>
             ) : (
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">User Email</label>
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">User Email or Username</label>
                 <input
                   className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  value={newChatUserEmail}
-                  onChange={e => setNewChatUserEmail(e.target.value)}
-                  placeholder="Enter user email"
+                  value={newChatUserInput}
+                  onChange={e => setNewChatUserInput(e.target.value)}
+                  placeholder="Enter user email or username"
                 />
               </div>
             )}
@@ -133,7 +133,7 @@ const Chat = () => {
               >Cancel</button>
               <button
                 className="px-3 py-1 rounded bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60"
-                disabled={creating || (newChatType === 'group' ? !newChatName : !newChatUserEmail)}
+                disabled={creating || (newChatType === 'group' ? !newChatName : !newChatUserInput)}
                 onClick={async () => {
                   setCreating(true);
                   try {
@@ -142,8 +142,13 @@ const Chat = () => {
                       // Only the creator for now; can add more later
                       members = [];
                     } else {
-                      // Find user by email
-                      const res = await axios.get('/api/auth/users', { params: { email: newChatUserEmail } });
+                      // Find user by email or username
+                      let res;
+                      if (newChatUserInput.includes('@')) {
+                        res = await axios.get('/api/auth/users', { params: { email: newChatUserInput } });
+                      } else {
+                        res = await axios.get('/api/auth/users', { params: { username: newChatUserInput } });
+                      }
                       if (!res.data.user) throw new Error('User not found');
                       members = [res.data.user._id];
                     }
@@ -156,7 +161,7 @@ const Chat = () => {
                     setSelectedChat(chatRes.data.chat);
                     setShowNewChat(false);
                     setNewChatName('');
-                    setNewChatUserEmail('');
+                    setNewChatUserInput('');
                   } catch (e) {
                     alert(e.response?.data?.message || e.message || 'Failed to create chat');
                   } finally {

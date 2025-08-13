@@ -1,9 +1,25 @@
+
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// @route   GET /api/auth/users
+// @desc    Find user by username or email
+// @access  Private
+router.get('/users', authenticateToken, async (req, res) => {
+  const { email, username } = req.query;
+  let user = null;
+  if (email) {
+    user = await User.findOne({ email: email.toLowerCase() });
+  } else if (username) {
+    user = await User.findOne({ username: username.trim() });
+  }
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  res.json({ user: user.getPublicProfile() });
+});
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -17,17 +33,23 @@ const generateToken = (userId) => {
 // @access  Public
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, farmName, location } = req.body;
+    const { name, username, email, password, farmName, location } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // Check if user already exists (by email or username)
+    const existingUser = await User.findOne({ $or: [ { email }, { username } ] });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
+      return res.status(400).json({ message: 'User already exists with this email or username' });
+    }
+
+    // Require username
+    if (!username || username.trim().length < 3) {
+      return res.status(400).json({ message: 'Username is required and must be at least 3 characters' });
     }
 
     // Create new user
     const user = new User({
       name,
+      username: username.trim(),
       email,
       password,
       farmName,
@@ -48,7 +70,7 @@ router.post('/register', async (req, res) => {
     console.error('Registration error:', error);
     
     if (error.code === 11000) {
-      return res.status(400).json({ message: 'Email already exists' });
+      return res.status(400).json({ message: 'Email or username already exists' });
     }
     
     if (error.name === 'ValidationError') {
