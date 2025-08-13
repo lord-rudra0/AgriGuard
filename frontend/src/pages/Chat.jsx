@@ -89,7 +89,15 @@ const Chat = () => {
   }, [socket, selectedChat]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      const container = messagesEndRef.current.parentElement;
+      const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+      
+      // Only auto-scroll if user is near the bottom or if it's a new message they sent
+      if (isNearBottom || (messages.length > 0 && messages[messages.length - 1]?.sender?._id === user?._id)) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
   }, [messages]);
 
   const [isTyping, setIsTyping] = useState('');
@@ -281,7 +289,7 @@ const Chat = () => {
       </aside>
       {/* Main chat window */}
       <main className="flex-1 flex flex-col">
-        <div className="flex-1 flex flex-col p-6">
+        <div className="flex-1 flex flex-col p-6 max-h-screen">
           {selectedChat ? (
             <>
               <div className="flex items-center justify-between">
@@ -298,7 +306,7 @@ const Chat = () => {
               ) : (
                 <div className="h-2" />
               )}
-              <div className="flex-1 overflow-y-auto rounded-2xl shadow-sm p-4 mb-4 backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60">
+              <div className="h-96 overflow-y-auto rounded-2xl shadow-sm p-4 mb-4 backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60">
                 {loadingMessages ? (
                   <div className="text-gray-500 dark:text-gray-400 text-center mt-8">Loading messages…</div>
                 ) : messages.length === 0 ? (
