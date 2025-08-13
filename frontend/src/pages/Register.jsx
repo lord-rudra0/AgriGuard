@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -77,6 +78,7 @@ const Register = () => {
         {/* Form */}
         <div className="card p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+
             {/* Name */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -97,6 +99,32 @@ const Register = () => {
                   placeholder="Enter your full name"
                 />
               </div>
+            </div>
+
+            {/* Username */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Username
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  minLength={3}
+                  maxLength={30}
+                  pattern="^[a-zA-Z0-9_]+$"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="input-field pl-10"
+                  placeholder="Choose a unique username"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Username must be 3-30 characters, letters, numbers, and underscores only.</p>
             </div>
 
             {/* Email */}
