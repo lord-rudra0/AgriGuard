@@ -10,6 +10,12 @@ const messageSchema = new mongoose.Schema({
   replyTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Message' },
   seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   deletedFor: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  reactions: [
+    {
+      user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      emoji: { type: String },
+    }
+  ],
 }, { timestamps: true });
 
 messageSchema.index({ chatId: 1, createdAt: -1 });

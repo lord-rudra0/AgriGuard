@@ -67,12 +67,22 @@ app.use('/api/chatSystem', chatSystemRoutes);
 // Socket.IO authentication middleware
 io.use(authenticateSocket);
 
+// In-memory presence map: userId -> Set of socket ids
+const onlineUsers = new Map();
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log(`User ${socket.user.id} connected`);
+  const userId = String(socket.user.id);
+  console.log(`User ${userId} connected`);
+
+  // Track presence
+  const setForUser = onlineUsers.get(userId) || new Set();
+  setForUser.add(socket.id);
+  onlineUsers.set(userId, setForUser);
+  io.emit('presence:update', { userId, online: true });
   
-  // Join user to their room
-  socket.join(`user_${socket.user.id}`);
+  // Join user to their personal room
+  socket.join(`user_${userId}`);
   
   // Handle sensor data simulation (in production, this would come from actual sensors)
   const sensorInterval = setInterval(() => {
@@ -96,21 +106,39 @@ io.on('connection', (socket) => {
     }
   }, 5000); // Send data every 5 seconds
 
-  // Chat message handling
-  socket.on('sendMessage', (data) => {
-    // Broadcast to all users (in production, implement proper room management)
-    io.emit('newMessage', {
-      id: Date.now(),
-      user: socket.user.name,
-      message: data.message,
-      timestamp: new Date(),
-      userId: socket.user.id
-    });
+  // Chat room management
+  socket.on('chat:join', ({ chatId }) => {
+    if (chatId) socket.join(`chat_${chatId}`);
+  });
+  socket.on('chat:leave', ({ chatId }) => {
+    if (chatId) socket.leave(`chat_${chatId}`);
+  });
+
+  // Typing indicators
+  socket.on('chat:typing', ({ chatId, typing }) => {
+    if (!chatId) return;
+    socket.to(`chat_${chatId}`).emit('chat:typing', { chatId, userId, typing, name: socket.user.name });
+  });
+
+  // Forward chat messages (after REST save on client)
+  socket.on('chat:message', ({ chatId, message }) => {
+    if (!chatId || !message) return;
+    socket.to(`chat_${chatId}`).emit('chat:message', message);
   });
 
   // Handle disconnect
   socket.on('disconnect', () => {
-    console.log(`User ${socket.user.id} disconnected`);
+    const set = onlineUsers.get(userId);
+    if (set) {
+      set.delete(socket.id);
+      if (set.size === 0) {
+        onlineUsers.delete(userId);
+        io.emit('presence:update', { userId, online: false });
+      } else {
+        onlineUsers.set(userId, set);
+      }
+    }
+    console.log(`User ${userId} disconnected`);
     clearInterval(sensorInterval);
   });
 });

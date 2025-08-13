@@ -3,13 +3,12 @@ import axios from 'axios';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useRef, useState } from 'react';
-import Avatar from '../components/chat/Avatar';
+import ChatListItem from '../components/chat/ChatListItem';
 import MessageBubble from '../components/chat/MessageBubble';
 import Composer from '../components/chat/Composer';
-import { Plus, Search, Settings, Star } from 'lucide-react';
 
 const Chat = () => {
-  const { socket } = useSocket();
+  const { socket, presence, joinChat, leaveChat, setTyping } = useSocket();
   const { user } = useAuth();
   const [chats, setChats] = useState([]);
   const [showNewChat, setShowNewChat] = useState(false);
@@ -23,7 +22,6 @@ const Chat = () => {
   const [sending, setSending] = useState(false);
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [typing, setTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Fetch chat list
@@ -35,64 +33,110 @@ const Chat = () => {
     });
   }, []);
 
-  // Fetch messages for selected chat
+  // Join/leave chat room and fetch messages for selected chat
   useEffect(() => {
     if (!selectedChat) return;
+    joinChat(selectedChat._id);
     setLoadingMessages(true);
     axios.get(`/api/chatSystem/messages/${selectedChat._id}`).then(res => {
       setMessages(res.data.messages || []);
       setLoadingMessages(false);
     });
+    // mark seen
+    axios.post(`/api/chatSystem/messages/${selectedChat._id}/seen`).catch(() => {});
+    return () => {
+      leaveChat(selectedChat._id);
+    };
   }, [selectedChat]);
 
   // Real-time: listen for new messages
   useEffect(() => {
     if (!socket) return;
-    const handler = (msg) => {
-      if (msg.chatId === selectedChat?._id) {
-        setMessages((prev) => [...prev, msg]);
+    const onTyping = ({ chatId, userId, typing, name }) => {
+      if (chatId === selectedChat?._id && userId !== user?._id) {
+        setIsTyping(typing ? name || 'Someone' : '');
       }
     };
-    socket.on('newMessage', handler);
-    return () => socket.off('newMessage', handler);
+    const onMessage = (message) => {
+      if (message.chatId === selectedChat?._id) {
+        setMessages(prev => [...prev, message]);
+        // mark seen on new message
+        axios.post(`/api/chatSystem/messages/${selectedChat._id}/seen`).catch(() => {});
+      }
+    };
+    socket.on('chat:typing', onTyping);
+    socket.on('chat:message', onMessage);
+    return () => {
+      socket.off('chat:typing', onTyping);
+      socket.off('chat:message', onMessage);
+    };
   }, [socket, selectedChat]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const sendMessage = async (text) => {
-    if (!text.trim() || !socket || sending || !selectedChat) return;
+  const [isTyping, setIsTyping] = useState('');
+
+  const sendMessage = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || !socket || sending || !selectedChat) return;
     setSending(true);
     try {
       const res = await axios.post('/api/chatSystem/messages', {
         chatId: selectedChat._id,
-        content: text,
+        content: input,
       });
+      setInput('');
       // Optimistically add message
       setMessages((prev) => [...prev, res.data.message]);
-      socket.emit('sendMessage', { ...res.data.message });
+      socket.emit('chat:message', { chatId: selectedChat._id, message: res.data.message });
     } finally {
       setSending(false);
     }
   };
 
+  const deleteChat = async () => {
+    if (!selectedChat) return;
+    if (!confirm('Delete this chat and all its messages?')) return;
+    await axios.delete(`/api/chatSystem/chats/${selectedChat._id}`);
+    setChats(prev => prev.filter(c => c._id !== selectedChat._id));
+    setSelectedChat(null);
+  };
+
+  const deleteMessage = async (messageId) => {
+    try {
+      await axios.delete(`/api/chatSystem/messages/${messageId}`);
+      setMessages(prev => prev.filter(m => (m._id || m.id) !== messageId));
+    } catch (e) {
+      alert(e.response?.data?.message || 'Failed to delete message');
+    }
+  };
+
+  // typing events
+  useEffect(() => {
+    if (!socket || !selectedChat) return;
+    if (!input) {
+      setTyping(selectedChat._id, false);
+      return;
+    }
+    setTyping(selectedChat._id, true);
+    const t = setTimeout(() => setTyping(selectedChat._id, false), 1200);
+    return () => clearTimeout(t);
+  }, [input, socket, selectedChat]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary-50 via-white to-primary-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex transition-colors duration-300">
+    <div className="min-h-screen flex transition-colors duration-300 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
       {/* Sidebar: Chat list */}
-      <aside className="w-80 backdrop-blur-xl bg-white/60 dark:bg-gray-800/50 border-r border-white/40 dark:border-gray-700/40 flex flex-col">        
-        <div className="p-4 flex items-center gap-2">
-          <div className="flex-1 relative">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/70 dark:bg-gray-700/60 border border-gray-200/60 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400" placeholder="Search chats" />
-          </div>
+      <aside className="w-80 backdrop-blur bg-white/70 dark:bg-gray-900/40 border-r border-white/50 dark:border-gray-800/60 flex flex-col shadow-sm">
+        <div className="p-4 flex items-center justify-between">
+          <span className="font-bold text-lg text-gray-900 dark:text-white">Chats</span>
           <button
-            className="p-2 rounded-xl bg-primary-600 text-white hover:bg-primary-700"
+            className="ml-2 px-3 py-1.5 rounded-xl bg-primary-600 text-white text-xs hover:bg-primary-700 shadow"
             onClick={() => setShowNewChat(true)}
             title="New chat"
-            aria-label="New chat"
           >
-            <Plus className="w-5 h-5" />
+            New
           </button>
         </div>
       {/* New Chat Modal */}
@@ -183,26 +227,22 @@ const Chat = () => {
         {loadingChats ? (
           <div className="p-4 text-gray-500">Loading…</div>
         ) : (
-          <ul className="flex-1 overflow-y-auto px-2 pb-4 space-y-2">
-            {chats.map((chat) => (
-              <li key={chat._id}>
-                <button
-                  className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors ${selectedChat?._id === chat._id ? 'bg-primary-100/80 dark:bg-primary-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-700/40'}`}
+          <ul className="flex-1 overflow-y-auto p-2 space-y-1">
+            {chats.map((chat) => {
+              const otherIds = (chat.members || []).map(m => m._id).filter(id => id !== user?._id);
+              const otherId = chat.type === 'one-to-one' ? otherIds[0] : null;
+              const online = otherId ? !!presence.get(String(otherId)) : false;
+              return (
+                <ChatListItem
+                  key={chat._id}
+                  chat={chat}
+                  active={selectedChat?._id === chat._id}
+                  currentUser={user}
+                  online={online}
                   onClick={() => setSelectedChat(chat)}
-                  aria-label={`Open chat ${chat.name || 'Direct chat'}`}
-                >
-                  <Avatar name={chat.name || chat.members?.map(m => m.name).filter(n => n !== user?.name).join(', ') || 'Chat'} size={40} online={true} />
-                  <div className="flex-1 text-left">
-                    <div className="flex items-center justify-between">
-                      <div className="font-semibold text-gray-900 dark:text-white truncate">{chat.name || chat.members?.map(m => m.name).filter(n => n !== user?.name).join(', ') || 'Chat'}</div>
-                      <Star className="w-4 h-4 text-yellow-400 opacity-70" title="Pin" />
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{chat.type === 'group' ? 'Group' : 'Direct'}</div>
-                  </div>
-                  <span className="inline-flex items-center justify-center text-xs rounded-full px-2 py-0.5 bg-secondary-100 text-secondary-700 dark:bg-secondary-800 dark:text-secondary-200" aria-label="unread count">0</span>
-                </button>
-              </li>
-            ))}
+                />
+              );
+            })}
           </ul>
         )}
       </aside>
@@ -211,15 +251,21 @@ const Chat = () => {
         <div className="flex-1 flex flex-col p-6">
           {selectedChat ? (
             <>
-              <div className="flex items-center gap-3 mb-3">
-                <Avatar name={selectedChat.name || selectedChat.members?.map(m => m.name).filter(n => n !== user?.name).join(', ') || 'Chat'} size={44} online={true} />
-                <div className="flex-1">
-                  <div className="font-bold text-xl text-gray-900 dark:text-white">{selectedChat.name || selectedChat.members?.map(m => m.name).filter(n => n !== user?.name).join(', ') || 'Chat'}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Online • Typing…</div>
-                </div>
-                <button className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700/50" aria-label="Settings"><Settings className="w-5 h-5 text-gray-500" /></button>
+              <div className="flex items-center justify-between">
+                <div className="font-bold text-xl mb-0.5 text-gray-900 dark:text-white">{selectedChat.name || selectedChat.members?.map(m => m.name).filter(n => n !== user?.name).join(', ') || 'Chat'}</div>
+                <button
+                  onClick={deleteChat}
+                  className="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded-md hover:bg-red-50 dark:text-red-400 dark:border-red-700/40 dark:hover:bg-red-900/20"
+                >
+                  Delete chat
+                </button>
               </div>
-              <div className="flex-1 overflow-y-auto rounded-2xl p-4 mb-4 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-white/40 dark:border-gray-700/40 shadow-sm">
+              {isTyping ? (
+                <div className="text-xs text-primary-600 dark:text-primary-400 mb-2">{isTyping} is typing…</div>
+              ) : (
+                <div className="h-2" />
+              )}
+              <div className="flex-1 overflow-y-auto rounded-2xl shadow-sm p-4 mb-4 backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60">
                 {loadingMessages ? (
                   <div className="text-gray-500 dark:text-gray-400 text-center mt-8">Loading messages…</div>
                 ) : messages.length === 0 ? (
@@ -227,20 +273,27 @@ const Chat = () => {
                 ) : (
                   <ul className="space-y-3">
                     {messages.map((msg, idx) => (
-                      <li key={msg._id || idx}>
+                      <li key={msg._id || idx} className="group">
                         <MessageBubble
                           me={msg.sender?._id === user?._id}
-                          name={msg.sender?.name}
-                          text={msg.content}
-                          time={msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : ''}
+                          author={msg.sender?.name || 'User'}
+                          content={msg.content}
+                          time={msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                         />
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 mt-1">
+                          {(msg.sender?._id === user?._id) && (
+                            <button className="text-[10px] text-red-600 hover:underline" onClick={() => deleteMessage(msg._id)}>
+                              Delete message
+                            </button>
+                          )}
+                        </div>
                       </li>
                     ))}
                     <div ref={messagesEndRef} />
                   </ul>
                 )}
               </div>
-              <Composer onSend={sendMessage} disabled={!socket || sending || !selectedChat} />
+              <Composer value={input} onChange={setInput} onSend={sendMessage} disabled={!socket || sending} />
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">Select a chat to start messaging</div>

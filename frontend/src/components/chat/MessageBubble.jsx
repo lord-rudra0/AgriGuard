@@ -1,14 +1,20 @@
 import React from 'react';
 
-const MessageBubble = ({ me = false, text, time, name }) => {
+const MessageBubble = ({ me, author, content, time }) => {
   return (
-    <div className={`flex ${me ? 'justify-end' : 'justify-start'} animate-fade-in`}>
-      <div className={`${me ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white'} shadow rounded-2xl px-4 py-2 max-w-[75%] transition-all`}
-        role="group" aria-label={`message from ${name || (me ? 'you' : 'user')}`}
+    <div className={`flex ${me ? 'justify-end' : 'justify-start'} animate-fade-up`}>
+      <div
+        className={`max-w-[75%] px-3 py-2 rounded-2xl shadow-sm transition-transform duration-150 ${
+          me
+            ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-tr-sm'
+            : 'bg-white dark:bg-gray-700 dark:text-white text-gray-900 border border-gray-100 dark:border-gray-600 rounded-tl-sm'
+        }`}
       >
-        {name && !me && <div className="text-xs font-semibold text-primary-700 dark:text-primary-300 mb-1">{name}</div>}
-        <div className="whitespace-pre-wrap break-words">{text}</div>
-        {time && <div className="text-[10px] opacity-70 mt-1 text-right">{time}</div>}
+        {!me && (
+          <p className="text-[10px] font-semibold mb-0.5 opacity-80">{author}</p>
+        )}
+        <p className="text-sm whitespace-pre-wrap break-words">{content}</p>
+        <div className={`text-[10px] mt-1 ${me ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}>{time}</div>
       </div>
     </div>
   );

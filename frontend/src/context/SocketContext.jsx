@@ -14,6 +14,7 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
+  const [presence, setPresence] = useState(new Map()); // userId -> online
   const [sensorData, setSensorData] = useState({
     temperature: 0,
     humidity: 0,
@@ -60,6 +61,15 @@ export const SocketProvider = ({ children }) => {
         console.log('Disconnected from server');
       });
 
+      // Presence updates
+      newSocket.on('presence:update', ({ userId, online }) => {
+        setPresence(prev => {
+          const next = new Map(prev);
+          next.set(String(userId), online);
+          return next;
+        });
+      });
+
       setSocket(newSocket);
 
   return () => {
@@ -75,12 +85,20 @@ export const SocketProvider = ({ children }) => {
     }
   };
 
+  const joinChat = (chatId) => socket?.emit('chat:join', { chatId });
+  const leaveChat = (chatId) => socket?.emit('chat:leave', { chatId });
+  const setTyping = (chatId, typing) => socket?.emit('chat:typing', { chatId, typing });
+
   return (
     <SocketContext.Provider value={{ 
-      socket, 
+      socket,
+      presence,
       sensorData, 
       alerts, 
-      emitMessage 
+      emitMessage,
+      joinChat,
+      leaveChat,
+      setTyping,
     }}>
       {children}
     </SocketContext.Provider>

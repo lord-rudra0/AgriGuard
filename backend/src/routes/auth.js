@@ -87,10 +87,22 @@ router.post('/register', async (req, res) => {
 // @access  Public
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { identifier, email, username, password } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email });
+    const loginId = (identifier || email || username || '').toString();
+    if (!loginId || !password) {
+      return res.status(400).json({ message: 'Identifier and password are required' });
+    }
+
+    // Determine query by email or username
+    let query;
+    if (loginId.includes('@')) {
+      query = { email: loginId.toLowerCase() };
+    } else {
+      query = { username: loginId.trim() };
+    }
+
+    const user = await User.findOne(query);
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -101,7 +113,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Check password
-    const isMatch = await user.comparePassword(password);
+  const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }

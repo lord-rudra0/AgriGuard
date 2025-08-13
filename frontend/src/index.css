@@ -70,3 +70,26 @@
     @apply bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400;
   }
 }
+
+@layer utilities {
+  /* Glassmorphism helpers */
+  .glass {
+    @apply backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60 shadow-sm;
+  }
+
+  /* Subtle pop and fade-in animations */
+  @keyframes popIn {
+    0% { transform: scale(0.98) translateY(6px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  @keyframes fadeInUp {
+    0% { transform: translateY(8px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  .animate-pop {
+    animation: popIn 180ms ease-out both;
+  }
+  .animate-fade-up {
+    animation: fadeInUp 220ms ease-out both;
+  }
+}

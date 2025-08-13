@@ -15,10 +15,6 @@ export const ThemeProvider = ({ children }) => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme || 'light';
   });
-  // Accent options: 'primary' | 'secondary' | 'accent'
-  const [accent, setAccent] = useState(() => {
-    return localStorage.getItem('accent') || 'primary';
-  });
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -27,16 +23,12 @@ export const ThemeProvider = ({ children }) => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  useEffect(() => {
-    localStorage.setItem('accent', accent);
-  }, [accent]);
-
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, accent, setAccent }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
