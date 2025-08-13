@@ -23,6 +23,7 @@ const Chat = () => {
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   // Fetch chat list
   useEffect(() => {
@@ -165,6 +166,42 @@ const Chat = () => {
 
   // Click-to-toggle actions for a message
   const [activeMessageId, setActiveMessageId] = useState(null);
+  
+  // Resizable chat window
+  const [chatHeight, setChatHeight] = useState(700); // Default height = 700px
+  const [isResizing, setIsResizing] = useState(false);
+
+  const handleMouseDown = (e) => {
+    setIsResizing(true);
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+      
+      const chatContainer = document.querySelector('.chat-messages-container');
+      if (chatContainer) {
+        const rect = chatContainer.getBoundingClientRect();
+        const newHeight = Math.max(200, Math.min(600, e.clientY - rect.top + 20));
+        setChatHeight(newHeight);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   return (
     <div className="min-h-screen flex transition-colors duration-300 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
@@ -306,7 +343,11 @@ const Chat = () => {
               ) : (
                 <div className="h-2" />
               )}
-              <div className="h-96 overflow-y-auto rounded-2xl shadow-sm p-4 mb-4 backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60">
+              <div 
+                className="chat-messages-container overflow-y-auto rounded-2xl shadow-sm p-4 mb-4 backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60"
+                style={{ height: `${chatHeight}px` }}
+                ref={messagesContainerRef}
+              >
                 {loadingMessages ? (
                   <div className="text-gray-500 dark:text-gray-400 text-center mt-8">Loading messages…</div>
                 ) : messages.length === 0 ? (
@@ -344,6 +385,20 @@ const Chat = () => {
                   </ul>
                 )}
               </div>
+              
+              {/* Resize Handle */}
+              <div 
+                className="w-full h-2 bg-transparent hover:bg-blue-500/20 cursor-ns-resize transition-all duration-200 relative group mb-2"
+                onMouseDown={handleMouseDown}
+              >
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                  <div className="w-12 h-1 bg-gray-300 rounded-full group-hover:bg-blue-500 transition-colors duration-200"></div>
+                </div>
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-xs text-gray-400 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                  {isResizing ? 'Resizing...' : 'Drag to resize'}
+                </div>
+              </div>
+              
               <Composer value={input} onChange={setInput} onSend={sendMessage} disabled={!socket || sending} />
             </>
           ) : (
