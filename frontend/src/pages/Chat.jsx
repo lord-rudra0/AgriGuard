@@ -44,6 +44,8 @@ const Chat = () => {
     });
     // mark seen
     axios.post(`/api/chatSystem/messages/${selectedChat._id}/seen`).catch(() => {});
+    // reset unread count locally for this chat
+    setChats(prev => prev.map(c => c._id === selectedChat._id ? { ...c, unreadCount: 0 } : c));
     return () => {
       leaveChat(selectedChat._id);
     };
@@ -58,6 +60,20 @@ const Chat = () => {
       }
     };
     const onMessage = (message) => {
+      // Update chat list preview/unread and ordering
+      setChats(prev => {
+        const list = [...prev];
+        const idx = list.findIndex(c => c._id === message.chatId);
+        if (idx !== -1) {
+          const isActive = message.chatId === selectedChat?._id;
+          const unreadCount = isActive ? (list[idx].unreadCount || 0) : (list[idx].unreadCount || 0) + 1;
+          const updated = { ...list[idx], lastMessage: message, updatedAt: new Date().toISOString(), unreadCount };
+          list.splice(idx, 1);
+          list.unshift(updated);
+        }
+        return list;
+      });
+
       if (message.chatId === selectedChat?._id) {
         setMessages(prev => [...prev, message]);
         // mark seen on new message
@@ -88,9 +104,22 @@ const Chat = () => {
         content: input,
       });
       setInput('');
-      // Optimistically add message
-      setMessages((prev) => [...prev, res.data.message]);
-      socket.emit('chat:message', { chatId: selectedChat._id, message: res.data.message });
+      // Optimistically add message with sender info
+      const messageWithSender = { ...res.data.message, sender: user };
+      setMessages((prev) => [...prev, messageWithSender]);
+      socket.emit('chat:message', { chatId: selectedChat._id, message: messageWithSender });
+      
+      // Update chat list lastMessage and move to top
+      setChats(prev => {
+        const list = [...prev];
+        const idx = list.findIndex(c => c._id === selectedChat._id);
+        if (idx !== -1) {
+          const updated = { ...list[idx], lastMessage: messageWithSender, updatedAt: new Date().toISOString() };
+          list.splice(idx, 1);
+          list.unshift(updated);
+        }
+        return list;
+      });
     } finally {
       setSending(false);
     }
@@ -108,6 +137,7 @@ const Chat = () => {
     try {
       await axios.delete(`/api/chatSystem/messages/${messageId}`);
       setMessages(prev => prev.filter(m => (m._id || m.id) !== messageId));
+  if (activeMessageId === messageId) setActiveMessageId(null);
     } catch (e) {
       alert(e.response?.data?.message || 'Failed to delete message');
     }
@@ -124,6 +154,9 @@ const Chat = () => {
     const t = setTimeout(() => setTyping(selectedChat._id, false), 1200);
     return () => clearTimeout(t);
   }, [input, socket, selectedChat]);
+
+  // Click-to-toggle actions for a message
+  const [activeMessageId, setActiveMessageId] = useState(null);
 
   return (
     <div className="min-h-screen flex transition-colors duration-300 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
@@ -272,23 +305,33 @@ const Chat = () => {
                   <div className="text-gray-500 dark:text-gray-400 text-center mt-8">No messages yet.</div>
                 ) : (
                   <ul className="space-y-3">
-                    {messages.map((msg, idx) => (
-                      <li key={msg._id || idx} className="group">
+                    {messages.map((msg, idx) => {
+                      const msgId = msg._id || idx;
+                      const showActions = activeMessageId === msgId;
+                      return (
+                      <li
+                        key={msgId}
+                        className="group cursor-pointer"
+                        onClick={() => setActiveMessageId(prev => prev === msgId ? null : msgId)}
+                      >
                         <MessageBubble
                           me={msg.sender?._id === user?._id}
                           author={msg.sender?.name || 'User'}
                           content={msg.content}
                           time={msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                         />
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 mt-1">
+                        <div className={`transition-opacity duration-150 mt-1 ${showActions ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                           {(msg.sender?._id === user?._id) && (
-                            <button className="text-[10px] text-red-600 hover:underline" onClick={() => deleteMessage(msg._id)}>
+                            <button
+                              className="inline-flex items-center px-2.5 py-1.5 text-sm text-red-700 border border-red-200 rounded-md hover:bg-red-50 dark:text-red-400 dark:border-red-700/40 dark:hover:bg-red-900/20"
+                              onClick={(e) => { e.stopPropagation(); deleteMessage(msg._id); }}
+                            >
                               Delete message
                             </button>
                           )}
                         </div>
                       </li>
-                    ))}
+                    );})}
                     <div ref={messagesEndRef} />
                   </ul>
                 )}
