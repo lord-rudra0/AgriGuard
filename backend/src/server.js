@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 import authRoutes from './routes/auth.js';
 import sensorRoutes from './routes/sensors.js';
 import chatRoutes from './routes/chat.js';
+import chatSystemRoutes from './routes/chatSystem.js';
 import { authenticateSocket } from './middleware/auth.js';
 
 // Load environment variables
@@ -61,6 +62,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/sensors', sensorRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/chatSystem', chatSystemRoutes);
 
 // Socket.IO authentication middleware
 io.use(authenticateSocket);

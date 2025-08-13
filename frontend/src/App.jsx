@@ -7,6 +7,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
+import Chat from './pages/Chat';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -96,16 +97,7 @@ function App() {
                   path="/chat"
                   element={
                     <ProtectedRoute>
-                      <div className="min-h-screen flex items-center justify-center">
-                        <div className="text-center">
-                          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                            Chat Page
-                          </h1>
-                          <p className="text-gray-600 dark:text-gray-300">
-                            Coming soon...
-                          </p>
-                        </div>
-                      </div>
+                      <Chat />
                     </ProtectedRoute>
                   }
                 />
