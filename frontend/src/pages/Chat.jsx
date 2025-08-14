@@ -25,6 +25,14 @@ const Chat = () => {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
+  // Add member modal state
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [addInput, setAddInput] = useState('');
+  const [adding, setAdding] = useState(false);
+  const phoneRegex = /^\+?[0-9]{7,15}$/;
+  // Members modal state
+  const [showMembers, setShowMembers] = useState(false);
+
   // Fetch chat list
   useEffect(() => {
     setLoadingChats(true);
@@ -331,12 +339,30 @@ const Chat = () => {
             <>
               <div className="flex items-center justify-between">
                 <div className="font-bold text-xl mb-0.5 text-gray-900 dark:text-white">{selectedChat.name || selectedChat.members?.map(m => (typeof m === 'object' ? (m.name || m.username) : null)).filter(n => !!n && n !== user?.name && n !== user?.username).join(', ') || 'Chat'}</div>
-                <button
-                  onClick={deleteChat}
-                  className="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded-md hover:bg-red-50 dark:text-red-400 dark:border-red-700/40 dark:hover:bg-red-900/20"
-                >
-                  Delete chat
-                </button>
+                <div className="flex items-center gap-2">
+                  {selectedChat.type === 'group' && (
+                    <>
+                      <button
+                        onClick={() => setShowMembers(true)}
+                        className="px-3 py-1.5 text-sm text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50 dark:text-gray-200 dark:border-gray-700/40 dark:hover:bg-gray-800/40"
+                      >
+                        Members
+                      </button>
+                      <button
+                        onClick={() => setShowAddMember(true)}
+                        className="px-3 py-1.5 text-sm text-primary-700 border border-primary-200 rounded-md hover:bg-primary-50 dark:text-primary-400 dark:border-primary-700/40 dark:hover:bg-primary-900/20"
+                      >
+                        Add member
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={deleteChat}
+                    className="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded-md hover:bg-red-50 dark:text-red-400 dark:border-red-700/40 dark:hover:bg-red-900/20"
+                  >
+                    Delete chat
+                  </button>
+                </div>
               </div>
               {isTyping ? (
                 <div className="text-xs text-primary-600 dark:text-primary-400 mb-2">{isTyping} is typing…</div>
@@ -406,6 +432,111 @@ const Chat = () => {
           )}
         </div>
       </main>
+      {/* Add Member Modal */}
+      {showAddMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Add member</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Enter Email, Username, or Phone</p>
+            <input
+              className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              value={addInput}
+              onChange={e => setAddInput(e.target.value)}
+              placeholder="Email / Username / Phone"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                className="px-3 py-1.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                onClick={() => { if (!adding) { setShowAddMember(false); setAddInput(''); } }}
+                disabled={adding}
+              >Cancel</button>
+              <button
+                className={`px-3 py-1.5 rounded text-white ${adding ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'}`}
+                disabled={adding || !addInput.trim()}
+                onClick={async () => {
+                  if (!selectedChat) return;
+                  const identifier = addInput.trim();
+                  if (!identifier) return;
+                  // prevent adding self
+                  if (identifier === user?.email || identifier === user?.username || identifier === user?.phone) {
+                    alert('You cannot add yourself');
+                    return;
+                  }
+                  // prevent adding existing member (by id if known)
+                  const memberIds = (selectedChat.members || []).map(m => (typeof m === 'object' ? m._id : m));
+                  setAdding(true);
+                  try {
+                    let res;
+                    if (identifier.includes('@')) {
+                      res = await axios.get('/api/auth/users', { params: { email: identifier } });
+                    } else if (phoneRegex.test(identifier)) {
+                      res = await axios.get('/api/auth/users', { params: { phone: identifier } });
+                    } else {
+                      res = await axios.get('/api/auth/users', { params: { username: identifier } });
+                    }
+                    const target = res.data?.user;
+                    if (!target?._id) throw new Error('User not found');
+                    if (memberIds.includes(target._id)) {
+                      alert('User is already a member');
+                      return;
+                    }
+                    const addRes = await axios.post(`/api/chatSystem/chats/${selectedChat._id}/add`, { userId: target._id });
+                    const updated = addRes.data?.chat;
+                    if (updated?._id) {
+                      setSelectedChat(updated);
+                      setChats(prev => prev.map(c => c._id === updated._id ? updated : c));
+                      setShowAddMember(false);
+                      setAddInput('');
+                    } else {
+                      // fallback: update members locally
+                      const merged = {
+                        ...selectedChat,
+                        members: [...(selectedChat.members || []), { _id: target._id, name: target.name, username: target.username, email: target.email }]
+                      };
+                      setSelectedChat(merged);
+                      setChats(prev => prev.map(c => c._id === merged._id ? merged : c));
+                      setShowAddMember(false);
+                      setAddInput('');
+                    }
+                  } catch (e) {
+                    alert(e.response?.data?.message || e.message || 'Failed to add member');
+                  } finally {
+                    setAdding(false);
+                  }
+                }}
+              >{adding ? 'Adding…' : 'Add'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Members Modal (read-only) */}
+      {showMembers && selectedChat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Group Members</h3>
+              <button
+                className="text-sm px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                onClick={() => setShowMembers(false)}
+              >Close</button>
+            </div>
+            <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+              {(selectedChat.members || []).map((m) => {
+                const id = typeof m === 'object' ? m._id : m;
+                const name = typeof m === 'object' ? (m.name || m.username || m.email || id) : id;
+                const meta = typeof m === 'object' ? (m.username || m.email || '') : '';
+                const isMe = id === user?._id;
+                return (
+                  <li key={id} className="py-2">
+                    <div className="text-sm text-gray-900 dark:text-white">{name}{isMe ? ' (You)' : ''}</div>
+                    {meta ? <div className="text-xs text-gray-500 dark:text-gray-400">{meta}</div> : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
