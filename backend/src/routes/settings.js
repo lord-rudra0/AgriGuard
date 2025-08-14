@@ -75,7 +75,7 @@ router.get('/', authenticateToken, async (req, res) => {
 router.put('/profile', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { name, email, phone, location, bio, avatar } = req.body;
+    const { name, username, email, phone, location, bio, avatar } = req.body;
 
     // Check if email is already taken by another user
     if (email) {
@@ -85,11 +85,20 @@ router.put('/profile', authenticateToken, async (req, res) => {
       }
     }
 
+    // Check if username is already taken by another user
+    if (username) {
+      const existingUserByUsername = await User.findOne({ username, _id: { $ne: userId } });
+      if (existingUserByUsername) {
+        return res.status(400).json({ success: false, message: 'Username already in use' });
+      }
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
         $set: {
           name: name || undefined,
+          username: username || undefined,
           email: email || undefined,
           phone: phone || undefined,
           location: location || undefined,

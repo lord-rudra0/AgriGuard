@@ -30,6 +30,7 @@ const Settings = () => {
   // Profile settings state
   const [profileData, setProfileData] = useState({
     name: '',
+    username: '',
     email: '',
     phone: '',
     location: '',
@@ -68,6 +69,7 @@ const Settings = () => {
     if (user) {
       setProfileData({
         name: user.name || '',
+        username: user.username || '',
         email: user.email || '',
         phone: user.phone || '',
         location: user.location || '',
@@ -207,6 +209,20 @@ const Settings = () => {
               onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Username
+            </label>
+            <input
+              type="text"
+              value={profileData.username}
+              onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value.replace(/\s+/g, '') }))}
+              placeholder="letters, numbers, underscores"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">3–30 chars, a–z, A–Z, 0–9, _</p>
           </div>
 
           <div>

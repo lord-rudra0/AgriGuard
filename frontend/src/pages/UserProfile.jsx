@@ -35,7 +35,7 @@ const UserProfile = () => {
                   )}
                 </div>
                 <h2 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">{user.name || '—'}</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Member</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">@{user.username || '—'}</p>
               </div>
 
               <div className="mt-6 space-y-3">
@@ -69,6 +69,11 @@ const UserProfile = () => {
                   <UserIcon className="w-4 h-4 text-gray-400" />
                   <span className="text-gray-500 dark:text-gray-400">Name:</span>
                   <span className="font-medium">{user.name || '—'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                  <UserIcon className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-500 dark:text-gray-400">Username:</span>
+                  <span className="font-medium">@{user.username || '—'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
                   <Calendar className="w-4 h-4 text-gray-400" />
