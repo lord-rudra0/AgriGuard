@@ -111,6 +111,18 @@ const Chat = () => {
 
   const [isTyping, setIsTyping] = useState('');
 
+  // Keep non-editable ASKAI chip state
+  const [askAIActive, setAskAIActive] = useState(false);
+
+  // Sanitize input: if user types @ASKAI, activate chip and strip text
+  const handleInputChange = (val) => {
+    if (/@ASKAI/i.test(val)) {
+      setAskAIActive(true);
+      val = val.replace(/@ASKAI/gi, '').replace(/\s{2,}/g, ' ').trimStart();
+    }
+    setInput(val);
+  };
+
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() || !socket || sending || !selectedChat) return;
@@ -138,8 +150,8 @@ const Chat = () => {
         return list;
       });
 
-      // If @ASKAI is mentioned, call AI endpoint and append AI reply
-      if (/@ASKAI/i.test(res.data.message.content || '')) {
+      // If ASKAI chip active, call AI endpoint and append AI reply
+      if (askAIActive) {
         try {
           const aiRes = await axios.post('/api/chatSystem/askai', {
             chatId: selectedChat._id,
@@ -164,6 +176,8 @@ const Chat = () => {
       }
     } finally {
       setSending(false);
+      // After sending, reset ASKAI unless user re-activates
+      setAskAIActive(false);
     }
   };
 
@@ -233,8 +247,8 @@ const Chat = () => {
         }
         return list;
       });
-      // If caption includes @ASKAI, invoke AI with image context
-      if (/@ASKAI/i.test(caption)) {
+      // If ASKAI chip active, invoke AI with image context
+      if (askAIActive) {
         try {
           const aiRes = await axios.post('/api/chatSystem/askai', {
             chatId: selectedChat._id,
@@ -263,6 +277,8 @@ const Chat = () => {
       alert(e.response?.data?.message || e.message || 'Failed to send image');
     } finally {
       setSending(false);
+      // Reset ASKAI after image send
+      setAskAIActive(false);
     }
   };
 
@@ -552,9 +568,16 @@ const Chat = () => {
                 </div>
               </div>
               
-              <Composer value={input} onChange={setInput} onSend={sendMessage} onUpload={handleUpload} onInsertAskAI={() => {
-                setInput(prev => /@ASKAI/i.test(prev) ? prev : (prev ? prev + ' @ASKAI ' : '@ASKAI '));
-              }} disabled={!socket || sending} />
+              <Composer
+                value={input}
+                onChange={handleInputChange}
+                onSend={sendMessage}
+                onUpload={handleUpload}
+                onInsertAskAI={() => setAskAIActive(true)}
+                askAIActive={askAIActive}
+                onRemoveAskAI={() => setAskAIActive(false)}
+                disabled={!socket || sending}
+              />
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">Select a chat to start messaging</div>
