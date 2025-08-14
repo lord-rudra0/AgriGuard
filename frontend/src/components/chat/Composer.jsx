@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-const Composer = ({ value, onChange, onSend, onUpload, disabled }) => {
+const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, disabled }) => {
   const fileRef = useRef(null);
   return (
     <form onSubmit={onSend} className="relative flex items-center gap-2">
@@ -22,6 +22,15 @@ const Composer = ({ value, onChange, onSend, onUpload, disabled }) => {
         title="Attach image"
       >
         📎
+      </button>
+      <button
+        type="button"
+        onClick={() => onInsertAskAI && onInsertAskAI()}
+        className="px-3 py-2 rounded-2xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+        disabled={disabled}
+        title="Ask AI (@ASKAI)"
+      >
+        ✨
       </button>
       <input
         type="text"

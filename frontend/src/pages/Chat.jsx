@@ -137,8 +137,58 @@ const Chat = () => {
         }
         return list;
       });
+
+      // If @ASKAI is mentioned, call AI endpoint and append AI reply
+      if (/@ASKAI/i.test(res.data.message.content || '')) {
+        try {
+          const aiRes = await axios.post('/api/chatSystem/askai', {
+            chatId: selectedChat._id,
+            content: res.data.message.content,
+          });
+          const aiMsg = aiRes.data.message;
+          setMessages(prev => [...prev, aiMsg]);
+          socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
+          setChats(prev => {
+            const list = [...prev];
+            const idx = list.findIndex(c => c._id === selectedChat._id);
+            if (idx !== -1) {
+              const updated = { ...list[idx], lastMessage: aiMsg, updatedAt: new Date().toISOString() };
+              list.splice(idx, 1);
+              list.unshift(updated);
+            }
+            return list;
+          });
+        } catch (err) {
+          console.error('AI error', err);
+        }
+      }
     } finally {
       setSending(false);
+    }
+  };
+
+  const onInsertAskAI = async (content) => {
+    if (!selectedChat || !socket || sending) return;
+    try {
+      const res = await axios.post('/api/chatSystem/askai', {
+        chatId: selectedChat._id,
+        content,
+      });
+      const aiMsg = res.data.message;
+      setMessages(prev => [...prev, aiMsg]);
+      socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
+      setChats(prev => {
+        const list = [...prev];
+        const idx = list.findIndex(c => c._id === selectedChat._id);
+        if (idx !== -1) {
+          const updated = { ...list[idx], lastMessage: aiMsg, updatedAt: new Date().toISOString() };
+          list.splice(idx, 1);
+          list.unshift(updated);
+        }
+        return list;
+      });
+    } catch (err) {
+      console.error('AI error', err);
     }
   };
 
@@ -435,8 +485,8 @@ const Chat = () => {
                         onClick={() => setActiveMessageId(prev => prev === msgId ? null : msgId)}
                       >
                         <MessageBubble
-                          me={msg.sender?._id === user?._id}
-                          author={msg.sender?.name || 'User'}
+                          me={msg.type === 'ai' ? false : (msg.sender?._id === user?._id)}
+                          author={msg.type === 'ai' ? 'ASKAI' : (msg.sender?.name || 'User')}
                           content={msg.content}
                           type={msg.type}
                           mediaUrl={msg.mediaUrl}
@@ -473,7 +523,9 @@ const Chat = () => {
                 </div>
               </div>
               
-              <Composer value={input} onChange={setInput} onSend={sendMessage} onUpload={handleUpload} disabled={!socket || sending} />
+              <Composer value={input} onChange={setInput} onSend={sendMessage} onUpload={handleUpload} onInsertAskAI={() => {
+                setInput(prev => /@ASKAI/i.test(prev) ? prev : (prev ? prev + ' @ASKAI ' : '@ASKAI '));
+              }} disabled={!socket || sending} />
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">Select a chat to start messaging</div>

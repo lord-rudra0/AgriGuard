@@ -111,6 +111,48 @@ router.post('/messages', authenticateToken, async (req, res) => {
   }
 });
 
+// Ask AI (Gemini) when @ASKAI is mentioned
+router.post('/askai', authenticateToken, async (req, res) => {
+  try {
+    const { chatId, content } = req.body;
+    if (!chatId || !content) return res.status(400).json({ message: 'chatId and content are required' });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return res.status(500).json({ message: 'GEMINI_API_KEY not configured' });
+
+    const system = `You are ASKAI, an agronomy assistant specialized in mushrooms. Be concise, factual, and actionable. If safety or contamination risk exists, call it out.`;
+    const userPrompt = content.replace(/@ASKAI/gi, '').trim();
+
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          { role: 'user', parts: [{ text: system }] },
+          { role: 'user', parts: [{ text: userPrompt || content }] }
+        ]
+      })
+    });
+    if (!resp.ok) {
+      const t = await resp.text();
+      return res.status(502).json({ message: 'Gemini API error', details: t });
+    }
+    const data = await resp.json();
+    const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response right now.';
+
+    const msg = new Message({
+      chatId,
+      sender: req.user._id, // stored as sender for schema; frontend treats type==='ai' specially
+      content: aiText,
+      type: 'ai'
+    });
+    await msg.save();
+    await Chat.findByIdAndUpdate(chatId, { lastMessage: msg._id, updatedAt: new Date() });
+    res.status(201).json({ message: msg });
+  } catch (e) {
+    res.status(500).json({ message: 'Failed to ask AI' });
+  }
+});
+
 // Get messages for a chat (pagination)
 router.get('/messages/:chatId', authenticateToken, async (req, res) => {
   const { chatId } = req.params;
