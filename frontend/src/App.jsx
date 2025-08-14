@@ -11,6 +11,8 @@ import Analytics from './pages/Analytics';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
+import Alerts from './pages/Alerts';
+import UserProfile from './pages/UserProfile';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -116,16 +118,7 @@ function App() {
                   path="/alerts"
                   element={
                     <ProtectedRoute>
-                      <div className="min-h-screen flex items-center justify-center">
-                        <div className="text-center">
-                          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                            Alerts Page
-                          </h1>
-                          <p className="text-gray-600 dark:text-gray-300">
-                            Coming soon...
-                          </p>
-                        </div>
-                      </div>
+                      <Alerts />
                     </ProtectedRoute>
                   }
                 />
@@ -135,6 +128,16 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Settings />
+                    </ProtectedRoute>
+                  }
+                />
+                
+                {/* Alias: Profile maps to Settings */}
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <UserProfile />
                     </ProtectedRoute>
                   }
                 />
