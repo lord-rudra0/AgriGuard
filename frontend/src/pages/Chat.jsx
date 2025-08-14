@@ -96,11 +96,23 @@ const Chat = () => {
         axios.post(`/api/chatSystem/messages/${selectedChat._id}/seen`).catch(() => {});
       }
     };
+    const onSeen = ({ chatId, userId: seenUserId }) => {
+      if (chatId !== selectedChat?._id) return;
+      // Do not redundantly add current user's id; server already added
+      setMessages(prev => prev.map(m => {
+        const seenBy = Array.isArray(m.seenBy) ? m.seenBy : [];
+        const has = seenBy.some(s => String((s && s._id) ? s._id : s) === String(seenUserId));
+        if (has) return m;
+        return { ...m, seenBy: [...seenBy, String(seenUserId)] };
+      }));
+    };
     socket.on('chat:typing', onTyping);
     socket.on('chat:message', onMessage);
+    socket.on('chat:seen', onSeen);
     return () => {
       socket.off('chat:typing', onTyping);
       socket.off('chat:message', onMessage);
+      socket.off('chat:seen', onSeen);
     };
   }, [socket, selectedChat]);
 

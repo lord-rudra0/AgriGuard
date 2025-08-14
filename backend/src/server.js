@@ -37,6 +37,9 @@ const io = new Server(server, {
   path: '/socket.io'
 });
 
+// Expose io to routes via app
+app.set('io', io);
+
 // Middleware
 app.use(helmet());
 app.use(cors(corsOptions));

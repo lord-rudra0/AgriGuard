@@ -197,6 +197,13 @@ router.post('/messages/:chatId/seen', authenticateToken, async (req, res) => {
     { chatId, seenBy: { $ne: req.user._id } },
     { $addToSet: { seenBy: req.user._id } }
   );
+  try {
+    // Emit socket event to others in the chat room
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`chat_${chatId}`).emit('chat:seen', { chatId, userId: String(req.user._id) });
+    }
+  } catch (_) {}
   res.json({ success: true });
 });
 
