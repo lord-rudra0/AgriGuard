@@ -182,17 +182,6 @@ const Login = () => {
             </Link>
           </div>
         </div>
-
-        {/* Demo credentials */}
-        <div className="card p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700">
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
-            Demo Credentials
-          </h3>
-          <p className="text-xs text-blue-600 dark:text-blue-400">
-            Email: demo@agriguard.com<br />
-            Password: demo123
-          </p>
-        </div>
       </div>
     </div>
   );
