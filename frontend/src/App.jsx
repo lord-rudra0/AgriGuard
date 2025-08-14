@@ -48,14 +48,33 @@ const PublicRoute = ({ children }) => {
 // App Layout Component
 const AppLayout = ({ children }) => {
   const { user } = useAuth();
-  
+
+  const PublicNav = () => (
+    <header className="container mx-auto px-4 py-6 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-9 h-9 rounded-xl bg-primary-600 text-white flex items-center justify-center font-bold">A</div>
+        <span className="text-xl font-semibold text-gray-900 dark:text-white">AgroNex</span>
+      </div>
+      <nav className="flex items-center gap-3">
+        <a href="/login" className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800">Log in</a>
+        <a href="/register" className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 shadow-sm">Sign up</a>
+      </nav>
+    </header>
+  );
+
+  const PublicFooter = () => (
+    <footer className="container mx-auto px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+      © {new Date().getFullYear()} AgroNex. All rights reserved.
+    </footer>
+  );
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      {user && <Header />}
+      {user ? <Header /> : <PublicNav />}
       <main className="flex-1">
         {children}
       </main>
-      {user && <Footer />}
+      {user ? <Footer /> : <PublicFooter />}
     </div>
   );
 };

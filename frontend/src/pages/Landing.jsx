@@ -34,17 +34,7 @@ const features = [
 export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950">
-      {/* Nav */}
-      <header className="container mx-auto px-4 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-primary-600 text-white flex items-center justify-center font-bold">A</div>
-          <span className="text-xl font-semibold text-gray-900 dark:text-white">AgroNex</span>
-        </div>
-        <nav className="flex items-center gap-3">
-          <Link to="/login" className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800">Log in</Link>
-          <Link to="/register" className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 shadow-sm">Sign up</Link>
-        </nav>
-      </header>
+      {/* Nav rendered by AppLayout for public routes */}
 
       {/* Hero */}
       <section className="container mx-auto px-4 py-10 md:py-20 grid md:grid-cols-2 items-center gap-10">
@@ -126,9 +116,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="container mx-auto px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-        © {new Date().getFullYear()} AgroNex. All rights reserved.
-      </footer>
+      {/* Footer rendered by AppLayout for public routes */}
     </div>
   );
 }
