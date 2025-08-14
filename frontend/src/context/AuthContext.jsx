@@ -74,6 +74,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
@@ -86,6 +90,7 @@ export const AuthProvider = ({ children }) => {
       login, 
       register, 
       logout, 
+      updateUser,
       loading 
     }}>
       {children}
