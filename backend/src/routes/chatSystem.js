@@ -44,7 +44,7 @@ router.post('/chats', authenticateToken, async (req, res) => {
 // Get all chats for user
 router.get('/chats', authenticateToken, async (req, res) => {
   const chats = await Chat.find({ members: req.user._id })
-    .populate('members', 'name email')
+    .populate('members', 'name username email')
     .populate({ path: 'lastMessage', populate: { path: 'sender', select: 'name email' } })
     .sort('-updatedAt')
     .lean();
@@ -129,7 +129,10 @@ router.post('/chats/:chatId/add', authenticateToken, async (req, res) => {
   const { chatId } = req.params;
   const { userId } = req.body;
   await Chat.findByIdAndUpdate(chatId, { $addToSet: { members: userId } });
-  res.json({ success: true });
+  const updated = await Chat.findById(chatId)
+    .populate('members', 'name username email')
+    .populate({ path: 'lastMessage', populate: { path: 'sender', select: 'name email' } });
+  res.json({ success: true, chat: updated });
 });
 router.post('/chats/:chatId/remove', authenticateToken, async (req, res) => {
   const { chatId } = req.params;

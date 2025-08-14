@@ -330,7 +330,7 @@ const Chat = () => {
           {selectedChat ? (
             <>
               <div className="flex items-center justify-between">
-                <div className="font-bold text-xl mb-0.5 text-gray-900 dark:text-white">{selectedChat.name || selectedChat.members?.map(m => m.name).filter(n => n !== user?.name).join(', ') || 'Chat'}</div>
+                <div className="font-bold text-xl mb-0.5 text-gray-900 dark:text-white">{selectedChat.name || selectedChat.members?.map(m => (typeof m === 'object' ? (m.name || m.username) : null)).filter(n => !!n && n !== user?.name && n !== user?.username).join(', ') || 'Chat'}</div>
                 <button
                   onClick={deleteChat}
                   className="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded-md hover:bg-red-50 dark:text-red-400 dark:border-red-700/40 dark:hover:bg-red-900/20"

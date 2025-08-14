@@ -2,7 +2,10 @@ import React from 'react';
 import Avatar from './Avatar';
 
 const ChatListItem = ({ chat, active, onClick, currentUser, online = false }) => {
-  const title = chat.name || (chat.members || []).map(m => m.name).filter(n => n !== currentUser?.name).join(', ') || 'Chat';
+  const names = (chat.members || [])
+    .map(m => (typeof m === 'object' ? (m.name || m.username) : null))
+    .filter(n => !!n && n !== currentUser?.name && n !== currentUser?.username);
+  const title = chat.name || names.join(', ') || 'Chat';
   const last = chat.lastMessage || {};
   const preview = last.content || (chat.type === 'group' ? 'Group created' : 'Say hello');
   const time = last.createdAt ? new Date(last.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
