@@ -6,6 +6,7 @@ import { SocketProvider } from './context/SocketContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Dashboard from './pages/Dashboard';
+import Landing from './pages/Landing';
 import Chat from './pages/Chat';
 import Analytics from './pages/Analytics';
 import Login from './pages/Login';
@@ -68,6 +69,14 @@ function App() {
             <AppLayout>
               <Routes>
                 {/* Public routes */}
+                <Route
+                  path="/"
+                  element={
+                    <PublicRoute>
+                      <Landing />
+                    </PublicRoute>
+                  }
+                />
                 <Route
                   path="/login"
                   element={
@@ -142,8 +151,7 @@ function App() {
                   }
                 />
 
-                {/* Root redirect */}
-                <Route path="/" element={<Navigate to="/dashboard" />} />
+                {/* Root handled above as Landing (public) */}
 
                 {/* 404 fallback */}
                 <Route
@@ -157,12 +165,7 @@ function App() {
                         <p className="text-gray-600 dark:text-gray-300 mb-8">
                           Page not found
                         </p>
-                        <a
-                          href="/dashboard"
-                          className="btn-primary"
-                        >
-                          Go to Dashboard
-                        </a>
+                        <a href="/" className="btn-primary">Go Home</a>
                       </div>
                     </div>
                   }
