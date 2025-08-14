@@ -9,8 +9,13 @@ const router = express.Router();
 // Create a new chat (group or 1-1)
 router.post('/chats', authenticateToken, async (req, res) => {
   try {
-    const { type, name, members, isAIGroup } = req.body;
-    if (!type || !Array.isArray(members) || members.length < 1) {
+    const { type, name, members = [], isAIGroup } = req.body;
+    // Basic validation
+    if (!type || !Array.isArray(members)) {
+      return res.status(400).json({ message: 'Invalid chat data' });
+    }
+    // For one-to-one chats, at least one other member is required
+    if (type === 'one-to-one' && members.length < 1) {
       return res.status(400).json({ message: 'Invalid chat data' });
     }
     // For 1-1, check if chat already exists
