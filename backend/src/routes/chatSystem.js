@@ -114,7 +114,7 @@ router.post('/messages', authenticateToken, async (req, res) => {
 // Ask AI (Gemini) when @ASKAI is mentioned
 router.post('/askai', authenticateToken, async (req, res) => {
   try {
-    const { chatId, content } = req.body;
+    const { chatId, content, mediaUrl, mediaType } = req.body;
     if (!chatId || !content) return res.status(400).json({ message: 'chatId and content are required' });
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return res.status(500).json({ message: 'GEMINI_API_KEY not configured' });
@@ -122,13 +122,36 @@ router.post('/askai', authenticateToken, async (req, res) => {
     const system = `You are ASKAI, an agronomy assistant specialized in mushrooms. Be concise, factual, and actionable. If safety or contamination risk exists, call it out.`;
     const userPrompt = content.replace(/@ASKAI/gi, '').trim();
 
+    // Build parts with optional inline image
+    const parts = [{ text: userPrompt || content }];
+    try {
+      if (mediaUrl) {
+        // Accept '/uploads/filename' or 'uploads/filename'
+        const localPrefix = mediaUrl.startsWith('/uploads') ? '/uploads' : (mediaUrl.startsWith('uploads') ? 'uploads' : null);
+        if (localPrefix) {
+          const filename = mediaUrl.replace(/^\/?uploads\/?/, '');
+          const filePath = path.resolve(process.cwd(), 'uploads', filename);
+          if (fs.existsSync(filePath)) {
+            const buf = fs.readFileSync(filePath);
+            const b64 = buf.toString('base64');
+            const mt = mediaType || ({
+              '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif'
+            })[path.extname(filename).toLowerCase()] || 'image/jpeg';
+            parts.push({ inlineData: { mimeType: mt, data: b64 } });
+          }
+        }
+      }
+    } catch (_) {
+      // ignore inline image failure; proceed with text-only
+    }
+
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [
           { role: 'user', parts: [{ text: system }] },
-          { role: 'user', parts: [{ text: userPrompt || content }] }
+          { role: 'user', parts }
         ]
       })
     });

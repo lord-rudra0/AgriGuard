@@ -210,9 +210,11 @@ const Chat = () => {
       const up = await axios.post('/api/chatSystem/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } });
       const url = up.data?.url;
       if (!url) throw new Error('Upload failed');
+      const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+      const caption = (input || '').trim();
       const res = await axios.post('/api/chatSystem/messages', {
         chatId: selectedChat._id,
-        content: '',
+        content: caption,
         type: 'image',
         mediaUrl: url,
         mediaType: file.type,
@@ -220,6 +222,7 @@ const Chat = () => {
       const messageWithSender = { ...res.data.message, sender: user };
       setMessages((prev) => [...prev, messageWithSender]);
       socket.emit('chat:message', { chatId: selectedChat._id, message: messageWithSender });
+      if (caption) setInput('');
       setChats(prev => {
         const list = [...prev];
         const idx = list.findIndex(c => c._id === selectedChat._id);
@@ -230,6 +233,32 @@ const Chat = () => {
         }
         return list;
       });
+      // If caption includes @ASKAI, invoke AI with image context
+      if (/@ASKAI/i.test(caption)) {
+        try {
+          const aiRes = await axios.post('/api/chatSystem/askai', {
+            chatId: selectedChat._id,
+            content: `${caption}\nImage included below`,
+            mediaUrl: url,
+            mediaType: file.type,
+          });
+          const aiMsg = aiRes.data.message;
+          setMessages(prev => [...prev, aiMsg]);
+          socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
+          setChats(prev => {
+            const list = [...prev];
+            const idx = list.findIndex(c => c._id === selectedChat._id);
+            if (idx !== -1) {
+              const updated = { ...list[idx], lastMessage: aiMsg, updatedAt: new Date().toISOString() };
+              list.splice(idx, 1);
+              list.unshift(updated);
+            }
+            return list;
+          });
+        } catch (e) {
+          console.error('AI error', e);
+        }
+      }
     } catch (e) {
       alert(e.response?.data?.message || e.message || 'Failed to send image');
     } finally {
