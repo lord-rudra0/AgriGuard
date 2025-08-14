@@ -5,21 +5,22 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-  "start": "node src/server.js",
-  "dev": "DEV_NO_DB=true DEV_OPEN_SOCKET=true NODE_ENV=development nodemon src/server.js"
+    "start": "node src/server.js",
+    "dev": "DEV_NO_DB=true DEV_OPEN_SOCKET=true NODE_ENV=development nodemon src/server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "mongoose": "^8.6.1",
-    "socket.io": "^4.7.5",
-    "jsonwebtoken": "^9.0.2",
+    "@google/generative-ai": "^0.17.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "@google/generative-ai": "^0.17.1",
-    "nodemailer": "^6.9.14",
+    "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
-    "helmet": "^7.1.0"
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.6.1",
+    "multer": "^2.0.2",
+    "nodemailer": "^6.9.14",
+    "socket.io": "^4.7.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"

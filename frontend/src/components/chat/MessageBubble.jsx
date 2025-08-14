@@ -1,6 +1,6 @@
 import React from 'react';
 
-const MessageBubble = ({ me, author, content, time }) => {
+const MessageBubble = ({ me, author, content, time, type, mediaUrl, mediaType }) => {
   return (
     <div className={`flex ${me ? 'justify-end' : 'justify-start'} animate-fade-up`}>
       <div
@@ -13,7 +13,13 @@ const MessageBubble = ({ me, author, content, time }) => {
         {!me && (
           <p className="text-[10px] font-semibold mb-0.5 opacity-80">{author}</p>
         )}
-        <p className="text-sm whitespace-pre-wrap break-words">{content}</p>
+        {type === 'image' && mediaUrl ? (
+          <a href={mediaUrl} target="_blank" rel="noreferrer">
+            <img src={mediaUrl} alt="attachment" className="max-h-64 rounded-md border border-black/10" />
+          </a>
+        ) : (
+          <p className="text-sm whitespace-pre-wrap break-words">{content}</p>
+        )}
         <div className={`text-[10px] mt-1 ${me ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}>{time}</div>
       </div>
     </div>

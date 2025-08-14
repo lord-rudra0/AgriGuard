@@ -1,10 +1,30 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Multer setup for image uploads
+const uploadsDir = path.resolve(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '';
+    const base = path.basename(file.originalname, ext).replace(/[^a-z0-9_-]/gi, '_');
+    cb(null, `${Date.now()}_${base}${ext}`);
+  }
+});
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype && file.mimetype.startsWith('image/')) return cb(null, true);
+  cb(new Error('Only image uploads are allowed'));
+};
+const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
 
 // Create a new chat (group or 1-1)
 router.post('/chats', authenticateToken, async (req, res) => {
@@ -58,6 +78,13 @@ router.get('/chats', authenticateToken, async (req, res) => {
   const unreadMap = new Map(unreadByChat.map(u => [String(u._id), u.count]));
   const enrich = chats.map(c => ({ ...c, unreadCount: unreadMap.get(String(c._id)) || 0 }));
   res.json({ chats: enrich });
+});
+
+// Upload image for chat message
+router.post('/upload', authenticateToken, upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+  const url = `/uploads/${req.file.filename}`;
+  res.status(201).json({ url, filename: req.file.filename, mimetype: req.file.mimetype, size: req.file.size });
 });
 
 // Send a message (text/media/AI)

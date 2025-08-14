@@ -142,6 +142,51 @@ const Chat = () => {
     }
   };
 
+  // Upload an image and send as a media message
+  const handleUpload = async (file) => {
+    if (!selectedChat || !socket || sending) return;
+    if (!file || !file.type?.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      alert('Image too large (max 5MB)');
+      return;
+    }
+    setSending(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const up = await axios.post('/api/chatSystem/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const url = up.data?.url;
+      if (!url) throw new Error('Upload failed');
+      const res = await axios.post('/api/chatSystem/messages', {
+        chatId: selectedChat._id,
+        content: '',
+        type: 'image',
+        mediaUrl: url,
+        mediaType: file.type,
+      });
+      const messageWithSender = { ...res.data.message, sender: user };
+      setMessages((prev) => [...prev, messageWithSender]);
+      socket.emit('chat:message', { chatId: selectedChat._id, message: messageWithSender });
+      setChats(prev => {
+        const list = [...prev];
+        const idx = list.findIndex(c => c._id === selectedChat._id);
+        if (idx !== -1) {
+          const updated = { ...list[idx], lastMessage: messageWithSender, updatedAt: new Date().toISOString() };
+          list.splice(idx, 1);
+          list.unshift(updated);
+        }
+        return list;
+      });
+    } catch (e) {
+      alert(e.response?.data?.message || e.message || 'Failed to send image');
+    } finally {
+      setSending(false);
+    }
+  };
+
   const deleteChat = async () => {
     if (!selectedChat) return;
     if (!confirm('Delete this chat and all its messages?')) return;
@@ -393,6 +438,9 @@ const Chat = () => {
                           me={msg.sender?._id === user?._id}
                           author={msg.sender?.name || 'User'}
                           content={msg.content}
+                          type={msg.type}
+                          mediaUrl={msg.mediaUrl}
+                          mediaType={msg.mediaType}
                           time={msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                         />
                         <div className={`transition-opacity duration-150 mt-1 ${showActions ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
@@ -425,7 +473,7 @@ const Chat = () => {
                 </div>
               </div>
               
-              <Composer value={input} onChange={setInput} onSend={sendMessage} disabled={!socket || sending} />
+              <Composer value={input} onChange={setInput} onSend={sendMessage} onUpload={handleUpload} disabled={!socket || sending} />
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">Select a chat to start messaging</div>
