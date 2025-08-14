@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActive = false, onRemoveAskAI, disabled }) => {
+const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActive = false, onRemoveAskAI, attachedMedia, onRemoveAttachment, uploading = false, disabled }) => {
   const fileRef = useRef(null);
   return (
     <form onSubmit={onSend} className="relative flex items-center gap-2">
@@ -18,7 +18,7 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
         type="button"
         onClick={() => fileRef.current?.click()}
         className="px-3 py-2 rounded-2xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-        disabled={disabled}
+        disabled={disabled || uploading}
         title="Attach image"
       >
         📎
@@ -32,6 +32,24 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
       >
         ✨
       </button>
+      {attachedMedia && (
+        <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 border border-blue-300 dark:border-blue-700 select-none">
+          {attachedMedia.previewUrl ? (
+            <img src={attachedMedia.previewUrl} alt="preview" className="w-6 h-6 rounded object-cover" />
+          ) : (
+            <span className="w-6 h-6 rounded bg-blue-300 inline-flex items-center justify-center">🖼️</span>
+          )}
+          <span>Image attached</span>
+          <button
+            type="button"
+            className="ml-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800/60 px-1"
+            onClick={() => onRemoveAttachment && onRemoveAttachment()}
+            title="Remove attachment"
+          >
+            ×
+          </button>
+        </span>
+      )}
       {askAIActive && (
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200 border border-purple-300 dark:border-purple-700 select-none">
           ASKAI

@@ -113,6 +113,8 @@ const Chat = () => {
 
   // Keep non-editable ASKAI chip state
   const [askAIActive, setAskAIActive] = useState(false);
+  // Attachment state (pick first, send later)
+  const [attachedMedia, setAttachedMedia] = useState(null); // { file, previewUrl }
 
   // Sanitize input: if user types @ASKAI, activate chip and strip text
   const handleInputChange = (val) => {
@@ -123,27 +125,66 @@ const Chat = () => {
     setInput(val);
   };
 
+  const handleUpload = (file) => {
+    if (!file || !file.type?.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      alert('Image too large (max 5MB)');
+      return;
+    }
+    const previewUrl = URL.createObjectURL(file);
+    setAttachedMedia({ file, previewUrl });
+  };
+
+  const removeAttachment = () => {
+    if (attachedMedia?.previewUrl) URL.revokeObjectURL(attachedMedia.previewUrl);
+    setAttachedMedia(null);
+  };
+
   const sendMessage = async (e) => {
     e.preventDefault();
-    if (!input.trim() || !socket || sending || !selectedChat) return;
+    if ((!input.trim() && !attachedMedia) || !socket || sending || !selectedChat) return;
     setSending(true);
     try {
-      const res = await axios.post('/api/chatSystem/messages', {
-        chatId: selectedChat._id,
-        content: input,
-      });
-      setInput('');
-      // Optimistically add message with sender info
-      const messageWithSender = { ...res.data.message, sender: user };
-      setMessages((prev) => [...prev, messageWithSender]);
-      socket.emit('chat:message', { chatId: selectedChat._id, message: messageWithSender });
-      
-      // Update chat list lastMessage and move to top
+      let sentMsg = null;
+      if (attachedMedia) {
+        // Upload the image now, then send message with caption
+        const form = new FormData();
+        form.append('file', attachedMedia.file);
+        const up = await axios.post('/api/chatSystem/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+        const url = up.data?.url;
+        if (!url) throw new Error('Upload failed');
+        const res = await axios.post('/api/chatSystem/messages', {
+          chatId: selectedChat._id,
+          content: input.trim(),
+          type: 'image',
+          mediaUrl: url,
+          mediaType: attachedMedia.file.type,
+        });
+        sentMsg = { ...res.data.message, sender: user };
+        // Clear attachment preview
+        if (attachedMedia.previewUrl) URL.revokeObjectURL(attachedMedia.previewUrl);
+        setAttachedMedia(null);
+        setInput('');
+      } else {
+        // Text-only message
+        const res = await axios.post('/api/chatSystem/messages', {
+          chatId: selectedChat._id,
+          content: input,
+        });
+        setInput('');
+        sentMsg = { ...res.data.message, sender: user };
+      }
+      // Optimistic UI updates (common)
+      setMessages((prev) => [...prev, sentMsg]);
+      socket.emit('chat:message', { chatId: selectedChat._id, message: sentMsg });
       setChats(prev => {
         const list = [...prev];
         const idx = list.findIndex(c => c._id === selectedChat._id);
         if (idx !== -1) {
-          const updated = { ...list[idx], lastMessage: messageWithSender, updatedAt: new Date().toISOString() };
+          const updated = { ...list[idx], lastMessage: sentMsg, updatedAt: new Date().toISOString() };
           list.splice(idx, 1);
           list.unshift(updated);
         }
@@ -153,10 +194,11 @@ const Chat = () => {
       // If ASKAI chip active, call AI endpoint and append AI reply
       if (askAIActive) {
         try {
-          const aiRes = await axios.post('/api/chatSystem/askai', {
-            chatId: selectedChat._id,
-            content: res.data.message.content,
-          });
+          let aiPayload = { chatId: selectedChat._id, content: sentMsg.content };
+          if (sentMsg.type === 'image' && sentMsg.mediaUrl) {
+            aiPayload = { ...aiPayload, mediaUrl: sentMsg.mediaUrl, mediaType: sentMsg.mediaType };
+          }
+          const aiRes = await axios.post('/api/chatSystem/askai', aiPayload);
           const aiMsg = aiRes.data.message;
           setMessages(prev => [...prev, aiMsg]);
           socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
@@ -206,81 +248,7 @@ const Chat = () => {
     }
   };
 
-  // Upload an image and send as a media message
-  const handleUpload = async (file) => {
-    if (!selectedChat || !socket || sending) return;
-    if (!file || !file.type?.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) { // 5MB
-      alert('Image too large (max 5MB)');
-      return;
-    }
-    setSending(true);
-    try {
-      const form = new FormData();
-      form.append('file', file);
-      const up = await axios.post('/api/chatSystem/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-      const url = up.data?.url;
-      if (!url) throw new Error('Upload failed');
-      const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
-      const caption = (input || '').trim();
-      const res = await axios.post('/api/chatSystem/messages', {
-        chatId: selectedChat._id,
-        content: caption,
-        type: 'image',
-        mediaUrl: url,
-        mediaType: file.type,
-      });
-      const messageWithSender = { ...res.data.message, sender: user };
-      setMessages((prev) => [...prev, messageWithSender]);
-      socket.emit('chat:message', { chatId: selectedChat._id, message: messageWithSender });
-      if (caption) setInput('');
-      setChats(prev => {
-        const list = [...prev];
-        const idx = list.findIndex(c => c._id === selectedChat._id);
-        if (idx !== -1) {
-          const updated = { ...list[idx], lastMessage: messageWithSender, updatedAt: new Date().toISOString() };
-          list.splice(idx, 1);
-          list.unshift(updated);
-        }
-        return list;
-      });
-      // If ASKAI chip active, invoke AI with image context
-      if (askAIActive) {
-        try {
-          const aiRes = await axios.post('/api/chatSystem/askai', {
-            chatId: selectedChat._id,
-            content: `${caption}\nImage included below`,
-            mediaUrl: url,
-            mediaType: file.type,
-          });
-          const aiMsg = aiRes.data.message;
-          setMessages(prev => [...prev, aiMsg]);
-          socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
-          setChats(prev => {
-            const list = [...prev];
-            const idx = list.findIndex(c => c._id === selectedChat._id);
-            if (idx !== -1) {
-              const updated = { ...list[idx], lastMessage: aiMsg, updatedAt: new Date().toISOString() };
-              list.splice(idx, 1);
-              list.unshift(updated);
-            }
-            return list;
-          });
-        } catch (e) {
-          console.error('AI error', e);
-        }
-      }
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || 'Failed to send image');
-    } finally {
-      setSending(false);
-      // Reset ASKAI after image send
-      setAskAIActive(false);
-    }
-  };
+  // (handled above) Upload picker sets attachment preview; actual upload occurs on send.
 
   const deleteChat = async () => {
     if (!selectedChat) return;
@@ -575,6 +543,9 @@ const Chat = () => {
                 onUpload={handleUpload}
                 onInsertAskAI={() => setAskAIActive(true)}
                 askAIActive={askAIActive}
+                attachedMedia={attachedMedia}
+                onRemoveAttachment={removeAttachment}
+                uploading={sending}
                 onRemoveAskAI={() => setAskAIActive(false)}
                 disabled={!socket || sending}
               />
