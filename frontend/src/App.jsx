@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { Shield } from 'lucide-react';
+import { Shield, Sun, Moon } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import Header from './components/Header';
@@ -49,6 +49,7 @@ const PublicRoute = ({ children }) => {
 // App Layout Component
 const AppLayout = ({ children }) => {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const PublicNav = () => (
     <header className="container mx-auto px-4 py-6 flex items-center justify-between">
@@ -59,6 +60,13 @@ const AppLayout = ({ children }) => {
         <span className="text-xl font-semibold text-gray-900 dark:text-white">AgriGuard</span>
       </Link>
       <nav className="flex items-center gap-3">
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Toggle theme"
+        >
+          {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+        </button>
         <a href="/login" className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800">Log in</a>
         <a href="/register" className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 shadow-sm">Sign up</a>
       </nav>

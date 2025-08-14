@@ -25,6 +25,7 @@ const Dashboard = () => {
   const { sensorData, alerts } = useSocket();
   const [isConnected, setIsConnected] = useState(true);
   const [chartData, setChartData] = useState([]);
+  const [mounted, setMounted] = useState(false);
 
   // Simulate chart data generation
   useEffect(() => {
@@ -50,6 +51,12 @@ const Dashboard = () => {
 
     return () => clearInterval(interval);
   }, [sensorData]);
+
+  // Mount animations trigger
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 50);
+    return () => clearTimeout(t);
+  }, []);
 
   const getThreshold = (type) => {
     const thresholds = {
@@ -112,7 +119,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -149,16 +156,21 @@ const Dashboard = () => {
         {/* Sensor Cards */}
         <div className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            {sensorConfigs.map((config) => (
-              <SensorCard
+            {sensorConfigs.map((config, i) => (
+              <div
                 key={config.type}
-                type={config.type}
-                value={config.value}
-                unit={config.unit}
-                status={getStatus(config.type, config.value)}
-                threshold={getThreshold(config.type)}
-                lastReading={sensorData.lastUpdated}
-              />
+                style={{ transitionDelay: `${i * 80 + 100}ms` }}
+                className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:-translate-y-0.5`}
+              >
+                <SensorCard
+                  type={config.type}
+                  value={config.value}
+                  unit={config.unit}
+                  status={getStatus(config.type, config.value)}
+                  threshold={getThreshold(config.type)}
+                  lastReading={sensorData.lastUpdated}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -166,8 +178,8 @@ const Dashboard = () => {
         {/* Charts and Alerts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Historical Chart */}
-          <div className="lg:col-span-2">
-            <div className="card p-6">
+          <div className={`lg:col-span-2 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+            <div className="card p-6 hover:shadow-lg transition-shadow duration-300">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   24-Hour Trends
@@ -230,7 +242,7 @@ const Dashboard = () => {
 
           {/* Recent Alerts */}
           <div className="space-y-6">
-            <div className="card p-6">
+            <div className={`card p-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:shadow-lg`}>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 Recent Alerts
               </h2>
@@ -240,7 +252,8 @@ const Dashboard = () => {
                   {recentAlerts.map((alert, index) => (
                     <div
                       key={index}
-                      className={`p-4 rounded-lg border-l-4 ${
+                      style={{ transitionDelay: `${index * 100}ms` }}
+                      className={`p-4 rounded-lg border-l-4 transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'} ${
                         alert.severity === 'high'
                           ? 'alert-danger border-red-500'
                           : alert.severity === 'medium'
@@ -277,7 +290,7 @@ const Dashboard = () => {
             </div>
 
             {/* System Status */}
-            <div className="card p-6">
+            <div className={`card p-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:shadow-lg`}>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 System Status
               </h2>

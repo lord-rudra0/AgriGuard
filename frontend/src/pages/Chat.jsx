@@ -33,6 +33,13 @@ const Chat = () => {
   // Members modal state
   const [showMembers, setShowMembers] = useState(false);
 
+  // Mounted state to trigger entrance animations
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 20);
+    return () => clearTimeout(t);
+  }, []);
+
   // Fetch chat list
   useEffect(() => {
     setLoadingChats(true);
@@ -422,19 +429,24 @@ const Chat = () => {
           <div className="p-4 text-gray-500">Loading…</div>
         ) : (
           <ul className="flex-1 overflow-y-auto p-2 space-y-1">
-            {chats.map((chat) => {
+            {chats.map((chat, idx) => {
               const otherIds = (chat.members || []).map(m => m._id).filter(id => id !== user?._id);
               const otherId = chat.type === 'one-to-one' ? otherIds[0] : null;
               const online = otherId ? !!presence.get(String(otherId)) : false;
               return (
-                <ChatListItem
+                <li
                   key={chat._id}
-                  chat={chat}
-                  active={selectedChat?._id === chat._id}
-                  currentUser={user}
-                  online={online}
-                  onClick={() => setSelectedChat(chat)}
-                />
+                  className={`transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+                  style={{ transitionDelay: `${Math.min(idx, 12) * 40}ms` }}
+                >
+                  <ChatListItem
+                    chat={chat}
+                    active={selectedChat?._id === chat._id}
+                    currentUser={user}
+                    online={online}
+                    onClick={() => setSelectedChat(chat)}
+                  />
+                </li>
               );
             })}
           </ul>
@@ -445,8 +457,29 @@ const Chat = () => {
         <div className="flex-1 flex flex-col p-6 max-h-screen">
           {selectedChat ? (
             <>
-              <div className="flex items-center justify-between">
-                <div className="font-bold text-xl mb-0.5 text-gray-900 dark:text-white">{selectedChat.name || selectedChat.members?.map(m => (typeof m === 'object' ? (m.name || m.username) : null)).filter(n => !!n && n !== user?.name && n !== user?.username).join(', ') || 'Chat'}</div>
+              <div className={`flex items-center justify-between transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
+                <div className="font-bold text-xl mb-0.5 text-gray-900 dark:text-white flex items-center gap-2">
+                  {(() => {
+                    const title = selectedChat.name || selectedChat.members?.map(m => (typeof m === 'object' ? (m.name || m.username) : null)).filter(n => !!n && n !== user?.name && n !== user?.username).join(', ') || 'Chat';
+                    // Online badge for one-to-one chats
+                    if (selectedChat.type === 'one-to-one') {
+                      const otherId = (selectedChat.members || [])
+                        .map(m => (typeof m === 'object' ? m._id : m))
+                        .find(id => String(id) !== String(user?._id));
+                      const isOnline = otherId ? !!presence.get(String(otherId)) : false;
+                      return (
+                        <>
+                          <span>{title}</span>
+                          <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border ${isOnline ? 'text-emerald-600 border-emerald-200 dark:text-emerald-400 dark:border-emerald-700/40' : 'text-gray-500 border-gray-200 dark:text-gray-400 dark:border-gray-700/40'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isOnline ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+                            {isOnline ? 'Online' : 'Offline'}
+                          </span>
+                        </>
+                      );
+                    }
+                    return <span>{title}</span>;
+                  })()}
+                </div>
                 <div className="flex items-center gap-2">
                   {selectedChat.type === 'group' && (
                     <>
@@ -478,7 +511,7 @@ const Chat = () => {
                 <div className="h-2" />
               )}
               <div 
-                className="chat-messages-container overflow-y-auto rounded-2xl shadow-sm p-4 mb-4 backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60"
+                className={`chat-messages-container overflow-y-auto rounded-2xl shadow-sm p-4 mb-4 backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60 transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
                 style={{ height: `${chatHeight}px` }}
                 ref={messagesContainerRef}
               >
@@ -491,33 +524,49 @@ const Chat = () => {
                     {messages.map((msg, idx) => {
                       const msgId = msg._id || idx;
                       const showActions = activeMessageId === msgId;
+                      const me = msg.type === 'ai' ? false : (msg.sender?._id === user?._id);
+                      // Compute seen indicators for my messages
+                      let seenCount = 0;
+                      let totalOthers = 0;
+                      try {
+                        const memberIds = (selectedChat?.members || []).map(m => (typeof m === 'object' ? m._id : m)).filter(Boolean);
+                        const others = memberIds.filter(id => String(id) !== String(user?._id));
+                        totalOthers = others.length;
+                        const seenBy = Array.isArray(msg.seenBy) ? msg.seenBy : [];
+                        const seenByIds = seenBy.map(s => (typeof s === 'object' && s?._id) ? s._id : s).filter(Boolean);
+                        seenCount = seenByIds.filter(id => String(id) !== String(user?._id)).length;
+                      } catch (e) {}
                       return (
-                      <li
-                        key={msgId}
-                        className="group cursor-pointer"
-                        onClick={() => setActiveMessageId(prev => prev === msgId ? null : msgId)}
-                      >
-                        <MessageBubble
-                          me={msg.type === 'ai' ? false : (msg.sender?._id === user?._id)}
-                          author={msg.type === 'ai' ? 'ASKAI' : (msg.sender?.name || 'User')}
-                          content={msg.content}
-                          type={msg.type}
-                          mediaUrl={msg.mediaUrl}
-                          mediaType={msg.mediaType}
-                          time={msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                        />
-                        <div className={`transition-opacity duration-150 mt-1 ${showActions ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                          {(msg.sender?._id === user?._id) && (
-                            <button
-                              className="inline-flex items-center px-2.5 py-1.5 text-sm text-red-700 border border-red-200 rounded-md hover:bg-red-50 dark:text-red-400 dark:border-red-700/40 dark:hover:bg-red-900/20"
-                              onClick={(e) => { e.stopPropagation(); deleteMessage(msg._id); }}
-                            >
-                              Delete message
-                            </button>
-                          )}
-                        </div>
-                      </li>
-                    );})}
+                        <li
+                          key={msgId}
+                          className={`group cursor-pointer transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+                          style={{ transitionDelay: `${Math.min(idx, 12) * 35}ms` }}
+                          onClick={() => setActiveMessageId(prev => prev === msgId ? null : msgId)}
+                        >
+                          <MessageBubble
+                            me={me}
+                            author={msg.type === 'ai' ? 'ASKAI' : (msg.sender?.name || 'User')}
+                            content={msg.content}
+                            type={msg.type}
+                            mediaUrl={msg.mediaUrl}
+                            mediaType={msg.mediaType}
+                            time={msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                            seenCount={me ? seenCount : 0}
+                            totalOthers={me ? totalOthers : 0}
+                          />
+                          <div className={`transition-opacity duration-150 mt-1 ${showActions ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                            {(msg.sender?._id === user?._id) && (
+                              <button
+                                className="inline-flex items-center px-2.5 py-1.5 text-sm text-red-700 border border-red-200 rounded-md hover:bg-red-50 dark:text-red-400 dark:border-red-700/40 dark:hover:bg-red-900/20"
+                                onClick={(e) => { e.stopPropagation(); deleteMessage(msg._id); }}
+                              >
+                                Delete message
+                              </button>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                     <div ref={messagesEndRef} />
                   </ul>
                 )}
@@ -525,7 +574,7 @@ const Chat = () => {
               
               {/* Resize Handle */}
               <div 
-                className="w-full h-2 bg-transparent hover:bg-blue-500/20 cursor-ns-resize transition-all duration-200 relative group mb-2"
+                className={`w-full h-2 bg-transparent hover:bg-blue-500/20 cursor-ns-resize transition-all duration-500 ease-out transform relative group mb-2 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
                 onMouseDown={handleMouseDown}
               >
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center">
@@ -536,19 +585,21 @@ const Chat = () => {
                 </div>
               </div>
               
-              <Composer
-                value={input}
-                onChange={handleInputChange}
-                onSend={sendMessage}
-                onUpload={handleUpload}
-                onInsertAskAI={() => setAskAIActive(true)}
-                askAIActive={askAIActive}
-                attachedMedia={attachedMedia}
-                onRemoveAttachment={removeAttachment}
-                uploading={sending}
-                onRemoveAskAI={() => setAskAIActive(false)}
-                disabled={!socket || sending}
-              />
+              <div className={`transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} style={{ transitionDelay: '120ms' }}>
+                <Composer
+                  value={input}
+                  onChange={handleInputChange}
+                  onSend={sendMessage}
+                  onUpload={handleUpload}
+                  onInsertAskAI={() => setAskAIActive(true)}
+                  askAIActive={askAIActive}
+                  attachedMedia={attachedMedia}
+                  onRemoveAttachment={removeAttachment}
+                  uploading={sending}
+                  onRemoveAskAI={() => setAskAIActive(false)}
+                  disabled={!socket || sending}
+                />
+              </div>
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">Select a chat to start messaging</div>

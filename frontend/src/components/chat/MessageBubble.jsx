@@ -1,6 +1,6 @@
 import React from 'react';
 
-const MessageBubble = ({ me, author, content, time, type, mediaUrl, mediaType }) => {
+const MessageBubble = ({ me, author, content, time, type, mediaUrl, mediaType, seenCount = 0, totalOthers = 0 }) => {
   return (
     <div className={`flex ${me ? 'justify-end' : 'justify-start'} animate-fade-up`}>
       <div
@@ -23,7 +23,18 @@ const MessageBubble = ({ me, author, content, time, type, mediaUrl, mediaType })
   })() : (
           <p className="text-sm whitespace-pre-wrap break-words">{content}</p>
         )}
-        <div className={`text-[10px] mt-1 ${me ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}>{time}</div>
+        <div className={`text-[10px] mt-1 ${me ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}>
+          {time}
+          {me && totalOthers > 0 && (
+            <span className="ml-1 opacity-80">
+              {seenCount >= totalOthers
+                ? ' • Seen'
+                : seenCount > 0
+                  ? ` • Seen by ${seenCount}/${totalOthers}`
+                  : ''}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

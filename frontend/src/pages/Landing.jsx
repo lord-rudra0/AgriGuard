@@ -43,15 +43,15 @@ export default function Landing() {
       {/* Nav rendered by AppLayout for public routes */}
 
       {/* Hero */}
-      <section className="container mx-auto px-4 py-10 md:py-20 grid md:grid-cols-2 items-center gap-10">
+      <section className="container mx-auto px-4 py-10 md:py-16 grid md:grid-cols-2 items-center gap-8 md:gap-12 max-w-6xl">
         <div className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
             Modern Agriculture. Powered by AI.
           </h1>
-          <p className={`mt-5 text-lg text-gray-600 dark:text-gray-300 max-w-xl transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}>
+          <p className={`mt-4 md:mt-5 text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}>
             Monitor your fields, chat with an agronomy AI assistant, and make faster, smarter decisions. Upload images, get instant insights, and stay ahead of risks.
           </p>
-          <div className={`mt-8 flex items-center gap-3 transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}>
+          <div className={`mt-6 md:mt-8 flex items-center gap-3 transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}>
             <Link to="/register" className="px-5 py-3 rounded-xl bg-primary-600 text-white hover:bg-primary-700 shadow transform transition-transform duration-300 hover:scale-[1.02]">
               Get Started
             </Link>
@@ -59,7 +59,7 @@ export default function Landing() {
               I have an account
             </Link>
           </div>
-          <div className={`mt-6 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 transition-opacity duration-700 delay-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+          <div className={`mt-5 md:mt-6 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 transition-opacity duration-700 delay-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
             <div className="flex items-center gap-2">
               <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-green-100 text-green-700">✓</span>
               Fast setup
@@ -77,7 +77,7 @@ export default function Landing() {
         <div className={`relative transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}>
           <div className="absolute inset-0 -z-10 bg-primary-600/20 blur-3xl rounded-full animate-pulse" />
           <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-900/60 backdrop-blur transform transition-transform duration-500 hover:scale-[1.02]">
-            <div className="aspect-video rounded-xl bg-gradient-to-br from-primary-600/25 to-emerald-500/25 flex items-center justify-center text-primary-700 dark:text-primary-300">
+            <div className="rounded-xl bg-gradient-to-br from-primary-600/25 to-emerald-500/25 flex items-center justify-center text-primary-700 dark:text-primary-300 h-56 sm:h-64 md:h-72">
               <div className="text-center">
                 <div className="text-5xl">🌾🤖</div>
                 <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">AI Agronomy Assistant</div>
