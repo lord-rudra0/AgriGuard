@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Eye, EyeOff, Mail, Lock, User, MapPin } from 'lucide-react';
+import { Shield, Eye, EyeOff, Mail, Lock, User, MapPin, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Register = () => {
@@ -9,6 +9,7 @@ const Register = () => {
     name: '',
     username: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     farmName: '',
@@ -127,10 +128,34 @@ const Register = () => {
               <p className="text-xs text-gray-500 mt-1">Username must be 3-30 characters, letters, numbers, and underscores only.</p>
             </div>
 
-            {/* Email */}
+            {/* Phone */}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Phone Number
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  pattern="^\+?[0-9]{7,15}$"
+                  title="Enter a valid phone number with 7 to 15 digits, optionally starting with +"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="input-field pl-10"
+                  placeholder="Enter your phone number"
+                />
+              </div>
+            </div>
+
+            {/* Email (optional) */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Address
+                Email Address (optional)
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -140,11 +165,10 @@ const Register = () => {
                   id="email"
                   name="email"
                   type="email"
-                  required
                   value={formData.email}
                   onChange={handleChange}
                   className="input-field pl-10"
-                  placeholder="Enter your email"
+                  placeholder="Enter your email (optional)"
                 />
               </div>
             </div>

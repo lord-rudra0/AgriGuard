@@ -7,15 +7,17 @@ import { authenticateToken } from '../middleware/auth.js';
 const router = express.Router();
 
 // @route   GET /api/auth/users
-// @desc    Find user by username or email
+// @desc    Find user by username, email or phone
 // @access  Private
 router.get('/users', authenticateToken, async (req, res) => {
-  const { email, username } = req.query;
+  const { email, username, phone } = req.query;
   let user = null;
   if (email) {
-    user = await User.findOne({ email: email.toLowerCase() });
+    user = await User.findOne({ email: String(email).toLowerCase() });
   } else if (username) {
-    user = await User.findOne({ username: username.trim() });
+    user = await User.findOne({ username: String(username).trim() });
+  } else if (phone) {
+    user = await User.findOne({ phone: String(phone).trim() });
   }
   if (!user) return res.status(404).json({ message: 'User not found' });
   res.json({ user: user.getPublicProfile() });
@@ -33,12 +35,16 @@ const generateToken = (userId) => {
 // @access  Public
 router.post('/register', async (req, res) => {
   try {
-    const { name, username, email, password, farmName, location } = req.body;
+    const { name, username, email, phone, password, farmName, location } = req.body;
 
-    // Check if user already exists (by email or username)
-    const existingUser = await User.findOne({ $or: [ { email }, { username } ] });
+    // Check if user already exists (by email, username, or phone)
+    const ors = [];
+    if (email) ors.push({ email: String(email).toLowerCase() });
+    if (username) ors.push({ username: String(username).trim() });
+    if (phone) ors.push({ phone: String(phone).trim() });
+    const existingUser = ors.length ? await User.findOne({ $or: ors }) : null;
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email or username' });
+      return res.status(400).json({ message: 'User already exists with this email, username, or phone' });
     }
 
     // Require username
@@ -46,11 +52,19 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Username is required and must be at least 3 characters' });
     }
 
+    // Require phone (7-15 digits, allowing optional leading +)
+    const trimmedPhone = String(phone || '').trim();
+    const phoneRegex = /^\+?[0-9]{7,15}$/;
+    if (!trimmedPhone || !phoneRegex.test(trimmedPhone)) {
+      return res.status(400).json({ message: 'A valid phone number is required' });
+    }
+
     // Create new user
     const user = new User({
       name,
       username: username.trim(),
-      email,
+      email: email ? String(email).toLowerCase() : undefined,
+      phone: trimmedPhone,
       password,
       farmName,
       location
@@ -70,7 +84,7 @@ router.post('/register', async (req, res) => {
     console.error('Registration error:', error);
     
     if (error.code === 11000) {
-      return res.status(400).json({ message: 'Email or username already exists' });
+      return res.status(400).json({ message: 'Email, phone, or username already exists' });
     }
     
     if (error.name === 'ValidationError') {
@@ -94,12 +108,16 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Identifier and password are required' });
     }
 
-    // Determine query by email or username
+    // Determine query by email, phone, or username
     let query;
-    if (loginId.includes('@')) {
+    const trimmed = loginId.trim();
+    const phoneRegex = /^\+?[0-9]{7,15}$/;
+    if (trimmed.includes('@')) {
       query = { email: loginId.toLowerCase() };
+    } else if (phoneRegex.test(trimmed)) {
+      query = { phone: trimmed };
     } else {
-      query = { username: loginId.trim() };
+      query = { username: trimmed };
     }
 
     const user = await User.findOne(query);

@@ -21,12 +21,22 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: [true, 'Email is required'],
+    required: false,
     unique: true,
+    sparse: true,
     lowercase: true,
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email'],
     // index: true, // removed to avoid duplicate index
+  },
+  phone: {
+    type: String,
+    required: false,
+    unique: true,
+    sparse: true,
+    trim: true,
+    // Accept E.164 like +<country><number> or plain digits 7-15 length
+    match: [/^\+?[0-9]{7,15}$/, 'Please enter a valid phone number']
   },
   password: {
     type: String,
@@ -83,6 +93,7 @@ const userSchema = new mongoose.Schema({
 // Index for better query performance (keep only these, not in schema fields)
 userSchema.index({ email: 1 });
 userSchema.index({ username: 1 });
+userSchema.index({ phone: 1 });
 userSchema.index({ farmName: 1 });
 userSchema.index({ location: 1 });
 

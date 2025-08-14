@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    identifier: '', // email or username
+    identifier: '', // email, username, or phone
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -61,10 +61,10 @@ const Login = () => {
         {/* Form */}
         <div className="card p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email or Username */}
+            {/* Email / Username / Phone */}
             <div>
               <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email or Username
+                Email / Username / Phone
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -78,7 +78,7 @@ const Login = () => {
                   value={formData.identifier}
                   onChange={handleChange}
                   className="input-field pl-10"
-                  placeholder="Enter your email or username"
+                  placeholder="Enter your email, username, or phone"
                 />
               </div>
             </div>
