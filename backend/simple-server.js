@@ -32,6 +32,16 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Simplified server is running!',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    vercel: !!process.env.VERCEL
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
