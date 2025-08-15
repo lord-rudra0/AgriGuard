@@ -15,6 +15,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
 import Recipes from './pages/Recipes';
+import Thresholds from './pages/Thresholds';
 import Alerts from './pages/Alerts';
 import UserProfile from './pages/UserProfile';
 
@@ -170,6 +171,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Alerts />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/thresholds"
+                  element={
+                    <ProtectedRoute>
+                      <Thresholds />
                     </ProtectedRoute>
                   }
                 />

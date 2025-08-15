@@ -20,6 +20,7 @@ import reportsRoutes, { runScheduleAndEmail } from './routes/reports.js';
 import ReportSchedule from './models/ReportSchedule.js';
 import recipesRoutes from './routes/recipes.js';
 import phasesRoutes from './routes/phases.js';
+import thresholdsRoutes from './routes/thresholds.js';
 import { authenticateSocket } from './middleware/auth.js';
 
 // Load environment variables
@@ -90,6 +91,7 @@ app.use('/api/analytics/views', analyticsViewsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/recipes', recipesRoutes);
 app.use('/api/phases', phasesRoutes);
+app.use('/api/thresholds', thresholdsRoutes);
 
 // Socket.IO authentication middleware
 io.use(authenticateSocket);
