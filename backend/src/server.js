@@ -30,7 +30,6 @@ import { authenticateSocket } from './middleware/auth.js';
 dotenv.config();
 
 const app = express();
-const server = createServer(app);
 
 // CORS configuration
 const corsOptions = {
@@ -40,15 +39,91 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
-// Socket.IO setup
-const io = new Server(server, {
-  cors: corsOptions,
-  transports: ['websocket', 'polling'],
-  path: '/socket.io'
-});
+// Only create HTTP server and Socket.IO in non-serverless environments
+let server, io;
 
-// Expose io to routes via app
-app.set('io', io);
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  server = createServer(app);
+  
+  // Socket.IO setup
+  io = new Server(server, {
+    cors: corsOptions,
+    transports: ['websocket', 'polling'],
+    path: '/socket.io'
+  });
+
+  // Expose io to routes via app
+  app.set('io', io);
+
+  // Socket.IO authentication middleware
+  io.use(authenticateSocket);
+
+  // In-memory presence map: userId -> Set of socket ids
+  const onlineUsers = new Map();
+
+  // Socket.IO connection handling
+  io.on('connection', (socket) => {
+    const userId = String(socket.user.id);
+    console.log(`User ${userId} connected`);
+
+    // Track presence
+    const setForUser = onlineUsers.get(userId) || new Set();
+    setForUser.add(socket.id);
+    onlineUsers.set(userId, setForUser);
+    io.emit('presence:update', { userId, online: true });
+    
+    // Join user to their personal room
+    socket.join(`user_${userId}`);
+    
+    // Handle sensor data simulation (in production, this would come from actual sensors)
+    const sensorInterval = setInterval(() => {
+      const sensorData = {
+        temperature: Math.round((Math.random() * 10 + 20) * 10) / 10, // 20-30°C
+        humidity: Math.round((Math.random() * 40 + 40) * 10) / 10, // 40-80%
+        co2: Math.round(Math.random() * 300 + 300), // 300-600 ppm
+        light: Math.round(Math.random() * 600 + 200), // 200-800 lux
+        soilMoisture: Math.round((Math.random() * 40 + 30) * 10) / 10, // 30-70%
+        timestamp: new Date()
+      };
+      
+      socket.emit('sensorData', sensorData);
+      
+      // Check for alerts
+      const alerts = checkForAlerts(sensorData);
+      if (alerts.length > 0) {
+        alerts.forEach(alert => {
+          socket.emit('newAlert', alert);
+        });
+      }
+    }, 5000); // Send data every 5 seconds
+
+    // Lightweight weather alert simulation (replace with real API integration later)
+    socket.on('disconnect', () => {
+      console.log(`User ${userId} disconnected`);
+      
+      // Remove from presence tracking
+      const userSet = onlineUsers.get(userId);
+      if (userSet) {
+        userSet.delete(socket.id);
+        if (userSet.size === 0) {
+          onlineUsers.delete(userId);
+          io.emit('presence:update', { userId, online: false });
+        }
+      }
+      
+      clearInterval(sensorInterval);
+    });
+  });
+} else {
+  // In serverless environment, create a mock io object
+  const mockIo = {
+    emit: () => {},
+    to: () => ({ emit: () => {} }),
+    on: () => {},
+    use: () => {}
+  };
+  app.set('io', mockIo);
+}
 
 // Middleware
 app.use(helmet());
@@ -98,98 +173,98 @@ app.use('/api/thresholds', thresholdsRoutes);
 app.use('/api/calendar', calendarRoutes);
 
 // Socket.IO authentication middleware
-io.use(authenticateSocket);
+// io.use(authenticateSocket); // This line is now handled above
 
 // In-memory presence map: userId -> Set of socket ids
-const onlineUsers = new Map();
+// const onlineUsers = new Map(); // This line is now handled above
 
 // Socket.IO connection handling
-io.on('connection', (socket) => {
-  const userId = String(socket.user.id);
-  console.log(`User ${userId} connected`);
+// io.on('connection', (socket) => { // This block is now handled above
+//   const userId = String(socket.user.id);
+//   console.log(`User ${userId} connected`);
 
-  // Track presence
-  const setForUser = onlineUsers.get(userId) || new Set();
-  setForUser.add(socket.id);
-  onlineUsers.set(userId, setForUser);
-  io.emit('presence:update', { userId, online: true });
+//   // Track presence
+//   const setForUser = onlineUsers.get(userId) || new Set();
+//   setForUser.add(socket.id);
+//   onlineUsers.set(userId, setForUser);
+//   io.emit('presence:update', { userId, online: true });
   
-  // Join user to their personal room
-  socket.join(`user_${userId}`);
+//   // Join user to their personal room
+//   socket.join(`user_${userId}`);
   
-  // Handle sensor data simulation (in production, this would come from actual sensors)
-  const sensorInterval = setInterval(() => {
-    const sensorData = {
-      temperature: Math.round((Math.random() * 10 + 20) * 10) / 10, // 20-30°C
-      humidity: Math.round((Math.random() * 40 + 40) * 10) / 10, // 40-80%
-      co2: Math.round(Math.random() * 300 + 300), // 300-600 ppm
-      light: Math.round(Math.random() * 600 + 200), // 200-800 lux
-      soilMoisture: Math.round((Math.random() * 40 + 30) * 10) / 10, // 30-70%
-      timestamp: new Date()
-    };
+//   // Handle sensor data simulation (in production, this would come from actual sensors)
+//   const sensorInterval = setInterval(() => {
+//     const sensorData = {
+//       temperature: Math.round((Math.random() * 10 + 20) * 10) / 10, // 20-30°C
+//       humidity: Math.round((Math.random() * 40 + 40) * 10) / 10, // 40-80%
+//       co2: Math.round(Math.random() * 300 + 300), // 300-600 ppm
+//       light: Math.round(Math.random() * 600 + 200), // 200-800 lux
+//       soilMoisture: Math.round((Math.random() * 40 + 30) * 10) / 10, // 30-70%
+//       timestamp: new Date()
+//     };
     
-    socket.emit('sensorData', sensorData);
+//     socket.emit('sensorData', sensorData);
     
-    // Check for alerts
-    const alerts = checkForAlerts(sensorData);
-    if (alerts.length > 0) {
-      alerts.forEach(alert => {
-        socket.emit('newAlert', alert);
-      });
-    }
-  }, 5000); // Send data every 5 seconds
+//     // Check for alerts
+//     const alerts = checkForAlerts(sensorData);
+//     if (alerts.length > 0) {
+//       alerts.forEach(alert => {
+//         socket.emit('newAlert', alert);
+//       });
+//     }
+//   }, 5000); // Send data every 5 seconds
 
-  // Lightweight weather alert simulation (replace with real API integration later)
-  const weatherAlertInterval = setInterval(() => {
-    // Randomly emit a weather alert ~1/6 times
-    if (Math.random() < 0.166) {
-      const kinds = [
-        { type: 'weather', title: 'High Heat Warning', message: 'Ambient temperature rising; adjust HVAC for grow rooms.', severity: 'medium' },
-        { type: 'weather', title: 'Storm Incoming', message: 'Possible power fluctuations. Verify backup systems.', severity: 'high' },
-        { type: 'weather', title: 'High Humidity Outside', message: 'Dehumidification load will increase.', severity: 'medium' },
-      ];
-      const alert = { ...kinds[Math.floor(Math.random() * kinds.length)], timestamp: new Date() };
-      socket.emit('weatherAlert', alert);
-    }
-  }, 60000); // Check roughly every minute
+//   // Lightweight weather alert simulation (replace with real API integration later)
+//   const weatherAlertInterval = setInterval(() => {
+//     // Randomly emit a weather alert ~1/6 times
+//     if (Math.random() < 0.166) {
+//       const kinds = [
+//         { type: 'weather', title: 'High Heat Warning', message: 'Ambient temperature rising; adjust HVAC for grow rooms.', severity: 'medium' },
+//         { type: 'weather', title: 'Storm Incoming', message: 'Possible power fluctuations. Verify backup systems.', severity: 'high' },
+//         { type: 'weather', title: 'High Humidity Outside', message: 'Dehumidification load will increase.', severity: 'medium' },
+//       ];
+//       const alert = { ...kinds[Math.floor(Math.random() * kinds.length)], timestamp: new Date() };
+//       socket.emit('weatherAlert', alert);
+//     }
+//   }, 60000); // Check roughly every minute
 
-  // Chat room management
-  socket.on('chat:join', ({ chatId }) => {
-    if (chatId) socket.join(`chat_${chatId}`);
-  });
-  socket.on('chat:leave', ({ chatId }) => {
-    if (chatId) socket.leave(`chat_${chatId}`);
-  });
+//   // Chat room management
+//   socket.on('chat:join', ({ chatId }) => {
+//     if (chatId) socket.join(`chat_${chatId}`);
+//   });
+//   socket.on('chat:leave', ({ chatId }) => {
+//     if (chatId) socket.leave(`chat_${chatId}`);
+//   });
 
-  // Typing indicators
-  socket.on('chat:typing', ({ chatId, typing }) => {
-    if (!chatId) return;
-    socket.to(`chat_${chatId}`).emit('chat:typing', { chatId, userId, typing, name: socket.user.name });
-  });
+//   // Typing indicators
+//   socket.on('chat:typing', ({ chatId, typing }) => {
+//     if (!chatId) return;
+//     socket.to(`chat_${chatId}`).emit('chat:typing', { chatId, userId, typing, name: socket.user.name });
+//   });
 
-  // Forward chat messages (after REST save on client)
-  socket.on('chat:message', ({ chatId, message }) => {
-    if (!chatId || !message) return;
-    socket.to(`chat_${chatId}`).emit('chat:message', message);
-  });
+//   // Forward chat messages (after REST save on client)
+//   socket.on('chat:message', ({ chatId, message }) => {
+//     if (!chatId || !message) return;
+//     socket.to(`chat_${chatId}`).emit('chat:message', message);
+//   });
 
-  // Handle disconnect
-  socket.on('disconnect', () => {
-    const set = onlineUsers.get(userId);
-    if (set) {
-      set.delete(socket.id);
-      if (set.size === 0) {
-        onlineUsers.delete(userId);
-        io.emit('presence:update', { userId, online: false });
-      } else {
-        onlineUsers.set(userId, set);
-      }
-    }
-    console.log(`User ${userId} disconnected`);
-    clearInterval(sensorInterval);
-    clearInterval(weatherAlertInterval);
-  });
-});
+//   // Handle disconnect
+//   socket.on('disconnect', () => {
+//     const set = onlineUsers.get(userId);
+//     if (set) {
+//       set.delete(socket.id);
+//       if (set.size === 0) {
+//         onlineUsers.delete(userId);
+//         io.emit('presence:update', { userId, online: false });
+//       } else {
+//         onlineUsers.set(userId, set);
+//       }
+//     }
+//     console.log(`User ${userId} disconnected`);
+//     clearInterval(sensorInterval);
+//     clearInterval(weatherAlertInterval);
+//   });
+// });
 
 // Function to check for alerts based on sensor data
 const checkForAlerts = (data) => {
@@ -254,11 +329,17 @@ app.use('*', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Socket.IO server ready`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-});
+// Only start the server if we're not in a serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 Socket.IO server ready`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+  });
+}
+
+// Export for Vercel serverless functions
+export default app;
 
 // Simple scheduler: checks every 5 minutes and sends emails when hour matches
 const SCHEDULER_INTERVAL_MS = 5 * 60 * 1000;

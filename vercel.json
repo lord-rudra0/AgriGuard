@@ -9,29 +9,18 @@
       }
     },
     {
-      "src": "backend/src/server.js",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/backend/src/server.js"
-    },
-    {
-      "src": "/socket.io/(.*)",
-      "dest": "/backend/src/server.js"
-    },
-    {
-      "src": "/uploads/(.*)",
-      "dest": "/backend/src/server.js"
+      "dest": "/api/$1"
     },
     {
       "src": "/(.*)",
       "dest": "/frontend/$1"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
