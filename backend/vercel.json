@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "main-server-no-socket.js",
+      "src": "component-test-server.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/main-server-no-socket.js"
+      "dest": "/component-test-server.js"
     }
   ]
 }
