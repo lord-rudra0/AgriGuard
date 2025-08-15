@@ -64,6 +64,18 @@ export const SocketProvider = ({ children }) => {
         setAlerts(prev => [alert, ...prev]);
       });
 
+      // Phase changes (Strain Recipes + Scheduler)
+      newSocket.on('phaseChanged', ({ roomId, action, phase }) => {
+        const title = action === 'completed'
+          ? `Room ${roomId}: Recipe completed`
+          : `Room ${roomId}: Phase ${action}`;
+        const message = action === 'completed'
+          ? 'All phases finished.'
+          : `${phase?.active?.name ?? phase?.name ?? 'Phase'} started`;
+        const alert = { type: 'phase', title, message, severity: 'info', timestamp: new Date() };
+        setAlerts(prev => [alert, ...prev]);
+      });
+
       newSocket.on('disconnect', () => {
         setConnected(false);
         console.log('Disconnected from server');

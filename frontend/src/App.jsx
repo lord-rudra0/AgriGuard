@@ -14,6 +14,7 @@ import Analytics from './pages/Analytics';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
+import Recipes from './pages/Recipes';
 import Alerts from './pages/Alerts';
 import UserProfile from './pages/UserProfile';
 
@@ -152,6 +153,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Analytics />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/recipes"
+                  element={
+                    <ProtectedRoute>
+                      <Recipes />
                     </ProtectedRoute>
                   }
                 />

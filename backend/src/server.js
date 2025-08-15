@@ -18,6 +18,8 @@ import geminiRoutes from './routes/gemini.js';
 import analyticsViewsRoutes from './routes/analyticsViews.js';
 import reportsRoutes, { runScheduleAndEmail } from './routes/reports.js';
 import ReportSchedule from './models/ReportSchedule.js';
+import recipesRoutes from './routes/recipes.js';
+import phasesRoutes from './routes/phases.js';
 import { authenticateSocket } from './middleware/auth.js';
 
 // Load environment variables
@@ -86,6 +88,8 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/gemini', geminiRoutes);
 app.use('/api/analytics/views', analyticsViewsRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/recipes', recipesRoutes);
+app.use('/api/phases', phasesRoutes);
 
 // Socket.IO authentication middleware
 io.use(authenticateSocket);
