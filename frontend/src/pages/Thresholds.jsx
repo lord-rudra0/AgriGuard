@@ -87,12 +87,23 @@ export default function Thresholds() {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10">
             <Filter className="w-4 h-4 text-gray-500" />
-            <select value={filterMetric} onChange={(e) => setFilterMetric(e.target.value)} className="bg-transparent text-sm">
+            <select
+              value={filterMetric}
+              onChange={(e) => setFilterMetric(e.target.value)}
+              className="input !px-2 !py-1 !h-9 !w-auto text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+            >
               <option value="">All metrics</option>
-              {metrics.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+              {metrics.map(m => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
             </select>
-            <input value={filterRoom} onChange={(e) => setFilterRoom(e.target.value)} placeholder="room id" className="px-2 py-1 rounded bg-white dark:bg-gray-900 ring-1 ring-black/5 dark:ring-white/10 text-sm" />
-            <button onClick={load} className="px-3 py-1.5 rounded-md text-sm font-medium bg-secondary-600 text-white hover:bg-secondary-700">Apply</button>
+            <input
+              value={filterRoom}
+              onChange={(e) => setFilterRoom(e.target.value)}
+              placeholder="room id"
+              className="input !px-2 !py-1 !h-9 text-sm"
+            />
+            <button onClick={load} className="btn-secondary !py-1.5 !px-3 text-sm">Apply</button>
           </div>
         </div>
       </div>
@@ -100,17 +111,17 @@ export default function Thresholds() {
       {/* Create */}
       <div className="card p-4 ring-1 ring-black/5 dark:ring-white/10 mb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" className="px-3 py-2 rounded-md bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10" />
-          <select value={form.metric} onChange={(e) => setForm({ ...form, metric: e.target.value })} className="px-3 py-2 rounded-md bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10">
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" className="input" />
+          <select value={form.metric} onChange={(e) => setForm({ ...form, metric: e.target.value })} className="input">
             {metrics.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
-          <input value={form.roomId} onChange={(e) => setForm({ ...form, roomId: e.target.value })} placeholder="Room (optional)" className="px-3 py-2 rounded-md bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10" />
-          <input type="number" value={form.min} onChange={(e) => setForm({ ...form, min: e.target.value })} placeholder="Min (optional)" className="px-3 py-2 rounded-md bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10" />
-          <input type="number" value={form.max} onChange={(e) => setForm({ ...form, max: e.target.value })} placeholder="Max (optional)" className="px-3 py-2 rounded-md bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10" />
-          <select value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })} className="px-3 py-2 rounded-md bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10">
+          <input value={form.roomId} onChange={(e) => setForm({ ...form, roomId: e.target.value })} placeholder="Room (optional)" className="input" />
+          <input type="number" value={form.min} onChange={(e) => setForm({ ...form, min: e.target.value })} placeholder="Min (optional)" className="input" />
+          <input type="number" value={form.max} onChange={(e) => setForm({ ...form, max: e.target.value })} placeholder="Max (optional)" className="input" />
+          <select value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })} className="input">
             {severities.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
-          <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notes (optional)" className="sm:col-span-2 lg:col-span-3 px-3 py-2 rounded-md bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10" />
+          <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notes (optional)" className="input sm:col-span-2 lg:col-span-3" />
         </div>
         <div className="mt-3 flex justify-end">
           <button onClick={createItem} disabled={saving || !form.name} className="px-3 py-1.5 rounded-md text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60 flex items-center gap-2"><Plus className="w-4 h-4"/> Create threshold</button>

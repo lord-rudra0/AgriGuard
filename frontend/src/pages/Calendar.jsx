@@ -15,6 +15,7 @@ const initialForm = {
 
 const ReminderInput = ({ reminders, setReminders }) => {
   const [value, setValue] = useState('');
+  const presets = [5, 10, 15, 30, 60, 120, 24 * 60];
   const addReminder = () => {
     const n = Number(value);
     if (Number.isFinite(n) && n >= 0 && !reminders.includes(n)) {
@@ -26,7 +27,7 @@ const ReminderInput = ({ reminders, setReminders }) => {
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reminders (minutes before)</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reminders (minutes before)</label>
       <div className="flex gap-2">
         <input
           type="number"
@@ -37,15 +38,28 @@ const ReminderInput = ({ reminders, setReminders }) => {
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addReminder()}
         />
-        <button type="button" className="btn-primary inline-flex items-center gap-2" onClick={addReminder}>
+        <button type="button" className="btn-primary" onClick={addReminder}>
           <Plus className="w-4 h-4" /> Add
         </button>
       </div>
-      <div className="flex flex-wrap gap-2 mt-2">
+      <div className="flex flex-wrap gap-2 mt-3">
+        {presets.map((p) => (
+          <button
+            type="button"
+            key={p}
+            onClick={() => !reminders.includes(p) && setReminders([...reminders, p].sort((a, b) => a - b))}
+            className={`chip hover:brightness-110 ${reminders.includes(p) ? 'ring-2 ring-primary-400' : ''}`}
+            title={`Add ${p} min reminder`}
+          >
+            <Clock className="w-3 h-3" /> {p >= 1440 ? `${p/1440}d` : `${p}m`}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2 mt-3">
         {reminders.map((r) => (
-          <span key={r} className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-sm bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-800">
+          <span key={r} className="chip">
             <Clock className="w-3 h-3" /> {r} min
-            <button type="button" onClick={() => removeReminder(r)} className="ml-1 text-indigo-700 dark:text-indigo-300 hover:opacity-80">
+            <button type="button" onClick={() => removeReminder(r)} className="ml-1 text-gray-600 dark:text-gray-300 hover:opacity-80">
               <X className="w-3 h-3" />
             </button>
           </span>
@@ -150,7 +164,7 @@ export default function Calendar() {
       </div>
 
       {/* Form */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-8">
+      <div className="card p-4 sm:p-6 mb-8">
         <form onSubmit={upsertEvent} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
@@ -211,7 +225,7 @@ export default function Calendar() {
             {editingId && (
               <button type="button" className="btn-secondary" onClick={resetForm}>Cancel</button>
             )}
-            <button type="submit" className="btn-primary inline-flex items-center gap-2" disabled={saving}>
+            <button type="submit" className="btn-primary" disabled={saving}>
               <Save className="w-4 h-4" /> {editingId ? 'Update Event' : 'Create Event'}
             </button>
           </div>
@@ -219,7 +233,7 @@ export default function Calendar() {
       </div>
 
       {/* Upcoming list */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="card">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming</h2>
           <span className="text-sm text-gray-500 dark:text-gray-400">{upcoming.length} events</span>
@@ -237,7 +251,9 @@ export default function Calendar() {
                   <div className="text-sm text-gray-600 dark:text-gray-300">
                     {format(parseISO(ev.startAt), 'PPpp')}
                     {ev.endAt ? ` - ${format(parseISO(ev.endAt), 'PPpp')}` : ''}
-                    {ev.roomId ? ` · ${ev.roomId}` : ''}
+                    {ev.roomId ? (
+                      <span className="ml-2 chip">Room: {ev.roomId}</span>
+                    ) : null}
                   </div>
                   {ev.description && (
                     <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">{ev.description}</div>
@@ -245,7 +261,7 @@ export default function Calendar() {
                   {(ev.reminders?.length || 0) > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {ev.reminders.map((r) => (
-                        <span key={r.minutesBefore} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 ring-1 ring-gray-200 dark:ring-gray-600">
+                        <span key={r.minutesBefore} className="chip">
                           <Clock className="w-3 h-3" /> {r.minutesBefore} min before
                         </span>
                       ))}
@@ -254,7 +270,7 @@ export default function Calendar() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button className="btn-secondary" onClick={() => editEvent(ev)}>Edit</button>
-                  <button className="btn-danger inline-flex items-center gap-2" onClick={() => deleteEvent(ev._id)}>
+                  <button className="btn-danger" onClick={() => deleteEvent(ev._id)}>
                     <Trash2 className="w-4 h-4" /> Delete
                   </button>
                 </div>
