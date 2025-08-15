@@ -15,6 +15,9 @@ import chatSystemRoutes from './routes/chatSystem.js';
 import settingsRoutes from './routes/settings.js';
 import alertsRoutes from './routes/alerts.js';
 import geminiRoutes from './routes/gemini.js';
+import analyticsViewsRoutes from './routes/analyticsViews.js';
+import reportsRoutes, { runScheduleAndEmail } from './routes/reports.js';
+import ReportSchedule from './models/ReportSchedule.js';
 import { authenticateSocket } from './middleware/auth.js';
 
 // Load environment variables
@@ -81,6 +84,8 @@ app.use('/api/chatSystem', chatSystemRoutes);
 app.use('/api/alerts', alertsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/gemini', geminiRoutes);
+app.use('/api/analytics/views', analyticsViewsRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Socket.IO authentication middleware
 io.use(authenticateSocket);
@@ -124,6 +129,20 @@ io.on('connection', (socket) => {
     }
   }, 5000); // Send data every 5 seconds
 
+  // Lightweight weather alert simulation (replace with real API integration later)
+  const weatherAlertInterval = setInterval(() => {
+    // Randomly emit a weather alert ~1/6 times
+    if (Math.random() < 0.166) {
+      const kinds = [
+        { type: 'weather', title: 'High Heat Warning', message: 'Ambient temperature rising; adjust HVAC for grow rooms.', severity: 'medium' },
+        { type: 'weather', title: 'Storm Incoming', message: 'Possible power fluctuations. Verify backup systems.', severity: 'high' },
+        { type: 'weather', title: 'High Humidity Outside', message: 'Dehumidification load will increase.', severity: 'medium' },
+      ];
+      const alert = { ...kinds[Math.floor(Math.random() * kinds.length)], timestamp: new Date() };
+      socket.emit('weatherAlert', alert);
+    }
+  }, 60000); // Check roughly every minute
+
   // Chat room management
   socket.on('chat:join', ({ chatId }) => {
     if (chatId) socket.join(`chat_${chatId}`);
@@ -158,6 +177,7 @@ io.on('connection', (socket) => {
     }
     console.log(`User ${userId} disconnected`);
     clearInterval(sensorInterval);
+    clearInterval(weatherAlertInterval);
   });
 });
 
@@ -223,6 +243,35 @@ server.listen(PORT, () => {
   console.log(`📊 Socket.IO server ready`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
 });
+
+// Simple scheduler: checks every 5 minutes and sends emails when hour matches
+const SCHEDULER_INTERVAL_MS = 5 * 60 * 1000;
+let schedulerTimer = null;
+function startScheduler() {
+  if (schedulerTimer) return;
+  schedulerTimer = setInterval(async () => {
+    try {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const items = await ReportSchedule.find({ enabled: true }).lean();
+      for (const s of items) {
+        const last = s.lastRunAt ? new Date(s.lastRunAt) : null;
+        const shouldRunHour = s.hourLocal ?? 8;
+        const isCorrectHour = currentHour === shouldRunHour;
+        const notRunThisHour = !last || last.getHours() !== currentHour || (now - last) > 60 * 60 * 1000;
+        // Basic frequency gate: daily always, weekly only on Monday
+        const freqOk = s.frequency === 'daily' || (s.frequency === 'weekly' && now.getDay() === 1);
+        if (isCorrectHour && notRunThisHour && freqOk) {
+          await runScheduleAndEmail(s);
+          await ReportSchedule.updateOne({ _id: s._id }, { $set: { lastRunAt: new Date() } });
+        }
+      }
+    } catch (e) {
+      console.error('Scheduler error', e);
+    }
+  }, SCHEDULER_INTERVAL_MS);
+}
+startScheduler();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

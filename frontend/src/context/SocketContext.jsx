@@ -14,6 +14,7 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
+  const [connected, setConnected] = useState(false);
   const [presence, setPresence] = useState(new Map()); // userId -> online
   const [sensorData, setSensorData] = useState({
     temperature: 0,
@@ -43,6 +44,7 @@ export const SocketProvider = ({ children }) => {
       );
 
       newSocket.on('connect', () => {
+        setConnected(true);
         console.log('Connected to server');
       });
 
@@ -57,7 +59,13 @@ export const SocketProvider = ({ children }) => {
         setAlerts(prev => [alert, ...prev]);
       });
 
+      // Weather alerts pushed from backend
+      newSocket.on('weatherAlert', (alert) => {
+        setAlerts(prev => [alert, ...prev]);
+      });
+
       newSocket.on('disconnect', () => {
+        setConnected(false);
         console.log('Disconnected from server');
       });
 
@@ -72,9 +80,10 @@ export const SocketProvider = ({ children }) => {
 
       setSocket(newSocket);
 
-  return () => {
+      return () => {
         newSocket.close();
         setSocket(null);
+        setConnected(false);
       };
     }
   }, [user]);
@@ -92,6 +101,7 @@ export const SocketProvider = ({ children }) => {
   return (
     <SocketContext.Provider value={{ 
       socket,
+      connected,
       presence,
       sensorData, 
       alerts, 

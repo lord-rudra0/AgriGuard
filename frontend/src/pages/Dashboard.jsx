@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSocket } from '../context/SocketContext';
+import useAlertsSocket from '../hooks/useAlertsSocket';
 import SensorCard from '../components/SensorCard';
 import { 
   LineChart, 
@@ -22,8 +23,9 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 
 const Dashboard = () => {
-  const { sensorData, alerts } = useSocket();
-  const [isConnected, setIsConnected] = useState(true);
+  const { sensorData, alerts, connected } = useSocket();
+  // Initialize toast notifications for incoming alerts (threshold + weather)
+  useAlertsSocket();
   const [chartData, setChartData] = useState([]);
   const [mounted, setMounted] = useState(false);
 
@@ -133,18 +135,18 @@ const Dashboard = () => {
               {/* Connection status */}
               <div className="flex items-center space-x-2">
                 <span className="relative inline-flex items-center">
-                  <span className={`h-2.5 w-2.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
-                  {isConnected && (
+                  <span className={`h-2.5 w-2.5 rounded-full ${connected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                  {connected && (
                     <span className="absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
                   )}
                 </span>
-                {isConnected ? (
+                {connected ? (
                   <Wifi className="w-5 h-5 text-emerald-600" />
                 ) : (
                   <WifiOff className="w-5 h-5 text-red-600" />
                 )}
-                <span className={`text-sm ${isConnected ? 'text-emerald-700' : 'text-red-600'}`}>
-                  {isConnected ? 'Connected' : 'Disconnected'}
+                <span className={`text-sm ${connected ? 'text-emerald-700' : 'text-red-600'}`}>
+                  {connected ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
               

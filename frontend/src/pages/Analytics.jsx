@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+																																																														import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import ExportButtons from '../components/analytics/ExportButtons';
+import SavedViews from '../components/analytics/SavedViews';
+import ReportScheduler from '../components/analytics/ReportScheduler';
 import {
 	ResponsiveContainer,
 	LineChart,
@@ -32,6 +35,7 @@ export default function Analytics() {
 	const [error, setError] = useState('');
 	const [rows, setRows] = useState([]); // backend analytics array
 	const [inserting, setInserting] = useState(false);
+  const [activeTypes, setActiveTypes] = useState(null); // null => all
 
 	useEffect(() => {
 		let active = true;
@@ -96,16 +100,24 @@ export default function Analytics() {
 		return { chartData: data, types: Array.from(typeSet), summary, counts: typeCounts };
 	}, [rows]);
 
+  // Ensure activeTypes defaults to all when data types change
+  useEffect(() => {
+    if (!types || types.length === 0) return;
+    if (activeTypes === null) return; // null means all
+    const filtered = activeTypes.filter((t) => types.includes(t));
+    if (filtered.length !== activeTypes.length) setActiveTypes(filtered);
+  }, [types]);
+
 	return (
 		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-up">
 				{/* Header */}
-					<div className="mb-6 flex items-center justify-between">
+					<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div>
 						<h1 className="text-3xl font-extrabold bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">Analytics</h1>
 						<p className="mt-2 text-indigo-700/90 dark:text-indigo-300">Trends, ranges, and activity over time</p>
 					</div>
-						<div className="flex gap-2 items-center">
+						<div className="flex flex-wrap gap-2 items-center justify-end">
 						{TIMEFRAMES.map((tf) => (
 							<button
 								key={tf.key}
@@ -119,6 +131,7 @@ export default function Analytics() {
 								{tf.label}
 							</button>
 						))}
+							<ExportButtons timeframe={timeframe} printSelector="#analytics-print-area" />
 							{/* Dev helper: insert mock data if empty */}
 							<button
 								onClick={async () => {
@@ -162,16 +175,28 @@ export default function Analytics() {
 							>
 								{inserting ? 'Adding…' : 'Add sample data'}
 							</button>
-					</div>
+						</div>
 				</div>
+
+        {/* Saved Views row */}
+        <div className="mb-6">
+          <SavedViews
+            currentTimeframe={timeframe}
+            currentTypes={activeTypes ?? types}
+            onApply={({ timeframe: tf, types: ty = [] }) => {
+              if (tf) setTimeframe(tf);
+              setActiveTypes(ty.length ? ty : null);
+            }}
+          />
+        </div>
 
 				{error && (
 					<div className="card p-4 mb-6 text-red-600 dark:text-red-400">{error}</div>
 				)}
 
 				{/* Summary cards */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-						{types.map((t) => (
+				<div id="analytics-print-area" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+						{(activeTypes ?? types).map((t) => (
 							<div key={t} className="card p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10">
 								<div className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">{t}</div>
 								<div className="mt-2 flex items-baseline gap-3">
@@ -215,13 +240,13 @@ export default function Analytics() {
 										<YAxis yAxisId="right" orientation="right" className="text-gray-600 dark:text-gray-400" />
 										<Tooltip />
 										<Legend />
-										{types.includes('temperature') && (
+										{(activeTypes ?? types).includes('temperature') && (
 											<Line type="monotone" dataKey="temperature" stroke="#f59e0b" strokeWidth={2.5} dot={false} name="Temperature" />
 										)}
-										{types.includes('humidity') && (
+										{(activeTypes ?? types).includes('humidity') && (
 											<Line type="monotone" dataKey="humidity" stroke="#3b82f6" strokeWidth={2.5} dot={false} name="Humidity" />
 										)}
-										{types.includes('co2') && (
+										{(activeTypes ?? types).includes('co2') && (
 											<Line type="monotone" dataKey="co2" stroke="#10b981" strokeWidth={2.5} dot={false} name="CO₂" yAxisId="right" />
 										)}
 									</LineChart>
@@ -236,7 +261,7 @@ export default function Analytics() {
 							<h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Readings by type</h2>
 							<div className="h-80">
 								<ResponsiveContainer width="100%" height="100%">
-									<BarChart data={Object.keys(counts).map((k) => ({ type: k, count: counts[k] }))}>
+									<BarChart data={Object.keys(counts).filter((k) => (activeTypes ?? types).includes(k)).map((k) => ({ type: k, count: counts[k] }))}>
 										<CartesianGrid strokeDasharray="3 3" className="opacity-30" />
 										<XAxis dataKey="type" className="text-gray-600 dark:text-gray-400" />
 										<YAxis className="text-gray-600 dark:text-gray-400" />
@@ -252,6 +277,11 @@ export default function Analytics() {
 				{loading && (
 					<div className="mt-6 text-center text-gray-600 dark:text-gray-300">Loading analytics…</div>
 				)}
+
+        {/* Scheduler */}
+        <div className="mt-8">
+          <ReportScheduler />
+        </div>
 			</div>
 		</div>
 	);
