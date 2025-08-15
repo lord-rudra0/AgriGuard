@@ -169,6 +169,29 @@ Promise.all([
   console.error('❌ Error during route import:', error);
 });
 
+// Add route status endpoint
+app.get('/api/route-status', (req, res) => {
+  res.json({ 
+    message: 'Route loading status',
+    timestamp: new Date().toISOString(),
+    routes: {
+      auth: !!authRoutes,
+      sensors: !!sensorRoutes,
+      chat: !!chatRoutes,
+      chatSystem: !!chatSystemRoutes,
+      settings: !!settingsRoutes,
+      alerts: !!alertsRoutes,
+      gemini: !!geminiRoutes,
+      analyticsViews: !!analyticsViewsRoutes,
+      reports: !!reportsRoutes,
+      recipes: !!recipesRoutes,
+      phases: !!phasesRoutes,
+      thresholds: !!thresholdsRoutes,
+      calendar: !!calendarRoutes
+    }
+  });
+});
+
 // Add basic health check route
 app.get('/health', (req, res) => {
   res.json({ 
