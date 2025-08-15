@@ -169,12 +169,46 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use('/uploads', express.static(uploadsDir));
 
-// Health check
+// MongoDB connection with better error handling
+if (process.env.MONGO_URI) {
+  mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  })
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+  })
+  .catch((error) => {
+    console.error('❌ MongoDB connection error:', error);
+    // Don't exit in serverless environment
+    if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+      process.exit(1);
+    }
+  });
+} else {
+  console.warn('⚠️ MONGO_URI not provided, running without database');
+}
+
+// Add a basic health check route at the top
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV 
+    environment: process.env.NODE_ENV || 'development',
+    mongoConnected: mongoose.connection.readyState === 1,
+    vercel: !!process.env.VERCEL
+  });
+});
+
+// Add environment info route for debugging
+app.get('/env-info', (req, res) => {
+  res.json({
+    nodeEnv: process.env.NODE_ENV,
+    vercel: !!process.env.VERCEL,
+    hasMongoUri: !!process.env.MONGO_URI,
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    hasGeminiKey: !!process.env.GEMINI_API_KEY,
+    frontendUrl: process.env.FRONTEND_URL || 'not set'
   });
 });
 
@@ -314,22 +348,6 @@ const checkForAlerts = (data) => {
 
   return alerts;
 };
-
-// MongoDB connection
-if (process.env.MONGO_URI) {
-  mongoose.connect(process.env.MONGO_URI)
-    .then(() => {
-      console.log('✅ Connected to MongoDB');
-    })
-    .catch((error) => {
-      console.error('❌ MongoDB connection error:', error);
-      if (process.env.NODE_ENV === 'production') {
-        process.exit(1);
-      }
-    });
-} else {
-  console.warn('⚠️ MONGO_URI not provided, running without database');
-}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
