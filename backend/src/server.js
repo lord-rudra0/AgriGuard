@@ -8,22 +8,6 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import authRoutes from './routes/auth.js';
-import sensorRoutes from './routes/sensors.js';
-import chatRoutes from './routes/chat.js';
-import chatSystemRoutes from './routes/chatSystem.js';
-import settingsRoutes from './routes/settings.js';
-import alertsRoutes from './routes/alerts.js';
-import geminiRoutes from './routes/gemini.js';
-import analyticsViewsRoutes from './routes/analyticsViews.js';
-import reportsRoutes, { runScheduleAndEmail } from './routes/reports.js';
-import ReportSchedule from './models/ReportSchedule.js';
-import recipesRoutes from './routes/recipes.js';
-import phasesRoutes from './routes/phases.js';
-import thresholdsRoutes from './routes/thresholds.js';
-import calendarRoutes from './routes/calendar.js';
-import CalendarEvent from './models/CalendarEvent.js';
-import Alert from './models/Alert.js';
 import { authenticateSocket } from './middleware/auth.js';
 
 // Load environment variables
@@ -196,6 +180,16 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     mongoConnected: mongoose.connection.readyState === 1,
+    vercel: !!process.env.VERCEL
+  });
+});
+
+// Add root route for testing
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Agricultural Monitoring Server is running!',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
     vercel: !!process.env.VERCEL
   });
 });
@@ -434,84 +428,110 @@ export default app;
 // Simple scheduler: checks every 5 minutes and sends emails when hour matches
 const SCHEDULER_INTERVAL_MS = 5 * 60 * 1000;
 let schedulerTimer = null;
-function startScheduler() {
+async function startScheduler() {
   if (schedulerTimer) return;
-  schedulerTimer = setInterval(async () => {
-    try {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const items = await ReportSchedule.find({ enabled: true }).lean();
-      for (const s of items) {
-        const last = s.lastRunAt ? new Date(s.lastRunAt) : null;
-        const shouldRunHour = s.hourLocal ?? 8;
-        const isCorrectHour = currentHour === shouldRunHour;
-        const notRunThisHour = !last || last.getHours() !== currentHour || (now - last) > 60 * 60 * 1000;
-        // Basic frequency gate: daily always, weekly only on Monday
-        const freqOk = s.frequency === 'daily' || (s.frequency === 'weekly' && now.getDay() === 1);
-        if (isCorrectHour && notRunThisHour && freqOk) {
-          await runScheduleAndEmail(s);
-          await ReportSchedule.updateOne({ _id: s._id }, { $set: { lastRunAt: new Date() } });
+  
+  try {
+    // Dynamically import required modules
+    const { default: ReportSchedule } = await import('./models/ReportSchedule.js');
+    const { runScheduleAndEmail } = await import('./routes/reports.js');
+    
+    schedulerTimer = setInterval(async () => {
+      try {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const items = await ReportSchedule.find({ enabled: true }).lean();
+        for (const s of items) {
+          const last = s.lastRunAt ? new Date(s.lastRunAt) : null;
+          const shouldRunHour = s.hourLocal ?? 8;
+          const isCorrectHour = currentHour === shouldRunHour;
+          const notRunThisHour = !last || last.getHours() !== currentHour || (now - last) > 60 * 60 * 1000;
+          // Basic frequency gate: daily always, weekly only on Monday
+          const freqOk = s.frequency === 'daily' || (s.frequency === 'weekly' && now.getDay() === 1);
+          if (isCorrectHour && notRunThisHour && freqOk) {
+            await runScheduleAndEmail(s);
+            await ReportSchedule.updateOne({ _id: s._id }, { $set: { lastRunAt: new Date() } });
+          }
         }
+      } catch (e) {
+        console.error('Scheduler error', e);
       }
-    } catch (e) {
-      console.error('Scheduler error', e);
-    }
-  }, SCHEDULER_INTERVAL_MS);
+    }, SCHEDULER_INTERVAL_MS);
+    
+    console.log('✅ Scheduler started successfully');
+  } catch (error) {
+    console.error('❌ Failed to start scheduler:', error.message);
+  }
 }
-startScheduler();
 
 // Calendar reminders: check every minute for due reminders and emit in-app alerts
 const CAL_REMINDER_INTERVAL_MS = 60 * 1000;
 let calTimer = null;
-function startCalendarReminderScheduler() {
+async function startCalendarReminderScheduler() {
   if (calTimer) return;
-  calTimer = setInterval(async () => {
-    try {
-      const now = new Date();
-      const windowStart = new Date(now.getTime() - 60 * 60 * 1000); // look back 1h for safety
-      const windowEnd = new Date(now.getTime() + 30 * 24 * 3600 * 1000); // next 30 days
-      const candidates = await CalendarEvent.find({
-        startAt: { $gte: windowStart, $lte: windowEnd },
-        reminders: { $exists: true, $ne: [] },
-      }).limit(1000);
+  
+  try {
+    // Dynamically import required modules
+    const { default: CalendarEvent } = await import('./models/CalendarEvent.js');
+    const { default: Alert } = await import('./models/Alert.js');
+    
+    calTimer = setInterval(async () => {
+      try {
+        const now = new Date();
+        const windowStart = new Date(now.getTime() - 60 * 60 * 1000); // look back 1h for safety
+        const windowEnd = new Date(now.getTime() + 30 * 24 * 3600 * 1000); // next 30 days
+        const candidates = await CalendarEvent.find({
+          startAt: { $gte: windowStart, $lte: windowEnd },
+          reminders: { $exists: true, $ne: [] },
+        }).limit(1000);
 
-      for (const ev of candidates) {
-        const startMs = new Date(ev.startAt).getTime();
-        for (const r of ev.reminders || []) {
-          const minutes = Number(r.minutesBefore);
-          if (!Number.isFinite(minutes)) continue;
-          if (ev.deliveredReminders?.includes(minutes)) continue;
-          const reminderTime = startMs - minutes * 60 * 1000;
-          if (Date.now() >= reminderTime) {
-            // Create Alert and emit
-            const alertDoc = await Alert.create({
-              userId: ev.userId,
-              type: 'system',
-              severity: 'medium',
-              title: 'Event Reminder',
-              message: `${ev.title}${ev.roomId ? ' @ ' + ev.roomId : ''} starts at ${new Date(startMs).toLocaleString()}`,
-            });
-            io.to(`user_${String(ev.userId)}`).emit('newAlert', {
-              type: 'system',
-              severity: 'medium',
-              title: 'Event Reminder',
-              message: alertDoc.message,
-              timestamp: new Date(),
-            });
-            // Mark reminder delivered
-            await CalendarEvent.updateOne(
-              { _id: ev._id },
-              { $addToSet: { deliveredReminders: minutes } }
-            );
+        for (const ev of candidates) {
+          const startMs = new Date(ev.startAt).getTime();
+          for (const r of ev.reminders || []) {
+            const minutes = Number(r.minutesBefore);
+            if (!Number.isFinite(minutes)) continue;
+            if (ev.deliveredReminders?.includes(minutes)) continue;
+            const reminderTime = startMs - minutes * 60 * 1000;
+            if (Date.now() >= reminderTime) {
+              // Create Alert and emit
+              const alertDoc = await Alert.create({
+                userId: ev.userId,
+                type: 'system',
+                severity: 'medium',
+                title: 'Event Reminder',
+                message: `${ev.title}${ev.roomId ? ' @ ' + ev.roomId : ''} starts at ${new Date(startMs).toLocaleString()}`,
+              });
+              io.to(`user_${String(ev.userId)}`).emit('newAlert', {
+                type: 'system',
+                severity: 'medium',
+                title: 'Event Reminder',
+                message: alertDoc.message,
+                timestamp: new Date(),
+              });
+              // Mark reminder delivered
+              await CalendarEvent.updateOne(
+                { _id: ev._id },
+                { $addToSet: { deliveredReminders: minutes } }
+              );
+            }
           }
         }
+      } catch (e) {
+        console.error('Calendar reminder scheduler error', e);
       }
-    } catch (e) {
-      console.error('Calendar reminder scheduler error', e);
-    }
-  }, CAL_REMINDER_INTERVAL_MS);
+    }, CAL_REMINDER_INTERVAL_MS);
+    
+    console.log('✅ Calendar reminder scheduler started successfully');
+  } catch (error) {
+    console.error('❌ Failed to start calendar reminder scheduler:', error.message);
+  }
 }
-startCalendarReminderScheduler();
+
+// Start schedulers after a delay to ensure routes are loaded
+setTimeout(() => {
+  startScheduler();
+  startCalendarReminderScheduler();
+}, 5000);
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
