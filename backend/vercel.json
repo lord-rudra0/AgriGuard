@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "minimal-server.js",
+      "src": "progressive-server.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/minimal-server.js"
+      "dest": "/progressive-server.js"
     }
   ]
 }
