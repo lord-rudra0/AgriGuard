@@ -4,14 +4,30 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize Gemini AI with error handling
+let genAI;
+try {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (apiKey) {
+    genAI = new GoogleGenerativeAI(apiKey);
+  } else {
+    console.warn('[chat] Missing GEMINI_API_KEY in environment. AI chat will be disabled.');
+  }
+} catch (error) {
+  console.error('[chat] Failed to initialize GoogleGenerativeAI:', error.message);
+}
 
 // @route   POST /api/chat/ai
 // @desc    Chat with AI assistant
 // @access  Private
 router.post('/ai', authenticateToken, async (req, res) => {
   try {
+    if (!genAI) {
+      return res.status(503).json({ 
+        message: 'AI service not configured. Please set GEMINI_API_KEY environment variable.' 
+      });
+    }
+
     const { message, context } = req.body;
     
     if (!message) {

@@ -15,6 +15,10 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ success: false, message: 'Access token required' });
   }
 
+  if (!process.env.JWT_SECRET) {
+    return res.status(500).json({ success: false, message: 'Server configuration error' });
+  }
+
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
       return res.status(403).json({ success: false, message: 'Invalid or expired token' });

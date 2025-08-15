@@ -26,7 +26,12 @@ try {
 // Body: { messages: [{ role: 'user'|'model'|'system', content: string }] }
 router.post('/chat', authenticateToken, async (req, res) => {
   try {
-    if (!genAI) return res.status(503).json({ success: false, message: 'Gemini not configured' });
+    if (!genAI) {
+      return res.status(503).json({ 
+        success: false, 
+        message: 'AI service not configured. Please set GEMINI_API_KEY environment variable.' 
+      });
+    }
 
     const { messages } = req.body || {};
     const userContent = Array.isArray(messages)

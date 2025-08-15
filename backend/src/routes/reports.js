@@ -89,19 +89,32 @@ router.delete('/schedules/:id', authenticateToken, async (req, res) => {
 
 // Minimal mailer
 export async function sendEmailCSV(to, subject, text, csvString, filename) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: false,
-    auth: process.env.SMTP_USER && process.env.SMTP_PASS ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
-  });
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || 'reports@agronex.local',
-    to,
-    subject,
-    text,
-    attachments: [{ filename, content: csvString, contentType: 'text/csv' }],
-  });
+  // Check if SMTP is configured
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn('[reports] SMTP not configured, skipping email send');
+    return;
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: false,
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    });
+    
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'reports@agronex.local',
+      to,
+      subject,
+      text,
+      attachments: [{ filename, content: csvString, contentType: 'text/csv' }],
+    });
+    
+    console.log(`[reports] Email sent to ${to}`);
+  } catch (error) {
+    console.error('[reports] Failed to send email:', error.message);
+  }
 }
 
 // Helper to run one schedule (used by scheduler in server.js)

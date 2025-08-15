@@ -11,6 +11,11 @@ export const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ message: 'Access token required' });
     }
 
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET not configured');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select('-password');
     
@@ -42,6 +47,11 @@ export const authenticateSocket = async (socket, next) => {
     
     if (!token) {
       return next(new Error('Authentication token required'));
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET not configured');
+      return next(new Error('Server configuration error'));
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

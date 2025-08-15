@@ -6,6 +6,7 @@ import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const router = express.Router();
 
@@ -25,6 +26,19 @@ const fileFilter = (req, file, cb) => {
   cb(new Error('Only image uploads are allowed'));
 };
 const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
+
+// Initialize Gemini AI with error handling
+let genAI;
+try {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (apiKey) {
+    genAI = new GoogleGenerativeAI(apiKey);
+  } else {
+    console.warn('[chatSystem] Missing GEMINI_API_KEY in environment. AI features will be disabled.');
+  }
+} catch (error) {
+  console.error('[chatSystem] Failed to initialize GoogleGenerativeAI:', error.message);
+}
 
 // Create a new chat (group or 1-1)
 router.post('/chats', authenticateToken, async (req, res) => {
