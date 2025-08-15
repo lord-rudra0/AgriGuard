@@ -12,10 +12,10 @@ const Footer = () => {
           {/* Brand section */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-primary-600 to-indigo-600 shadow-sm ring-1 ring-black/5">
                 <Shield className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
+              <span className="text-xl font-extrabold bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">
                 AgriGuard
               </span>
             </div>
@@ -26,21 +26,21 @@ const Footer = () => {
             <div className="flex space-x-3">
               <a 
                 href="#" 
-                className="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors duration-200"
+                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white/70 dark:bg-gray-900/40 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
                 aria-label="Twitter"
               >
                 <Twitter className="w-5 h-5" />
               </a>
               <a 
                 href="#" 
-                className="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors duration-200"
+                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white/70 dark:bg-gray-900/40 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
                 aria-label="LinkedIn"
               >
                 <Linkedin className="w-5 h-5" />
               </a>
               <a 
                 href="#" 
-                className="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors duration-200"
+                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white/70 dark:bg-gray-900/40 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
                 aria-label="GitHub"
               >
                 <Github className="w-5 h-5" />
@@ -56,25 +56,25 @@ const Footer = () => {
             <nav className="space-y-2">
               <Link 
                 to="/dashboard" 
-                className="block text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
               >
                 Dashboard
               </Link>
               <Link 
                 to="/analytics" 
-                className="block text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
               >
                 Analytics
               </Link>
               <Link 
                 to="/chat" 
-                className="block text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
               >
                 Community Chat
               </Link>
               <Link 
                 to="/alerts" 
-                className="block text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
               >
                 Alerts
               </Link>
@@ -89,25 +89,25 @@ const Footer = () => {
             <nav className="space-y-2">
               <Link 
                 to="/learning" 
-                className="block text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
               >
                 Learning Resources
               </Link>
               <Link 
                 to="/maintenance" 
-                className="block text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
               >
                 Maintenance Logs
               </Link>
               <Link 
                 to="/community" 
-                className="block text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
               >
                 Community Forum
               </Link>
               <Link 
                 to="/ai-predictions" 
-                className="block text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
               >
                 AI Predictions
               </Link>
@@ -144,7 +144,7 @@ const Footer = () => {
                   placeholder="Enter your email"
                   className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                 />
-                <button className="px-4 py-2 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors duration-200">
+                <button className="px-4 py-2 text-sm text-white rounded-md bg-gradient-to-r from-primary-600 to-indigo-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.01] transition-all duration-200">
                   Subscribe
                 </button>
               </div>
@@ -161,19 +161,19 @@ const Footer = () => {
             <div className="flex space-x-6 text-sm">
               <Link 
                 to="/privacy" 
-                className="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+                className="px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
               >
                 Privacy Policy
               </Link>
               <Link 
                 to="/terms" 
-                className="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+                className="px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
               >
                 Terms of Service
               </Link>
               <Link 
                 to="/support" 
-                className="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
+                className="px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
               >
                 Support
               </Link>
