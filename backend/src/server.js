@@ -167,7 +167,7 @@ const uploadsDir = path.resolve(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', exprmainess.static(uploadsDir));
 
 // MongoDB connection with better error handling
 if (process.env.MONGO_URI) {
@@ -212,20 +212,71 @@ app.get('/env-info', (req, res) => {
   });
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/sensors', sensorRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/chatSystem', chatSystemRoutes);
-app.use('/api/alerts', alertsRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/gemini', geminiRoutes);
-app.use('/api/analytics/views', analyticsViewsRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/recipes', recipesRoutes);
-app.use('/api/phases', phasesRoutes);
-app.use('/api/thresholds', thresholdsRoutes);
-app.use('/api/calendar', calendarRoutes);
+// Add error handling for route imports
+const importRoute = async (routePath, routeName) => {
+  try {
+    const routeModule = await import(routePath);
+    console.log(`✅ ${routeName} routes imported successfully`);
+    return routeModule.default;
+  } catch (error) {
+    console.error(`❌ Failed to import ${routeName} routes:`, error.message);
+    return null;
+  }
+};
+
+// Import routes with error handling
+let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes;
+
+// Import routes one by one with error handling
+Promise.all([
+  importRoute('./routes/auth.js', 'Auth'),
+  importRoute('./routes/sensors.js', 'Sensors'),
+  importRoute('./routes/chat.js', 'Chat'),
+  importRoute('./routes/chatSystem.js', 'ChatSystem'),
+  importRoute('./routes/settings.js', 'Settings'),
+  importRoute('./routes/alerts.js', 'Alerts'),
+  importRoute('./routes/gemini.js', 'Gemini'),
+  importRoute('./routes/analyticsViews.js', 'AnalyticsViews'),
+  importRoute('./routes/reports.js', 'Reports'),
+  importRoute('./routes/recipes.js', 'Recipes'),
+  importRoute('./routes/phases.js', 'Phases'),
+  importRoute('./routes/thresholds.js', 'Thresholds'),
+  importRoute('./routes/calendar.js', 'Calendar')
+]).then(([auth, sensors, chat, chatSystem, settings, alerts, gemini, analyticsViews, reports, recipes, phases, thresholds, calendar]) => {
+  // Assign imported routes
+  authRoutes = auth;
+  sensorRoutes = sensors;
+  chatRoutes = chat;
+  chatSystemRoutes = chatSystem;
+  settingsRoutes = settings;
+  alertsRoutes = alerts;
+  geminiRoutes = gemini;
+  analyticsViewsRoutes = analyticsViews;
+  reportsRoutes = reports;
+  recipesRoutes = recipes;
+  phasesRoutes = phases;
+  thresholdsRoutes = thresholds;
+  calendarRoutes = calendar;
+
+  // Use routes only if they imported successfully
+  if (authRoutes) app.use('/api/auth', authRoutes);
+  if (sensorRoutes) app.use('/api/sensors', sensorRoutes);
+  if (chatRoutes) app.use('/api/chat', chatRoutes);
+  if (chatSystemRoutes) app.use('/api/chat-system', chatSystemRoutes);
+  if (settingsRoutes) app.use('/api/settings', settingsRoutes);
+  if (alertsRoutes) app.use('/api/alerts', alertsRoutes);
+  if (geminiRoutes) app.use('/api/gemini', geminiRoutes);
+  if (analyticsViewsRoutes) app.use('/api/analytics-views', analyticsViewsRoutes);
+  if (reportsRoutes) app.use('/api/reports', reportsRoutes);
+  if (recipesRoutes) app.use('/api/recipes', recipesRoutes);
+  if (phasesRoutes) app.use('/api/phases', phasesRoutes);
+  if (thresholdsRoutes) app.use('/api/thresholds', thresholdsRoutes);
+  if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
+
+  console.log('✅ All routes configured');
+}).catch(error => {
+  console.error('❌ Error during route import:', error);
+});
 
 // Socket.IO authentication middleware
 // io.use(authenticateSocket); // This line is now handled above
