@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import ChatBot from './components/ChatBot';
 import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
 import Chat from './pages/Chat';
@@ -85,6 +86,8 @@ const AppLayout = ({ children }) => {
       <main className="flex-1">
         {children}
       </main>
+      {/* Floating ChatBot only for authenticated users */}
+      {user && <ChatBot />}
       {user ? <Footer /> : <PublicFooter />}
     </div>
   );

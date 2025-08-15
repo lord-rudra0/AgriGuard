@@ -14,6 +14,7 @@ import chatRoutes from './routes/chat.js';
 import chatSystemRoutes from './routes/chatSystem.js';
 import settingsRoutes from './routes/settings.js';
 import alertsRoutes from './routes/alerts.js';
+import geminiRoutes from './routes/gemini.js';
 import { authenticateSocket } from './middleware/auth.js';
 
 // Load environment variables
@@ -79,6 +80,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/chatSystem', chatSystemRoutes);
 app.use('/api/alerts', alertsRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/gemini', geminiRoutes);
 
 // Socket.IO authentication middleware
 io.use(authenticateSocket);
