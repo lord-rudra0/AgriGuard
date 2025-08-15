@@ -12,6 +12,9 @@ export const useSocket = () => {
   return context;
 };
 
+// Explicit named export for the raw context (optional helper)
+export { SocketContext };
+
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
@@ -109,6 +112,7 @@ export const SocketProvider = ({ children }) => {
   const joinChat = (chatId) => socket?.emit('chat:join', { chatId });
   const leaveChat = (chatId) => socket?.emit('chat:leave', { chatId });
   const setTyping = (chatId, typing) => socket?.emit('chat:typing', { chatId, typing });
+  const clearAlerts = () => setAlerts([]);
 
   return (
     <SocketContext.Provider value={{ 
@@ -116,7 +120,8 @@ export const SocketProvider = ({ children }) => {
       connected,
       presence,
       sensorData, 
-      alerts, 
+      alerts,
+      clearAlerts,
       emitMessage,
       joinChat,
       leaveChat,

@@ -26,7 +26,7 @@ const Header = () => {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const location = useLocation();
-  const { alerts } = useSocket();
+  const { alerts, clearAlerts } = useSocket();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -100,7 +100,16 @@ const Header = () => {
                   <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-50 ring-1 ring-black/5 dark:ring-white/10">
                     <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                       <div className="font-medium text-gray-900 dark:text-white">Notifications</div>
-                      <Link to="/alerts" onClick={() => setIsBellOpen(false)} className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">View all</Link>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => { clearAlerts(); setIsBellOpen(false); }}
+                          className="text-xs px-2 py-1 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/60"
+                          title="Clear all"
+                        >
+                          Clear
+                        </button>
+                        <Link to="/alerts" onClick={() => setIsBellOpen(false)} className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">View all</Link>
+                      </div>
                     </div>
                     <div className="max-h-80 overflow-auto divide-y divide-gray-200 dark:divide-gray-700">
                       {(alerts?.slice(0, 8) || []).map((a, idx) => (
