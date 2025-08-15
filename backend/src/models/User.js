@@ -90,10 +90,9 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for better query performance (keep only these, not in schema fields)
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
-userSchema.index({ phone: 1 });
+// Indexes for better query performance
+// Note: email, username and phone already create indexes via `unique: true` at field level.
+// To avoid duplicate index warnings, we only keep additional indexes that don't overlap.
 userSchema.index({ farmName: 1 });
 userSchema.index({ location: 1 });
 

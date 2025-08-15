@@ -345,7 +345,7 @@ const Chat = () => {
         <div className="p-4 flex items-center justify-between">
           <span className="font-bold text-lg text-gray-900 dark:text-white">Chats</span>
           <button
-            className="ml-2 px-3 py-1.5 rounded-xl bg-primary-600 text-white text-xs hover:bg-primary-700 shadow"
+            className="ml-2 px-3 py-1.5 rounded-xl text-xs bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99] transition-all duration-200"
             onClick={() => setShowNewChat(true)}
             title="New chat"
           >
@@ -391,12 +391,12 @@ const Chat = () => {
             )}
             <div className="flex gap-2 justify-end">
               <button
-                className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+                className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
                 onClick={() => setShowNewChat(false)}
                 disabled={creating}
               >Cancel</button>
               <button
-                className="px-3 py-1 rounded bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60"
+                className={`px-3 py-1 rounded text-white ${creating ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-primary-600 to-indigo-600 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99]'} shadow-sm ring-1 ring-black/5 transition-all duration-200 disabled:opacity-60`}
                 disabled={creating || (newChatType === 'group' ? !newChatName : !newChatUserInput)}
                 onClick={async () => {
                   setCreating(true);
@@ -448,7 +448,7 @@ const Chat = () => {
               return (
                 <li
                   key={chat._id}
-                  className={`transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+                  className={`transition-all duration-500 ease-out transform rounded-xl hover:-translate-y-0.5 hover:bg-primary-50/60 dark:hover:bg-primary-900/20 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
                   style={{ transitionDelay: `${Math.min(idx, 12) * 40}ms` }}
                 >
                   <ChatListItem
@@ -481,15 +481,20 @@ const Chat = () => {
                       const isOnline = otherId ? !!presence.get(String(otherId)) : false;
                       return (
                         <>
-                          <span>{title}</span>
+                          <span className="bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">{title}</span>
                           <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border ${isOnline ? 'text-emerald-600 border-emerald-200 dark:text-emerald-400 dark:border-emerald-700/40' : 'text-gray-500 border-gray-200 dark:text-gray-400 dark:border-gray-700/40'}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isOnline ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+                            <span className="relative w-3 h-3 mr-1.5 inline-flex items-center justify-center">
+                              {isOnline && (
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400/60 animate-ping"></span>
+                              )}
+                              <span className={`relative inline-block w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+                            </span>
                             {isOnline ? 'Online' : 'Offline'}
                           </span>
                         </>
                       );
                     }
-                    return <span>{title}</span>;
+                    return <span className="bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">{title}</span>;
                   })()}
                 </div>
                 <div className="flex items-center gap-2">
@@ -497,13 +502,13 @@ const Chat = () => {
                     <>
                       <button
                         onClick={() => setShowMembers(true)}
-                        className="px-3 py-1.5 text-sm text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50 dark:text-gray-200 dark:border-gray-700/40 dark:hover:bg-gray-800/40"
+                        className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 rounded-md bg-white/70 dark:bg-gray-900/40 ring-1 ring-black/5 dark:ring-white/10 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200"
                       >
                         Members
                       </button>
                       <button
                         onClick={() => setShowAddMember(true)}
-                        className="px-3 py-1.5 text-sm text-primary-700 border border-primary-200 rounded-md hover:bg-primary-50 dark:text-primary-400 dark:border-primary-700/40 dark:hover:bg-primary-900/20"
+                        className="px-3 py-1.5 text-sm rounded-md bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99] transition-all duration-200"
                       >
                         Add member
                       </button>
@@ -511,19 +516,19 @@ const Chat = () => {
                   )}
                   <button
                     onClick={deleteChat}
-                    className="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded-md hover:bg-red-50 dark:text-red-400 dark:border-red-700/40 dark:hover:bg-red-900/20"
+                    className="px-3 py-1.5 text-sm rounded-md text-white bg-gradient-to-r from-rose-600 to-red-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99] transition-all duration-200"
                   >
                     Delete chat
                   </button>
                 </div>
               </div>
               {isTyping ? (
-                <div className="text-xs text-primary-600 dark:text-primary-400 mb-2">{isTyping} is typing…</div>
+                <div className="text-xs mb-2 bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">{isTyping} is typing…</div>
               ) : (
                 <div className="h-2" />
               )}
               <div 
-                className={`chat-messages-container overflow-y-auto rounded-2xl shadow-sm p-4 mb-4 backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60 transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+                className={`chat-messages-container overflow-y-auto rounded-2xl shadow-sm p-4 mb-4 backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60 ring-1 ring-black/5 dark:ring-white/10 hover:shadow-md transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
                 style={{ height: `${chatHeight}px` }}
                 ref={messagesContainerRef}
               >

@@ -130,18 +130,18 @@ const Alerts = () => {
   }, [items]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-fade-up">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Alerts</h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-300">Monitor and manage system alerts in real time</p>
+            <h1 className="text-3xl font-extrabold bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">Alerts</h1>
+            <p className="mt-2 text-indigo-700/90 dark:text-indigo-300">Monitor and manage system alerts in real time</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={markAllRead} className="px-3 py-2 text-sm rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white">
+            <button onClick={markAllRead} className="px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white ring-1 ring-black/5 dark:ring-white/10 hover:bg-indigo-50 dark:hover:bg-gray-700/60 transition-all duration-200">
               Mark all read
             </button>
-            <button onClick={clearResolved} className="px-3 py-2 text-sm rounded-md bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-800 dark:text-red-300">
+            <button onClick={clearResolved} className="px-3 py-2 text-sm rounded-md text-white bg-gradient-to-r from-rose-600 to-red-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99] transition-all duration-200">
               Clear resolved
             </button>
           </div>
@@ -180,29 +180,36 @@ const Alerts = () => {
             </select>
           </div>
           <div className="flex items-end">
-            <button onClick={fetchAlerts} className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+            <button onClick={fetchAlerts} className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white ring-1 ring-black/5 dark:ring-white/10 hover:bg-indigo-50 dark:hover:bg-gray-700/60 transition-all duration-200">
               <Filter className="w-4 h-4" /> Apply
             </button>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm divide-y divide-gray-100 dark:divide-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm divide-y divide-gray-100 dark:divide-gray-700 ring-1 ring-black/5 dark:ring-white/10">
           {loading ? (
             <div className="p-8 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
           ) : grouped.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">No alerts found</div>
           ) : (
             grouped.map(alert => (
-              <div key={alert._id} className="p-4 flex items-start gap-4">
-                <div className={`mt-1 w-2 h-2 rounded-full ${alert.isRead ? 'bg-gray-300 dark:bg-gray-600' : 'bg-green-500'}`}></div>
+              <div key={alert._id} className="p-4 flex items-start gap-4 transition-colors duration-200 hover:bg-gray-50/80 dark:hover:bg-gray-700/30">
+                <div className="relative mt-1">
+                  {!alert.isRead && (
+                    <span className="absolute -inset-1 rounded-full bg-emerald-400/50 animate-ping"></span>
+                  )}
+                  <span className={`relative block w-2 h-2 rounded-full ${alert.isRead ? 'bg-gray-300 dark:bg-gray-600' : 'bg-emerald-500'}`}></span>
+                </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`px-2 py-0.5 text-xs rounded ${severityColors[alert.severity]}`}>{alert.severity}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(alert.createdAt).toLocaleString()}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-red-500" />
-                    <h3 className="font-medium text-gray-900 dark:text-white">{alert.title}</h3>
+                    <AlertTriangle className="w-4 h-4 text-red-500 animate-pulse" />
+                    <h3 className="font-medium text-gray-900 dark:text-white bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">
+                      {alert.title}
+                    </h3>
                     <span className="text-xs text-gray-500 dark:text-gray-400">• {alert.type}</span>
                     {alert.value != null && alert.threshold && (
                       <span className="text-xs text-gray-500 dark:text-gray-400">• value {alert.value}, threshold {alert.threshold.min ?? '-'}-{alert.threshold.max ?? '-'}</span>
@@ -214,13 +221,13 @@ const Alerts = () => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => markRead(alert._id, !alert.isRead)} className="px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                  <button onClick={() => markRead(alert._id, !alert.isRead)} className="px-2 py-1 text-xs rounded ring-1 ring-black/5 dark:ring-white/10 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700/60 transition-all duration-200">
                     {alert.isRead ? 'Mark unread' : 'Mark read'}
                   </button>
-                  <button onClick={() => resolveAlert(alert._id, !alert.isResolved)} className="px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                  <button onClick={() => resolveAlert(alert._id, !alert.isResolved)} className="px-2 py-1 text-xs rounded ring-1 ring-black/5 dark:ring-white/10 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700/60 transition-all duration-200">
                     {alert.isResolved ? 'Reopen' : 'Resolve'}
                   </button>
-                  <button onClick={() => deleteAlert(alert._id)} className="px-2 py-1 text-xs rounded border border-red-300 text-red-700 dark:border-red-600 dark:text-red-300 flex items-center gap-1">
+                  <button onClick={() => deleteAlert(alert._id)} className="px-2 py-1 text-xs rounded text-white bg-gradient-to-r from-rose-600 to-red-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99] transition-all duration-200 flex items-center gap-1">
                     <Trash2 className="w-3 h-3" /> Delete
                   </button>
                 </div>
@@ -232,9 +239,9 @@ const Alerts = () => {
         {/* Pagination */}
         {total > limit && (
           <div className="mt-4 flex justify-end items-center gap-2 text-sm">
-            <button disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))} className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50">Prev</button>
+            <button disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))} className="px-3 py-1 rounded ring-1 ring-black/5 dark:ring-white/10 bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-gray-700/60 disabled:opacity-50 transition-all duration-200">Prev</button>
             <span className="text-gray-600 dark:text-gray-300">Page {page}</span>
-            <button disabled={page * limit >= total} onClick={() => setPage(p => p + 1)} className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50">Next</button>
+            <button disabled={page * limit >= total} onClick={() => setPage(p => p + 1)} className="px-3 py-1 rounded ring-1 ring-black/5 dark:ring-white/10 bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-gray-700/60 disabled:opacity-50 transition-all duration-200">Next</button>
           </div>
         )}
       </div>

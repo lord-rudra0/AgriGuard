@@ -98,23 +98,23 @@ export default function Analytics() {
 
 	return (
 		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-up">
 				{/* Header */}
 					<div className="mb-6 flex items-center justify-between">
 					<div>
-						<h1 className="text-3xl font-bold text-gray-900 dark:text-white">Analytics</h1>
-						<p className="mt-2 text-gray-600 dark:text-gray-300">Trends, ranges, and activity over time</p>
+						<h1 className="text-3xl font-extrabold bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">Analytics</h1>
+						<p className="mt-2 text-indigo-700/90 dark:text-indigo-300">Trends, ranges, and activity over time</p>
 					</div>
 						<div className="flex gap-2 items-center">
 						{TIMEFRAMES.map((tf) => (
 							<button
 								key={tf.key}
 								onClick={() => setTimeframe(tf.key)}
-								className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 ${
+								className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-all duration-200 will-change-transform ${
 									timeframe === tf.key
-										? 'bg-primary-600 text-white'
-										: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-								}`}
+										? 'bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-sm ring-2 ring-primary-400/50 hover:brightness-110'
+										: 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-700 dark:hover:text-indigo-300 ring-1 ring-black/5 dark:ring-white/10 hover:scale-105'
+									}`}
 							>
 								{tf.label}
 							</button>
@@ -171,21 +171,21 @@ export default function Analytics() {
 
 				{/* Summary cards */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-					{types.map((t) => (
-						<div key={t} className="card p-5">
-							<div className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">{t}</div>
-							<div className="mt-2 flex items-baseline gap-3">
-								<div className="text-2xl font-semibold text-gray-900 dark:text-white">
-									{summary[t]?.avg ?? '—'}
+						{types.map((t) => (
+							<div key={t} className="card p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10">
+								<div className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">{t}</div>
+								<div className="mt-2 flex items-baseline gap-3">
+									<div className="text-2xl font-semibold text-gray-900 dark:text-white">
+										{summary[t]?.avg ?? '—'}
+									</div>
+									<div className="text-sm text-gray-500 dark:text-gray-400">avg</div>
 								</div>
-								<div className="text-sm text-gray-500 dark:text-gray-400">avg</div>
+								<div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+									min {summary[t]?.min ?? '—'} · max {summary[t]?.max ?? '—'}
+								</div>
+								<div className="mt-2 text-xs text-gray-500 dark:text-gray-400">records {counts[t] ?? 0}</div>
 							</div>
-							<div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-								min {summary[t]?.min ?? '—'} · max {summary[t]?.max ?? '—'}
-							</div>
-							<div className="mt-2 text-xs text-gray-500 dark:text-gray-400">records {counts[t] ?? 0}</div>
-						</div>
-					))}
+						))}
 				</div>
 
 						{/* Empty state */}
@@ -202,7 +202,7 @@ export default function Analytics() {
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 					{/* Combined time-series */}
 					<div className="lg:col-span-2">
-						<div className="card p-6">
+						<div className="card p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10">
 							<h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
 								Averages over time
 							</h2>
@@ -216,13 +216,13 @@ export default function Analytics() {
 										<Tooltip />
 										<Legend />
 										{types.includes('temperature') && (
-											<Line type="monotone" dataKey="temperature" stroke="#f59e0b" strokeWidth={2} dot={false} name="Temperature" />
+											<Line type="monotone" dataKey="temperature" stroke="#f59e0b" strokeWidth={2.5} dot={false} name="Temperature" />
 										)}
 										{types.includes('humidity') && (
-											<Line type="monotone" dataKey="humidity" stroke="#3b82f6" strokeWidth={2} dot={false} name="Humidity" />
+											<Line type="monotone" dataKey="humidity" stroke="#3b82f6" strokeWidth={2.5} dot={false} name="Humidity" />
 										)}
 										{types.includes('co2') && (
-											<Line type="monotone" dataKey="co2" stroke="#10b981" strokeWidth={2} dot={false} name="CO₂" yAxisId="right" />
+											<Line type="monotone" dataKey="co2" stroke="#10b981" strokeWidth={2.5} dot={false} name="CO₂" yAxisId="right" />
 										)}
 									</LineChart>
 								</ResponsiveContainer>
@@ -232,7 +232,7 @@ export default function Analytics() {
 
 					{/* Counts per type */}
 					<div>
-						<div className="card p-6">
+						<div className="card p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10">
 							<h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Readings by type</h2>
 							<div className="h-80">
 								<ResponsiveContainer width="100%" height="100%">
@@ -241,7 +241,7 @@ export default function Analytics() {
 										<XAxis dataKey="type" className="text-gray-600 dark:text-gray-400" />
 										<YAxis className="text-gray-600 dark:text-gray-400" />
 										<Tooltip />
-										<Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+										<Bar dataKey="count" fill="#7c3aed" radius={[6, 6, 0, 0]} />
 									</BarChart>
 								</ResponsiveContainer>
 							</div>

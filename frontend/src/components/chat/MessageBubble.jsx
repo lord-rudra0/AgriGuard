@@ -2,22 +2,26 @@ import React from 'react';
 
 const MessageBubble = ({ me, author, content, time, type, mediaUrl, mediaType, seenCount = 0, totalOthers = 0 }) => {
   return (
-    <div className={`flex ${me ? 'justify-end' : 'justify-start'} animate-fade-up`}>
+    <div className={`flex ${me ? 'justify-end' : 'justify-start'} animate-fade-up transition-all duration-300`}>
       <div
-        className={`max-w-[75%] px-3 py-2 rounded-2xl shadow-sm transition-transform duration-150 ${
+        className={`max-w-[75%] px-3 py-2 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 will-change-transform ${
           me
-            ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-tr-sm'
-            : 'bg-white dark:bg-gray-700 dark:text-white text-gray-900 border border-gray-100 dark:border-gray-600 rounded-tl-sm'
+            ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white rounded-tr-sm ring-1 ring-primary-500/20 hover:brightness-110 hover:scale-[1.01]'
+            : 'bg-gradient-to-br from-white to-indigo-50 dark:from-gray-700 dark:to-gray-800 dark:text-white text-gray-900 border border-white/60 dark:border-gray-600 rounded-tl-sm ring-1 ring-indigo-100/60 dark:ring-gray-600/40 hover:scale-[1.01]'
         }`}
       >
         {!me && (
-          <p className="text-[10px] font-semibold mb-0.5 opacity-80">{author}</p>
+          <p className="text-[10px] font-semibold mb-0.5 opacity-90 text-indigo-600 dark:text-indigo-300">{author}</p>
         )}
         {type === 'image' && mediaUrl ? (() => {
     const src = mediaUrl.startsWith('http') || mediaUrl.startsWith('/uploads') ? mediaUrl : `/uploads/${mediaUrl}`;
     return (
-      <a href={src} target="_blank" rel="noreferrer">
-        <img src={src} alt="attachment" className="max-h-64 rounded-md border border-black/10" />
+      <a href={src} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-md">
+        <img
+          src={src}
+          alt="attachment"
+          className="max-h-64 rounded-md border border-black/10 transition-transform duration-300 ease-out hover:scale-[1.02]"
+        />
       </a>
     );
   })() : (

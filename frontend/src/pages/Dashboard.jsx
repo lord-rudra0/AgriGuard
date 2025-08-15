@@ -117,27 +117,33 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-up">
         {/* Header */}
         <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-3xl font-extrabold bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">
                 Farm Dashboard
               </h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-300">
+              <p className="mt-2 text-indigo-700/90 dark:text-indigo-300">
                 Real-time monitoring of your agricultural environment
               </p>
             </div>
             <div className="flex items-center space-x-4">
               {/* Connection status */}
               <div className="flex items-center space-x-2">
+                <span className="relative inline-flex items-center">
+                  <span className={`h-2.5 w-2.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                  {isConnected && (
+                    <span className="absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+                  )}
+                </span>
                 {isConnected ? (
-                  <Wifi className="w-5 h-5 text-green-500" />
+                  <Wifi className="w-5 h-5 text-emerald-600" />
                 ) : (
-                  <WifiOff className="w-5 h-5 text-red-500" />
+                  <WifiOff className="w-5 h-5 text-red-600" />
                 )}
-                <span className={`text-sm ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+                <span className={`text-sm ${isConnected ? 'text-emerald-700' : 'text-red-600'}`}>
                   {isConnected ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
@@ -179,12 +185,12 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Historical Chart */}
           <div className={`lg:col-span-2 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-            <div className="card p-6 hover:shadow-lg transition-shadow duration-300">
+            <div className="card p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   24-Hour Trends
                 </h2>
-                <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200">
+                <button className="flex items-center space-x-2 px-3 py-2 text-sm rounded-md bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99] transition-all duration-200">
                   <RefreshCw className="w-4 h-4" />
                   <span>Refresh</span>
                 </button>
@@ -213,24 +219,24 @@ const Dashboard = () => {
                       type="monotone"
                       dataKey="temperature"
                       stroke="#f59e0b"
-                      strokeWidth={2}
-                      dot={{ fill: '#f59e0b', r: 4 }}
+                      strokeWidth={2.5}
+                      dot={{ fill: '#f59e0b', r: 3 }}
                       name="Temperature (°C)"
                     />
                     <Line
                       type="monotone"
                       dataKey="humidity"
                       stroke="#3b82f6"
-                      strokeWidth={2}
-                      dot={{ fill: '#3b82f6', r: 4 }}
+                      strokeWidth={2.5}
+                      dot={{ fill: '#3b82f6', r: 3 }}
                       name="Humidity (%)"
                     />
                     <Line
                       type="monotone"
                       dataKey="co2"
                       stroke="#10b981"
-                      strokeWidth={2}
-                      dot={{ fill: '#10b981', r: 4 }}
+                      strokeWidth={2.5}
+                      dot={{ fill: '#10b981', r: 3 }}
                       name="CO₂ (ppm)"
                       yAxisId="right"
                     />
@@ -242,7 +248,7 @@ const Dashboard = () => {
 
           {/* Recent Alerts */}
           <div className="space-y-6">
-            <div className={`card p-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:shadow-lg`}>
+            <div className={`card p-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:shadow-lg hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10`}>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 Recent Alerts
               </h2>
@@ -255,15 +261,15 @@ const Dashboard = () => {
                       style={{ transitionDelay: `${index * 100}ms` }}
                       className={`p-4 rounded-lg border-l-4 transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'} ${
                         alert.severity === 'high'
-                          ? 'alert-danger border-red-500'
+                          ? 'alert-danger border-red-500/80'
                           : alert.severity === 'medium'
-                          ? 'alert-warning border-yellow-500'
-                          : 'alert-safe border-green-500'
+                          ? 'alert-warning border-yellow-500/80'
+                          : 'alert-safe border-green-500/80'
                       }`}
                     >
                       <div className="flex items-start space-x-3">
                         {alert.severity === 'high' ? (
-                          <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
+                          <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 animate-pulse" />
                         ) : (
                           <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
                         )}
@@ -290,7 +296,7 @@ const Dashboard = () => {
             </div>
 
             {/* System Status */}
-            <div className={`card p-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:shadow-lg`}>
+            <div className={`card p-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:shadow-lg hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10`}>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 System Status
               </h2>
