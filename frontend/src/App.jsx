@@ -18,6 +18,7 @@ import Recipes from './pages/Recipes';
 import Thresholds from './pages/Thresholds';
 import Alerts from './pages/Alerts';
 import UserProfile from './pages/UserProfile';
+import Calendar from './pages/Calendar';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -179,6 +180,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Thresholds />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/calendar"
+                  element={
+                    <ProtectedRoute>
+                      <Calendar />
                     </ProtectedRoute>
                   }
                 />

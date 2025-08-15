@@ -14,20 +14,25 @@ import {
   Home,
   MessageSquare,
   BarChart3,
-  Shield
+  Shield,
+  Calendar as CalendarIcon,
 } from 'lucide-react';
+import { useSocket } from '../context/SocketContext';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isBellOpen, setIsBellOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const location = useLocation();
+  const { alerts } = useSocket();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Chat', href: '/chat', icon: MessageSquare },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+    { name: 'Calendar', href: '/calendar', icon: CalendarIcon },
     { name: 'Thresholds', href: '/thresholds', icon: BarChart3 },
     { name: 'Recipes', href: '/recipes', icon: BarChart3 },
     { name: 'Alerts', href: '/alerts', icon: Bell },
@@ -75,6 +80,47 @@ const Header = () => {
 
           {/* Right side buttons */}
           <div className="flex items-center space-x-4">
+            {/* Notifications bell */}
+            {user && (
+              <div className="relative">
+                <button
+                  onClick={() => setIsBellOpen(!isBellOpen)}
+                  className="relative p-2 rounded-md text-gray-600 dark:text-gray-300 bg-white/70 dark:bg-gray-900/40 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
+                  aria-label="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  {alerts?.length > 0 && (
+                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white bg-red-500 rounded-full">
+                      {Math.min(alerts.length, 9)}{alerts.length > 9 ? '+' : ''}
+                    </span>
+                  )}
+                </button>
+                {isBellOpen && (
+                  <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-50 ring-1 ring-black/5 dark:ring-white/10">
+                    <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                      <div className="font-medium text-gray-900 dark:text-white">Notifications</div>
+                      <Link to="/alerts" onClick={() => setIsBellOpen(false)} className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">View all</Link>
+                    </div>
+                    <div className="max-h-80 overflow-auto divide-y divide-gray-200 dark:divide-gray-700">
+                      {(alerts?.slice(0, 8) || []).map((a, idx) => (
+                        <div key={idx} className="px-3 py-2">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{a.title || 'Notification'}</div>
+                          {a.message && (
+                            <div className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{a.message}</div>
+                          )}
+                          <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                            {a.timestamp ? new Date(a.timestamp).toLocaleString() : ''}
+                          </div>
+                        </div>
+                      ))}
+                      {(!alerts || alerts.length === 0) && (
+                        <div className="px-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">No notifications</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}

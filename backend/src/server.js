@@ -21,6 +21,9 @@ import ReportSchedule from './models/ReportSchedule.js';
 import recipesRoutes from './routes/recipes.js';
 import phasesRoutes from './routes/phases.js';
 import thresholdsRoutes from './routes/thresholds.js';
+import calendarRoutes from './routes/calendar.js';
+import CalendarEvent from './models/CalendarEvent.js';
+import Alert from './models/Alert.js';
 import { authenticateSocket } from './middleware/auth.js';
 
 // Load environment variables
@@ -92,6 +95,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/recipes', recipesRoutes);
 app.use('/api/phases', phasesRoutes);
 app.use('/api/thresholds', thresholdsRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // Socket.IO authentication middleware
 io.use(authenticateSocket);
@@ -278,6 +282,59 @@ function startScheduler() {
   }, SCHEDULER_INTERVAL_MS);
 }
 startScheduler();
+
+// Calendar reminders: check every minute for due reminders and emit in-app alerts
+const CAL_REMINDER_INTERVAL_MS = 60 * 1000;
+let calTimer = null;
+function startCalendarReminderScheduler() {
+  if (calTimer) return;
+  calTimer = setInterval(async () => {
+    try {
+      const now = new Date();
+      const windowStart = new Date(now.getTime() - 60 * 60 * 1000); // look back 1h for safety
+      const windowEnd = new Date(now.getTime() + 30 * 24 * 3600 * 1000); // next 30 days
+      const candidates = await CalendarEvent.find({
+        startAt: { $gte: windowStart, $lte: windowEnd },
+        reminders: { $exists: true, $ne: [] },
+      }).limit(1000);
+
+      for (const ev of candidates) {
+        const startMs = new Date(ev.startAt).getTime();
+        for (const r of ev.reminders || []) {
+          const minutes = Number(r.minutesBefore);
+          if (!Number.isFinite(minutes)) continue;
+          if (ev.deliveredReminders?.includes(minutes)) continue;
+          const reminderTime = startMs - minutes * 60 * 1000;
+          if (Date.now() >= reminderTime) {
+            // Create Alert and emit
+            const alertDoc = await Alert.create({
+              userId: ev.userId,
+              type: 'system',
+              severity: 'medium',
+              title: 'Event Reminder',
+              message: `${ev.title}${ev.roomId ? ' @ ' + ev.roomId : ''} starts at ${new Date(startMs).toLocaleString()}`,
+            });
+            io.to(`user_${String(ev.userId)}`).emit('newAlert', {
+              type: 'system',
+              severity: 'medium',
+              title: 'Event Reminder',
+              message: alertDoc.message,
+              timestamp: new Date(),
+            });
+            // Mark reminder delivered
+            await CalendarEvent.updateOne(
+              { _id: ev._id },
+              { $addToSet: { deliveredReminders: minutes } }
+            );
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Calendar reminder scheduler error', e);
+    }
+  }, CAL_REMINDER_INTERVAL_MS);
+}
+startCalendarReminderScheduler();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
