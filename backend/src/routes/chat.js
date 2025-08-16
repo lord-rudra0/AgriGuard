@@ -46,13 +46,13 @@ router.post('/ai', authenticateToken, async (req, res) => {
       });
     }
 
-    const { message, context } = req.body;
+    const { message, context, image } = req.body;
     
     if (!message) {
       return res.status(400).json({ message: 'Message is required' });
     }
 
-    // Create context-aware prompt
+    // Create context-aware prompt (preserved)
     const systemPrompt = `
       You are AgriGuard AI, an expert agricultural assistant specializing in modern farming techniques, 
       crop monitoring, and sustainable agriculture. You help farmers with:
@@ -73,10 +73,17 @@ router.post('/ai', authenticateToken, async (req, res) => {
       Keep responses concise but informative.
     `;
 
-    const fullPrompt = `${systemPrompt}\n\nUser Question: ${message}`;
+    // Build multimodal parts: text + optional inline image
+    const parts = [
+      { text: systemPrompt },
+      { text: `\n\nUser Question: ${message}` },
+    ];
+    if (image && typeof image === 'object' && image.data && image.mimeType) {
+      parts.push({ inlineData: { data: image.data, mimeType: image.mimeType } });
+    }
 
     // Generate response
-    const result = await model.generateContent(fullPrompt);
+    const result = await model.generateContent(parts);
     const response = await result.response;
     const aiMessage = response.text();
 

@@ -162,6 +162,24 @@ const Chat = () => {
     setAttachedMedia(null);
   };
 
+  // Convert a File to data URL and extract base64 + mime type
+  const fileToData = (file) => new Promise((resolve, reject) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        const [prefix, base64] = String(dataUrl).split(',');
+        const match = String(prefix).match(/data:(.*);base64/);
+        const mimeType = match ? match[1] : (file.type || 'application/octet-stream');
+        resolve({ dataUrl, base64, mimeType });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    } catch (e) {
+      reject(e);
+    }
+  });
+
   const sendMessage = async (e) => {
     e.preventDefault();
     if ((!input.trim() && !attachedMedia) || !socket || sending || !selectedChat) return;
@@ -169,24 +187,49 @@ const Chat = () => {
     try {
       let sentMsg = null;
       if (attachedMedia) {
-        // Upload the image now, then send message with caption
-        const form = new FormData();
-        form.append('file', attachedMedia.file);
-        const up = await axios.post('/api/chatSystem/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-        const url = up.data?.url;
-        if (!url) throw new Error('Upload failed');
+        // Inline image: embed as data URL for chat and send to AI if ASKAI is active
+        const { dataUrl, base64, mimeType } = await fileToData(attachedMedia.file);
         const res = await axios.post('/api/chatSystem/messages', {
           chatId: selectedChat._id,
           content: input.trim(),
           type: 'image',
-          mediaUrl: url,
-          mediaType: attachedMedia.file.type,
+          mediaUrl: dataUrl,
+          mediaType: mimeType,
         });
         sentMsg = { ...res.data.message, sender: user };
-        // Clear attachment preview
         if (attachedMedia.previewUrl) URL.revokeObjectURL(attachedMedia.previewUrl);
         setAttachedMedia(null);
         setInput('');
+
+        // If ASKAI is active, immediately call AI with inline image
+        if (askAIActive) {
+          try {
+            const prompt = sentMsg.content || 'Analyze this image for crop issues and recommendations.';
+            const aiRes = await axios.post('/api/chat/ai', { message: prompt, image: { data: base64, mimeType } });
+            const aiText = aiRes.data?.message || aiRes.data?.reply || aiRes.data?.text;
+            const aiMsg = {
+              _id: `ai_${Date.now()}`,
+              chatId: selectedChat._id,
+              type: 'ai',
+              content: aiText || 'I could not generate a response right now.',
+              createdAt: new Date().toISOString(),
+            };
+            setMessages(prev => [...prev, aiMsg]);
+            socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
+            setChats(prev => {
+              const list = [...prev];
+              const idx = list.findIndex(c => c._id === selectedChat._id);
+              if (idx !== -1) {
+                const updated = { ...list[idx], lastMessage: aiMsg, updatedAt: new Date().toISOString() };
+                list.splice(idx, 1);
+                list.unshift(updated);
+              }
+              return list;
+            });
+          } catch (err) {
+            console.error('AI error', err);
+          }
+        }
       } else {
         // Text-only message
         const res = await axios.post('/api/chatSystem/messages', {
@@ -210,14 +253,11 @@ const Chat = () => {
         return list;
       });
 
-      // If ASKAI chip active, call AI endpoint and append AI reply
-      if (askAIActive) {
+      // If ASKAI chip active and no image AI call already made, call AI for text-only
+      if (askAIActive && !attachedMedia) {
         try {
           // Compose a textual message for AI route
           let aiMessage = sentMsg.content || '';
-          if (sentMsg.type === 'image' && sentMsg.mediaUrl) {
-            aiMessage = `${aiMessage ? aiMessage + '\n' : ''}Image URL: ${sentMsg.mediaUrl}${sentMsg.mediaType ? `\nImage Type: ${sentMsg.mediaType}` : ''}`;
-          }
           const aiRes = await axios.post('/api/chat/ai', { message: aiMessage });
           const aiText = aiRes.data?.message || aiRes.data?.reply || aiRes.data?.text;
           const aiMsg = {
