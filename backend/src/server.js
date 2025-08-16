@@ -221,6 +221,8 @@ const importRoute = async (routePath, routeName) => {
     return routeModule.default;
   } catch (error) {
     console.error(`❌ Failed to import ${routeName} routes:`, error.message);
+    console.error(`   Path: ${routePath}`);
+    console.error(`   Error type: ${error.code || 'unknown'}`);
     return null;
   }
 };
@@ -228,56 +230,49 @@ const importRoute = async (routePath, routeName) => {
 // Import routes with error handling
 let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes;
 
-// Import routes one by one with error handling
-Promise.all([
-  importRoute('./routes/auth.js', 'Auth'),
-  importRoute('./routes/sensors.js', 'Sensors'),
-  importRoute('./routes/chat.js', 'Chat'),
-  importRoute('./routes/chatSystem.js', 'ChatSystem'),
-  importRoute('./routes/settings.js', 'Settings'),
-  importRoute('./routes/alerts.js', 'Alerts'),
-  importRoute('./routes/gemini.js', 'Gemini'),
-  importRoute('./routes/analyticsViews.js', 'AnalyticsViews'),
-  importRoute('./routes/reports.js', 'Reports'),
-  importRoute('./routes/recipes.js', 'Recipes'),
-  importRoute('./routes/phases.js', 'Phases'),
-  importRoute('./routes/thresholds.js', 'Thresholds'),
-  importRoute('./routes/calendar.js', 'Calendar')
-]).then(([auth, sensors, chat, chatSystem, settings, alerts, gemini, analyticsViews, reports, recipes, phases, thresholds, calendar]) => {
-  // Assign imported routes
-  authRoutes = auth;
-  sensorRoutes = sensors;
-  chatRoutes = chat;
-  chatSystemRoutes = chatSystem;
-  settingsRoutes = settings;
-  alertsRoutes = alerts;
-  geminiRoutes = gemini;
-  analyticsViewsRoutes = analyticsViews;
-  reportsRoutes = reports;
-  recipesRoutes = recipes;
-  phasesRoutes = phases;
-  thresholdsRoutes = thresholds;
-  calendarRoutes = calendar;
+// Import routes one by one with error handling - more robust approach
+const loadRoutes = async () => {
+  try {
+    console.log('🚀 Starting route loading...');
+    
+    // Import routes one by one
+    authRoutes = await importRoute('./routes/auth.js', 'Auth');
+    sensorRoutes = await importRoute('./routes/sensors.js', 'Sensors');
+    chatRoutes = await importRoute('./routes/chat.js', 'Chat');
+    chatSystemRoutes = await importRoute('./routes/chatSystem.js', 'ChatSystem');
+    settingsRoutes = await importRoute('./routes/settings.js', 'Settings');
+    alertsRoutes = await importRoute('./routes/alerts.js', 'Alerts');
+    geminiRoutes = await importRoute('./routes/gemini.js', 'Gemini');
+    analyticsViewsRoutes = await importRoute('./routes/analyticsViews.js', 'AnalyticsViews');
+    reportsRoutes = await importRoute('./routes/reports.js', 'Reports');
+    recipesRoutes = await importRoute('./routes/recipes.js', 'Recipes');
+    phasesRoutes = await importRoute('./routes/phases.js', 'Phases');
+    thresholdsRoutes = await importRoute('./routes/thresholds.js', 'Thresholds');
+    calendarRoutes = await importRoute('./routes/calendar.js', 'Calendar');
 
-  // Use routes only if they imported successfully
-  if (authRoutes) app.use('/api/auth', authRoutes);
-  if (sensorRoutes) app.use('/api/sensors', sensorRoutes);
-  if (chatRoutes) app.use('/api/chat', chatRoutes);
-  if (chatSystemRoutes) app.use('/api/chat-system', chatSystemRoutes);
-  if (settingsRoutes) app.use('/api/settings', settingsRoutes);
-  if (alertsRoutes) app.use('/api/alerts', alertsRoutes);
-  if (geminiRoutes) app.use('/api/gemini', geminiRoutes);
-  if (analyticsViewsRoutes) app.use('/api/analytics-views', analyticsViewsRoutes);
-  if (reportsRoutes) app.use('/api/reports', reportsRoutes);
-  if (recipesRoutes) app.use('/api/recipes', recipesRoutes);
-  if (phasesRoutes) app.use('/api/phases', phasesRoutes);
-  if (thresholdsRoutes) app.use('/api/thresholds', thresholdsRoutes);
-  if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
+    // Use routes only if they imported successfully
+    if (authRoutes) app.use('/api/auth', authRoutes);
+    if (sensorRoutes) app.use('/api/sensors', sensorRoutes);
+    if (chatRoutes) app.use('/api/chat', chatRoutes);
+    if (chatSystemRoutes) app.use('/api/chat-system', chatSystemRoutes);
+    if (settingsRoutes) app.use('/api/settings', settingsRoutes);
+    if (alertsRoutes) app.use('/api/alerts', alertsRoutes);
+    if (geminiRoutes) app.use('/api/gemini', geminiRoutes);
+    if (analyticsViewsRoutes) app.use('/api/analytics-views', analyticsViewsRoutes);
+    if (reportsRoutes) app.use('/api/reports', reportsRoutes);
+    if (recipesRoutes) app.use('/api/recipes', recipesRoutes);
+    if (phasesRoutes) app.use('/api/phases', phasesRoutes);
+    if (thresholdsRoutes) app.use('/api/thresholds', thresholdsRoutes);
+    if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
 
-  console.log('✅ All routes configured');
-}).catch(error => {
-  console.error('❌ Error during route import:', error);
-});
+    console.log('✅ All routes configured');
+  } catch (error) {
+    console.error('❌ Error during route loading:', error);
+  }
+};
+
+// Load routes immediately
+loadRoutes();
 
 // Socket.IO authentication middleware
 // io.use(authenticateSocket); // This line is now handled above
