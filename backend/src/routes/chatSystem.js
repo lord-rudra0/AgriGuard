@@ -71,6 +71,42 @@ router.get('/messages/:chatId', authenticateToken, async (req, res) => {
   res.json({ messages: messages.reverse() });
 });
 
+// Create a new message (text or image)
+router.post('/messages', authenticateToken, async (req, res) => {
+  try {
+    const { chatId, content, type = 'text', mediaUrl, mediaType } = req.body;
+    if (!chatId) return res.status(400).json({ message: 'chatId is required' });
+    if (!content && !mediaUrl) return res.status(400).json({ message: 'content or mediaUrl required' });
+
+    // Create message
+    const message = await Message.create({
+      chatId,
+      sender: req.user._id,
+      content: content || '',
+      type,
+      mediaUrl: mediaUrl || undefined,
+      mediaType: mediaType || undefined,
+    });
+
+    // Update chat lastMessage and updatedAt
+    await Chat.findByIdAndUpdate(chatId, { lastMessage: message._id, updatedAt: new Date() });
+
+    // Populate sender for response
+    const populated = await Message.findById(message._id).populate('sender', 'name email');
+
+    // Emit to chat room via Socket.IO (exclude sender to avoid duplicate on client)
+    try {
+      const io = req.app.get('io');
+      if (io) io.to(`chat_${chatId}`).except(`user_${String(req.user._id)}`).emit('chat:message', populated);
+    } catch (_) {}
+
+    res.status(201).json({ message: populated });
+  } catch (e) {
+    console.error('Create message error', e);
+    res.status(500).json({ message: 'Failed to send message' });
+  }
+});
+
 // Mark messages as seen in a chat
 router.post('/messages/:chatId/seen', authenticateToken, async (req, res) => {
   const { chatId } = req.params;

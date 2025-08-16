@@ -91,7 +91,12 @@ const Chat = () => {
       });
 
       if (message.chatId === selectedChat?._id) {
-        setMessages(prev => [...prev, message]);
+        // De-duplicate by message id
+        setMessages(prev => {
+          const exists = prev.some(m => String(m._id || m.id) === String(message._id || message.id));
+          if (exists) return prev;
+          return [...prev, message];
+        });
         // mark seen on new message
         axios.post(`/api/chatSystem/messages/${selectedChat._id}/seen`).catch(() => {});
       }
@@ -198,7 +203,6 @@ const Chat = () => {
       }
       // Optimistic UI updates (common)
       setMessages((prev) => [...prev, sentMsg]);
-      socket.emit('chat:message', { chatId: selectedChat._id, message: sentMsg });
       setChats(prev => {
         const list = [...prev];
         const idx = list.findIndex(c => c._id === selectedChat._id);
@@ -220,7 +224,6 @@ const Chat = () => {
           const aiRes = await axios.post('/api/chatSystem/askai', aiPayload);
           const aiMsg = aiRes.data.message;
           setMessages(prev => [...prev, aiMsg]);
-          socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
           setChats(prev => {
             const list = [...prev];
             const idx = list.findIndex(c => c._id === selectedChat._id);
@@ -251,7 +254,6 @@ const Chat = () => {
       });
       const aiMsg = res.data.message;
       setMessages(prev => [...prev, aiMsg]);
-      socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
       setChats(prev => {
         const list = [...prev];
         const idx = list.findIndex(c => c._id === selectedChat._id);

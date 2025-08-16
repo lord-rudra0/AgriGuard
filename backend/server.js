@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { authenticateSocket } from './src/middleware/auth.js';
 import { authRoutes as authRoutesStatic } from './src/routes/index.js';
+import chatSystemRoutesStatic from './src/routes/chatSystem.js';
 
 // Load environment variables
 dotenv.config();
@@ -180,10 +181,46 @@ const limiter = rateLimit({
     return req.headers['x-forwarded-for']?.split(',')[0] || req.ip || req.connection.remoteAddress;
   }
 });
+
+// Debug endpoint to list all mounted routes (HTTP only)
+app.get('/debug/routes', (req, res) => {
+  try {
+    const routes = [];
+    const stack = app._router && app._router.stack ? app._router.stack : [];
+    stack.forEach((layer) => {
+      if (layer.route && layer.route.path) {
+        const methods = Object.keys(layer.route.methods)
+          .filter((m) => layer.route.methods[m])
+          .map((m) => m.toUpperCase());
+        routes.push({ methods, path: layer.route.path });
+      } else if (layer.name === 'router' && layer.handle && layer.handle.stack) {
+        layer.handle.stack.forEach((sub) => {
+          try {
+            const route = sub.route;
+            if (route && route.path) {
+              const methods = Object.keys(route.methods)
+                .filter((m) => route.methods[m])
+                .map((m) => m.toUpperCase());
+              // Try to extract mount path prefix
+              const prefix = layer.regexp && layer.regexp.fast_slash ? '' : (layer.regexp?.source || '');
+              routes.push({ methods, path: `${route.path}`, mountedAt: prefix });
+            }
+          } catch (_) {}
+        });
+      }
+    });
+    res.json({ count: routes.length, routes });
+  } catch (e) {
+    res.status(500).json({ message: 'Failed to enumerate routes', error: e?.message || String(e) });
+  }
+});
 app.use('/api', limiter);
 
 // Synchronously mount critical routes to avoid cold-start 404s
 app.use('/api/auth', authRoutesStatic);
+// Mount chat system routes synchronously as well (both aliases)
+app.use('/api/chat-system', chatSystemRoutesStatic);
+app.use('/api/chatSystem', chatSystemRoutesStatic);
 
 // Note: Static file serving removed for Vercel serverless compatibility
 // Vercel serverless functions cannot create directories or serve static files
@@ -353,7 +390,11 @@ const loadRoutes = async () => {
     // Auth is already mounted synchronously above to avoid cold-start 404s
     if (sensorRoutes) app.use('/api/sensors', sensorRoutes);
     if (chatRoutes) app.use('/api/chat', chatRoutes);
-    if (chatSystemRoutes) app.use('/api/chat-system', chatSystemRoutes);
+    if (chatSystemRoutes) {
+      // Support both kebab-case and camelCase paths
+      app.use('/api/chat-system', chatSystemRoutes);
+      app.use('/api/chatSystem', chatSystemRoutes);
+    }
     if (settingsRoutes) app.use('/api/settings', settingsRoutes);
     if (alertsRoutes) app.use('/api/alerts', alertsRoutes);
     if (geminiRoutes) app.use('/api/gemini', geminiRoutes);
