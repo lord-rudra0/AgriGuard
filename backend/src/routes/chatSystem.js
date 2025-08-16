@@ -71,34 +71,37 @@ router.get('/messages/:chatId', authenticateToken, async (req, res) => {
   res.json({ messages: messages.reverse() });
 });
 
-// Create a new message (text or image)
+// Create/send a new message
 router.post('/messages', authenticateToken, async (req, res) => {
   try {
-    const { chatId, content, type = 'text', mediaUrl, mediaType } = req.body;
+    const { chatId, content, type = 'text', mediaUrl, mediaType, replyTo } = req.body;
     if (!chatId) return res.status(400).json({ message: 'chatId is required' });
-    if (!content && !mediaUrl) return res.status(400).json({ message: 'content or mediaUrl required' });
+    if (!content && !mediaUrl) return res.status(400).json({ message: 'Message content or media is required' });
 
-    // Create message
-    const message = await Message.create({
+    // Ensure user is part of the chat
+    const chat = await Chat.findById(chatId);
+    if (!chat) return res.status(404).json({ message: 'Chat not found' });
+    const isMember = chat.members.map(String).includes(String(req.user._id));
+    if (!isMember) return res.status(403).json({ message: 'Not a member of this chat' });
+
+    const msg = await Message.create({
       chatId,
       sender: req.user._id,
-      content: content || '',
+      content: content || null,
       type,
-      mediaUrl: mediaUrl || undefined,
-      mediaType: mediaType || undefined,
+      mediaUrl: mediaUrl || null,
+      mediaType: mediaType || null,
+      replyTo: replyTo || null,
     });
 
-    // Update chat lastMessage and updatedAt
-    await Chat.findByIdAndUpdate(chatId, { lastMessage: message._id, updatedAt: new Date() });
+    // Update chat lastMessage
+    await Chat.findByIdAndUpdate(chatId, { lastMessage: msg._id, updatedAt: new Date() });
 
-    // Populate sender for response
-    const populated = await Message.findById(message._id).populate('sender', 'name email');
+    const populated = await Message.findById(msg._id).populate('sender', 'name email');
 
-    // Emit to chat room via Socket.IO (exclude sender to avoid duplicate on client)
-    try {
-      const io = req.app.get('io');
-      if (io) io.to(`chat_${chatId}`).except(`user_${String(req.user._id)}`).emit('chat:message', populated);
-    } catch (_) {}
+    // Do not broadcast here to avoid duplicates.
+    // The client should emit 'chat:message' via Socket.IO after a successful REST save.
+    // The server (backend/server.js) forwards that socket event to other participants.
 
     res.status(201).json({ message: populated });
   } catch (e) {

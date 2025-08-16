@@ -91,12 +91,7 @@ const Chat = () => {
       });
 
       if (message.chatId === selectedChat?._id) {
-        // De-duplicate by message id
-        setMessages(prev => {
-          const exists = prev.some(m => String(m._id || m.id) === String(message._id || message.id));
-          if (exists) return prev;
-          return [...prev, message];
-        });
+        setMessages(prev => [...prev, message]);
         // mark seen on new message
         axios.post(`/api/chatSystem/messages/${selectedChat._id}/seen`).catch(() => {});
       }
@@ -203,6 +198,7 @@ const Chat = () => {
       }
       // Optimistic UI updates (common)
       setMessages((prev) => [...prev, sentMsg]);
+      socket.emit('chat:message', { chatId: selectedChat._id, message: sentMsg });
       setChats(prev => {
         const list = [...prev];
         const idx = list.findIndex(c => c._id === selectedChat._id);
@@ -217,13 +213,22 @@ const Chat = () => {
       // If ASKAI chip active, call AI endpoint and append AI reply
       if (askAIActive) {
         try {
-          let aiPayload = { chatId: selectedChat._id, content: sentMsg.content };
+          // Compose a textual message for AI route
+          let aiMessage = sentMsg.content || '';
           if (sentMsg.type === 'image' && sentMsg.mediaUrl) {
-            aiPayload = { ...aiPayload, mediaUrl: sentMsg.mediaUrl, mediaType: sentMsg.mediaType };
+            aiMessage = `${aiMessage ? aiMessage + '\n' : ''}Image URL: ${sentMsg.mediaUrl}${sentMsg.mediaType ? `\nImage Type: ${sentMsg.mediaType}` : ''}`;
           }
-          const aiRes = await axios.post('/api/chatSystem/askai', aiPayload);
-          const aiMsg = aiRes.data.message;
+          const aiRes = await axios.post('/api/chat/ai', { message: aiMessage });
+          const aiText = aiRes.data?.message || aiRes.data?.reply || aiRes.data?.text;
+          const aiMsg = {
+            _id: `ai_${Date.now()}`,
+            chatId: selectedChat._id,
+            type: 'ai',
+            content: aiText || 'I could not generate a response right now.',
+            createdAt: new Date().toISOString(),
+          };
           setMessages(prev => [...prev, aiMsg]);
+          socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
           setChats(prev => {
             const list = [...prev];
             const idx = list.findIndex(c => c._id === selectedChat._id);
@@ -248,12 +253,17 @@ const Chat = () => {
   const onInsertAskAI = async (content) => {
     if (!selectedChat || !socket || sending) return;
     try {
-      const res = await axios.post('/api/chatSystem/askai', {
+      const res = await axios.post('/api/chat/ai', { message: content });
+      const aiText = res.data?.message || res.data?.reply || res.data?.text;
+      const aiMsg = {
+        _id: `ai_${Date.now()}`,
         chatId: selectedChat._id,
-        content,
-      });
-      const aiMsg = res.data.message;
+        type: 'ai',
+        content: aiText || 'I could not generate a response right now.',
+        createdAt: new Date().toISOString(),
+      };
       setMessages(prev => [...prev, aiMsg]);
+      socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
       setChats(prev => {
         const list = [...prev];
         const idx = list.findIndex(c => c._id === selectedChat._id);

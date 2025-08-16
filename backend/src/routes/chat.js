@@ -17,14 +17,32 @@ try {
   console.error('[chat] Failed to initialize GoogleGenerativeAI:', error.message);
 }
 
+// Helper to lazily get the model, allowing env to be read at request time
+function getModel(modelName = 'gemini-1.5-flash') {
+  try {
+    if (!genAI) {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (apiKey) {
+        genAI = new GoogleGenerativeAI(apiKey);
+      }
+    }
+    return genAI ? genAI.getGenerativeModel({ model: modelName }) : null;
+  } catch (e) {
+    console.error('[chat] getModel error:', e.message);
+    return null;
+  }
+}
+
 // @route   POST /api/chat/ai
 // @desc    Chat with AI assistant
 // @access  Private
 router.post('/ai', authenticateToken, async (req, res) => {
   try {
-    if (!genAI) {
-      return res.status(503).json({ 
-        message: 'AI service not configured. Please set GEMINI_API_KEY environment variable.' 
+    const model = getModel();
+    if (!model) {
+      return res.status(503).json({
+        message: 'AI service not configured. Please set GEMINI_API_KEY and restart the backend.',
+        hasGeminiKey: !!process.env.GEMINI_API_KEY
       });
     }
 
@@ -33,9 +51,6 @@ router.post('/ai', authenticateToken, async (req, res) => {
     if (!message) {
       return res.status(400).json({ message: 'Message is required' });
     }
-
-    // Get the generative model
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
     // Create context-aware prompt
     const systemPrompt = `
@@ -71,16 +86,15 @@ router.post('/ai', authenticateToken, async (req, res) => {
       context: context || null
     });
   } catch (error) {
-    console.error('AI chat error:', error);
-    
-    if (error.message && error.message.includes('API key')) {
+    console.error('AI chat error:', error?.response?.data || error?.message || error);
+    const msg = (error?.response?.data?.error) || error?.message || 'Unknown error';
+    if (/api key|unauthorized|permission/i.test(msg)) {
       return res.status(500).json({ 
-        message: 'AI service configuration error. Please contact support.' 
+        message: 'AI service configuration error. Please verify GEMINI_API_KEY permissions.'
       });
     }
-    
-    res.status(500).json({ 
-      message: 'Sorry, I\'m having trouble processing your request right now. Please try again later.' 
+    return res.status(500).json({ 
+      message: 'AI failed to generate a reply. Please try again.'
     });
   }
 });
@@ -90,13 +104,18 @@ router.post('/ai', authenticateToken, async (req, res) => {
 // @access  Private
 router.post('/analyze-data', authenticateToken, async (req, res) => {
   try {
+    const model = getModel();
+    if (!model) {
+      return res.status(503).json({
+        message: 'AI service not configured. Please set GEMINI_API_KEY and restart the backend.',
+        hasGeminiKey: !!process.env.GEMINI_API_KEY
+      });
+    }
     const { sensorData, timeframe = '24h' } = req.body;
     
     if (!sensorData) {
       return res.status(400).json({ message: 'Sensor data is required' });
     }
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
     const analysisPrompt = `
       As an agricultural AI expert, analyze the following sensor data for ${req.user.farmName} 
@@ -126,10 +145,8 @@ router.post('/analyze-data', authenticateToken, async (req, res) => {
       timeframe
     });
   } catch (error) {
-    console.error('Data analysis error:', error);
-    res.status(500).json({ 
-      message: 'Unable to analyze data at this time. Please try again later.' 
-    });
+    console.error('Data analysis error:', error?.response?.data || error?.message || error);
+    return res.status(500).json({ message: 'AI analysis failed. Please try again.' });
   }
 });
 
@@ -138,9 +155,14 @@ router.post('/analyze-data', authenticateToken, async (req, res) => {
 // @access  Private
 router.post('/farming-tips', authenticateToken, async (req, res) => {
   try {
+    const model = getModel();
+    if (!model) {
+      return res.status(503).json({
+        message: 'AI service not configured. Please set GEMINI_API_KEY and restart the backend.',
+        hasGeminiKey: !!process.env.GEMINI_API_KEY
+      });
+    }
     const { cropType, growthStage, currentConditions, specificQuestion } = req.body;
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
     const tipsPrompt = `
       Provide expert farming advice for:
@@ -173,10 +195,8 @@ router.post('/farming-tips', authenticateToken, async (req, res) => {
       growthStage: growthStage || 'All stages'
     });
   } catch (error) {
-    console.error('Farming tips error:', error);
-    res.status(500).json({ 
-      message: 'Unable to generate farming tips at this time. Please try again later.' 
-    });
+    console.error('Farming tips error:', error?.response?.data || error?.message || error);
+    return res.status(500).json({ message: 'AI tips generation failed. Please try again.' });
   }
 });
 
