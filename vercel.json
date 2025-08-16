@@ -14,9 +14,5 @@
       "src": "/(.*)",
       "dest": "/frontend/$1"
     }
-  ],
-  "env": {
-    "VITE_API_URL": "https://agro-nex-backend.vercel.app",
-    "VITE_SOCKET_URL": "https://agro-nex-backend.vercel.app"
-  }
+  ]
 }
