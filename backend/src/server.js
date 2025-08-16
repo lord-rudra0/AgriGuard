@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { authenticateSocket } from './middleware/auth.js';
+import { authRoutes as authRoutesStatic } from './routes/index.js';
 
 // Load environment variables
 dotenv.config();
@@ -178,6 +179,9 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
+// Synchronously mount critical routes to avoid cold-start 404s
+app.use('/api/auth', authRoutesStatic);
+
 // Note: Static file serving removed for Vercel serverless compatibility
 // Vercel serverless functions cannot create directories or serve static files
 // For file uploads, use Vercel Blob or external storage services
@@ -320,7 +324,7 @@ const loadRoutes = async () => {
     }
 
     // Use routes only if they imported successfully
-    if (authRoutes) app.use('/api/auth', authRoutes);
+    // Auth is already mounted synchronously above to avoid cold-start 404s
     if (sensorRoutes) app.use('/api/sensors', sensorRoutes);
     if (chatRoutes) app.use('/api/chat', chatRoutes);
     if (chatSystemRoutes) app.use('/api/chat-system', chatSystemRoutes);
