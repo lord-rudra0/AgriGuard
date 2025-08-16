@@ -115,59 +115,98 @@ const importRoute = async (routePath, routeName) => {
   }
 };
 
-// Import routes with error handling
-let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes;
+// Import and register routes one by one with error handling
+const loadRoutes = async () => {
+  try {
+    // Import routes one by one
+    const authRoutes = await importRoute('./src/routes/auth.js', 'Auth');
+    if (authRoutes) {
+      app.use('/api/auth', authRoutes);
+      console.log('✅ Auth routes registered');
+    }
 
-// Import routes one by one with error handling
-Promise.all([
-  importRoute('./src/routes/auth.js', 'Auth'),
-  importRoute('./src/routes/sensors.js', 'Sensors'),
-  importRoute('./src/routes/chat.js', 'Chat'),
-  importRoute('./src/routes/chatSystem.js', 'ChatSystem'),
-  importRoute('./src/routes/settings.js', 'Settings'),
-  importRoute('./src/routes/alerts.js', 'Alerts'),
-  importRoute('./src/routes/gemini.js', 'Gemini'),
-  importRoute('./src/routes/analyticsViews.js', 'AnalyticsViews'),
-  importRoute('./src/routes/reports.js', 'Reports'),
-  importRoute('./src/routes/recipes.js', 'Recipes'),
-  importRoute('./src/routes/phases.js', 'Phases'),
-  importRoute('./src/routes/thresholds.js', 'Thresholds'),
-  importRoute('./src/routes/calendar.js', 'Calendar')
-]).then(([auth, sensors, chat, chatSystem, settings, alerts, gemini, analyticsViews, reports, recipes, phases, thresholds, calendar]) => {
-  // Assign imported routes
-  authRoutes = auth;
-  sensorRoutes = sensors;
-  chatRoutes = chat;
-  chatSystemRoutes = chatSystem;
-  settingsRoutes = settings;
-  alertsRoutes = alerts;
-  geminiRoutes = gemini;
-  analyticsViewsRoutes = analyticsViews;
-  reportsRoutes = reports;
-  recipesRoutes = recipes;
-  phasesRoutes = phases;
-  thresholdsRoutes = thresholds;
-  calendarRoutes = calendar;
+    const sensorRoutes = await importRoute('./src/routes/sensors.js', 'Sensors');
+    if (sensorRoutes) {
+      app.use('/api/sensors', sensorRoutes);
+      console.log('✅ Sensors routes registered');
+    }
 
-  // Use routes only if they imported successfully
-  if (authRoutes) app.use('/api/auth', authRoutes);
-  if (sensorRoutes) app.use('/api/sensors', sensorRoutes);
-  if (chatRoutes) app.use('/api/chat', chatRoutes);
-  if (chatSystemRoutes) app.use('/api/chat-system', chatSystemRoutes);
-  if (settingsRoutes) app.use('/api/settings', settingsRoutes);
-  if (alertsRoutes) app.use('/api/alerts', alertsRoutes);
-  if (geminiRoutes) app.use('/api/gemini', geminiRoutes);
-  if (analyticsViewsRoutes) app.use('/api/analytics-views', analyticsViewsRoutes);
-  if (reportsRoutes) app.use('/api/reports', reportsRoutes);
-  if (recipesRoutes) app.use('/api/recipes', recipesRoutes);
-  if (phasesRoutes) app.use('/api/phases', phasesRoutes);
-  if (thresholdsRoutes) app.use('/api/thresholds', thresholdsRoutes);
-  if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
+    const chatRoutes = await importRoute('./src/routes/chat.js', 'Chat');
+    if (chatRoutes) {
+      app.use('/api/chat', chatRoutes);
+      console.log('✅ Chat routes registered');
+    }
 
-  console.log('✅ All routes configured');
-}).catch(error => {
-  console.error('❌ Error during route import:', error);
-});
+    const chatSystemRoutes = await importRoute('./src/routes/chatSystem.js', 'ChatSystem');
+    if (chatSystemRoutes) {
+      app.use('/api/chat-system', chatSystemRoutes);
+      console.log('✅ ChatSystem routes registered');
+    }
+
+    const settingsRoutes = await importRoute('./src/routes/settings.js', 'Settings');
+    if (settingsRoutes) {
+      app.use('/api/settings', settingsRoutes);
+      console.log('✅ Settings routes registered');
+    }
+
+    const alertsRoutes = await importRoute('./src/routes/alerts.js', 'Alerts');
+    if (alertsRoutes) {
+      app.use('/api/alerts', alertsRoutes);
+      console.log('✅ Alerts routes registered');
+    }
+
+    const geminiRoutes = await importRoute('./src/routes/gemini.js', 'Gemini');
+    if (geminiRoutes) {
+      app.use('/api/gemini', geminiRoutes);
+      console.log('✅ Gemini routes registered');
+    }
+
+    const analyticsViewsRoutes = await importRoute('./src/routes/analyticsViews.js', 'AnalyticsViews');
+    if (analyticsViewsRoutes) {
+      app.use('/api/analytics-views', analyticsViewsRoutes);
+      console.log('✅ AnalyticsViews routes registered');
+    }
+
+    const reportsRoutes = await importRoute('./src/routes/reports.js', 'Reports');
+    if (reportsRoutes) {
+      app.use('/api/reports', reportsRoutes);
+      console.log('✅ Reports routes registered');
+    }
+
+    const recipesRoutes = await importRoute('./src/routes/recipes.js', 'Recipes');
+    if (recipesRoutes) {
+      app.use('/api/recipes', recipesRoutes);
+      console.log('✅ Recipes routes registered');
+    }
+
+    const phasesRoutes = await importRoute('./src/routes/phases.js', 'Phases');
+    if (phasesRoutes) {
+      app.use('/api/phases', phasesRoutes);
+      console.log('✅ Phases routes registered');
+    }
+
+    const thresholdsRoutes = await importRoute('./src/routes/thresholds.js', 'Thresholds');
+    if (thresholdsRoutes) {
+      app.use('/api/thresholds', thresholdsRoutes);
+      console.log('✅ Thresholds routes registered');
+    }
+
+    const calendarRoutes = await importRoute('./src/routes/calendar.js', 'Calendar');
+    if (calendarRoutes) {
+      app.use('/api/calendar', calendarRoutes);
+      console.log('✅ Calendar routes registered');
+    }
+
+    console.log('✅ All routes loaded and registered');
+  } catch (error) {
+    console.error('❌ Error during route loading:', error);
+  }
+};
+
+// Load routes after a short delay to ensure middleware is ready
+setTimeout(() => {
+  loadRoutes();
+}, 1000);
 
 // Add route status endpoint
 app.get('/api/route-status', (req, res) => {
