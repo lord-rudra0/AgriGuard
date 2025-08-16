@@ -1,7 +1,6 @@
-// Minimal server to identify crash point
+// Minimal server - just the basics
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -11,12 +10,11 @@ const app = express();
 
 // Basic middleware only
 app.use(cors());
-app.use(helmet());
 app.use(express.json());
 
 // Root route
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Minimal server is running!',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
@@ -26,16 +24,18 @@ app.get('/', (req, res) => {
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString()
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    vercel: !!process.env.VERCEL
   });
 });
 
-// Test basic API
+// Simple test route
 app.get('/api/test', (req, res) => {
-  res.json({ 
-    message: 'Basic API working',
+  res.json({
+    message: 'Test route working!',
     timestamp: new Date().toISOString()
   });
 });
@@ -43,9 +43,10 @@ app.get('/api/test', (req, res) => {
 // Error handling
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Internal server error',
-    message: err.message 
+    message: err.message,
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -53,7 +54,8 @@ app.use((err, req, res, next) => {
 app.use('*', (req, res) => {
   res.status(404).json({
     message: 'Route not found',
-    path: req.originalUrl
+    path: req.originalUrl,
+    timestamp: new Date().toISOString()
   });
 });
 
