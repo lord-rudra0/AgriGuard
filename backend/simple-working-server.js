@@ -24,14 +24,15 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// MongoDB connection (optional)
+// MongoDB connection (optional) - fixed to not use top-level await
 if (process.env.MONGO_URI) {
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ MongoDB connected');
-  } catch (error) {
-    console.log('⚠️ MongoDB connection failed:', error.message);
-  }
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+      console.log('✅ MongoDB connected');
+    })
+    .catch((error) => {
+      console.log('⚠️ MongoDB connection failed:', error.message);
+    });
 }
 
 // File uploads directory setup
