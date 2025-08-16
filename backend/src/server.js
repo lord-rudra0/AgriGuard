@@ -14,8 +14,26 @@ dotenv.config();
 const app = express();
 
 // CORS configuration
+// Build an allowlist and normalize to avoid trailing-slash mismatch
+const rawAllowed = [
+  process.env.FRONTEND_URL,
+  process.env.VERCEL_URL, // Vercel-provided URL
+  'http://localhost:3000',
+]
+  .filter(Boolean)
+  .flatMap(v => String(v).split(',')) // support comma-separated values
+  .map(v => v.trim().replace(/\/$/, ''));
+
+const ALLOWED_ORIGINS = Array.from(new Set(rawAllowed));
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || process.env.VERCEL_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow non-browser requests with no Origin
+    if (!origin) return callback(null, true);
+    const clean = origin.replace(/\/$/, '');
+    const ok = ALLOWED_ORIGINS.includes(clean);
+    return callback(ok ? null : new Error(`CORS: Origin not allowed: ${origin}`), ok);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -24,9 +42,13 @@ const corsOptions = {
 // Create HTTP server and Socket.IO
 const server = createServer(app);
 
-// Socket.IO setup
+// Socket.IO setup (apply same CORS policy)
 const io = new Server(server, {
-  cors: corsOptions,
+  cors: {
+    origin: ALLOWED_ORIGINS,
+    credentials: true,
+    methods: ['GET', 'POST']
+  },
   transports: ['websocket', 'polling'],
   path: '/socket.io'
 });
