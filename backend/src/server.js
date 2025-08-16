@@ -63,6 +63,9 @@ io.use(authenticateSocket);
 // In-memory presence map: userId -> Set of socket ids
 const onlineUsers = new Map();
 
+// Track last MongoDB connection error for diagnostics
+let lastMongoError = null;
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   const userId = String(socket.user.id);
@@ -186,22 +189,32 @@ app.use('/api/auth', authRoutesStatic);
 // Vercel serverless functions cannot create directories or serve static files
 // For file uploads, use Vercel Blob or external storage services
 
-// MongoDB connection with better error handling
+// MongoDB connection with retry/backoff for serverless reliability
 if (process.env.MONGO_URI) {
-  mongoose.connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-  })
-  .then(() => {
-    console.log('✅ Connected to MongoDB');
-  })
-  .catch((error) => {
-    console.error('❌ MongoDB connection error:', error);
-    // Don't exit in serverless environment
-    if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-      process.exit(1);
+  async function connectWithRetry(attempt = 1) {
+    const maxAttempts = 5;
+    const baseDelayMs = 2000;
+    try {
+      await mongoose.connect(process.env.MONGO_URI, {
+        serverSelectionTimeoutMS: 8000,
+        socketTimeoutMS: 20000,
+        family: 4, // prefer IPv4 to avoid some DNS/IPv6 issues in serverless
+      });
+      lastMongoError = null;
+      console.log('✅ Connected to MongoDB');
+    } catch (err) {
+      lastMongoError = err?.message || String(err);
+      console.error(`❌ MongoDB connection error (attempt ${attempt}):`, err?.message || err);
+      if (attempt < maxAttempts) {
+        const delay = baseDelayMs * Math.pow(2, attempt - 1);
+        console.log(`⏳ Retrying MongoDB connection in ${delay}ms...`);
+        setTimeout(() => connectWithRetry(attempt + 1), delay);
+      } else {
+        console.error('🛑 Max MongoDB connection attempts reached. Will stay degraded.');
+      }
     }
-  });
+  }
+  connectWithRetry();
 } else {
   console.warn('⚠️ MONGO_URI not provided, running without database');
 }
@@ -237,6 +250,20 @@ app.get('/env-info', (req, res) => {
     hasGeminiKey: !!process.env.GEMINI_API_KEY,
     frontendUrl: process.env.FRONTEND_URL || 'not set'
   });
+});
+
+// DB ping endpoint for diagnostics
+app.get('/db/ping', async (req, res) => {
+  try {
+    const state = mongoose.connection.readyState; // 0=disconnected,1=connected,2=connecting,3=disconnecting
+    res.json({
+      readyState: state,
+      connected: state === 1,
+      lastError: lastMongoError || null,
+    });
+  } catch (e) {
+    res.status(500).json({ message: 'Ping failed', error: e?.message || String(e) });
+  }
 });
 
 // Add error handling for route imports
