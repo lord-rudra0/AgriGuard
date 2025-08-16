@@ -1,6 +1,4 @@
 import express from 'express';
-import path from 'path';
-import fs from 'fs';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
@@ -133,25 +131,34 @@ io.on('connection', (socket) => {
 // Middleware
 app.use(helmet());
 app.use(cors(corsOptions));
+
+// Trust proxy for Vercel serverless environment
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting
+// Rate limiting - fixed for Vercel serverless
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: {
     error: 'Too many requests from this IP, please try again later'
+  },
+  // Fix for Vercel serverless environment
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Use a custom key generator that works with Vercel
+  keyGenerator: (req) => {
+    // Use X-Forwarded-For header if available, fallback to IP
+    return req.headers['x-forwarded-for']?.split(',')[0] || req.ip || req.connection.remoteAddress;
   }
 });
 app.use('/api', limiter);
 
-// Static: serve uploads
-const uploadsDir = path.resolve(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-app.use('/uploads', express.static(uploadsDir));
+// Note: Static file serving removed for Vercel serverless compatibility
+// Vercel serverless functions cannot create directories or serve static files
+// For file uploads, use Vercel Blob or external storage services
 
 // MongoDB connection with better error handling
 if (process.env.MONGO_URI) {
