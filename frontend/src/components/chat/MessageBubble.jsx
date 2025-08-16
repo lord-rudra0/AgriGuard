@@ -13,8 +13,18 @@ const MessageBubble = ({ me, author, content, time, type, mediaUrl, mediaType, s
         {!me && (
           <p className="text-[10px] font-semibold mb-0.5 opacity-90 text-indigo-600 dark:text-indigo-300">{author}</p>
         )}
-        {type === 'image' && mediaUrl ? (() => {
-    const src = mediaUrl.startsWith('http') || mediaUrl.startsWith('/uploads') ? mediaUrl : `/uploads/${mediaUrl}`;
+        {type === 'ai_loader' ? (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="w-4 h-4 border-2 border-indigo-400/60 border-t-transparent rounded-full animate-spin"></span>
+            <span>{content || 'ASKAI is thinking...'}</span>
+          </div>
+        ) : type === 'image' && mediaUrl ? (() => {
+    const src = (
+      mediaUrl.startsWith('http') ||
+      mediaUrl.startsWith('/uploads') ||
+      mediaUrl.startsWith('data:') ||
+      mediaUrl.startsWith('blob:')
+    ) ? mediaUrl : `/uploads/${mediaUrl}`;
     return (
       <a href={src} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-md">
         <img

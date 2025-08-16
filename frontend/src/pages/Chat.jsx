@@ -132,6 +132,8 @@ const Chat = () => {
 
   // Keep non-editable ASKAI chip state
   const [askAIActive, setAskAIActive] = useState(false);
+  // Track temporary AI loader message id
+  const [aiLoaderId, setAiLoaderId] = useState(null);
   // Attachment state (pick first, send later)
   const [attachedMedia, setAttachedMedia] = useState(null); // { file, previewUrl }
 
@@ -201,8 +203,32 @@ const Chat = () => {
         setAttachedMedia(null);
         setInput('');
 
-        // If ASKAI is active, immediately call AI with inline image
+        // Append the user's image message immediately before any AI call
+        setMessages((prev) => [...prev, sentMsg]);
+        socket.emit('chat:message', { chatId: selectedChat._id, message: sentMsg });
+        setChats(prev => {
+          const list = [...prev];
+          const idx = list.findIndex(c => c._id === selectedChat._id);
+          if (idx !== -1) {
+            const updated = { ...list[idx], lastMessage: sentMsg, updatedAt: new Date().toISOString() };
+            list.splice(idx, 1);
+            list.unshift(updated);
+          }
+          return list;
+        });
+
+        // If ASKAI is active, show inline loader and immediately call AI with inline image
         if (askAIActive) {
+          // Do not lock input while AI is thinking
+          setSending(false);
+          const loader = {
+            _id: `ai_loader_${Date.now()}`,
+            chatId: selectedChat._id,
+            type: 'ai_loader',
+            content: 'ASKAI is analyzing your image...'
+          };
+          setAiLoaderId(loader._id);
+          setMessages(prev => [...prev, loader]);
           try {
             const prompt = sentMsg.content || 'Analyze this image for crop issues and recommendations.';
             const aiRes = await axios.post('/api/chat/ai', { message: prompt, image: { data: base64, mimeType } });
@@ -214,6 +240,8 @@ const Chat = () => {
               type: 'ai'
             });
             const aiMsg = { ...save.data.message };
+            // Remove loader
+            setMessages(prev => prev.filter(m => (m._id || m.id) !== loader._id));
             setMessages(prev => [...prev, aiMsg]);
             socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
             setChats(prev => {
@@ -228,6 +256,10 @@ const Chat = () => {
             });
           } catch (err) {
             console.error('AI error', err);
+            // Remove loader on error
+            setMessages(prev => prev.filter(m => (m._id || m.id) !== loader._id));
+          } finally {
+            setAiLoaderId(null);
           }
         }
       } else {
@@ -238,23 +270,34 @@ const Chat = () => {
         });
         setInput('');
         sentMsg = { ...res.data.message, sender: user };
+
+        // Append the user's text message immediately before any AI call
+        setMessages((prev) => [...prev, sentMsg]);
+        socket.emit('chat:message', { chatId: selectedChat._id, message: sentMsg });
+        setChats(prev => {
+          const list = [...prev];
+          const idx = list.findIndex(c => c._id === selectedChat._id);
+          if (idx !== -1) {
+            const updated = { ...list[idx], lastMessage: sentMsg, updatedAt: new Date().toISOString() };
+            list.splice(idx, 1);
+            list.unshift(updated);
+          }
+          return list;
+        });
       }
-      // Optimistic UI updates (common)
-      setMessages((prev) => [...prev, sentMsg]);
-      socket.emit('chat:message', { chatId: selectedChat._id, message: sentMsg });
-      setChats(prev => {
-        const list = [...prev];
-        const idx = list.findIndex(c => c._id === selectedChat._id);
-        if (idx !== -1) {
-          const updated = { ...list[idx], lastMessage: sentMsg, updatedAt: new Date().toISOString() };
-          list.splice(idx, 1);
-          list.unshift(updated);
-        }
-        return list;
-      });
 
       // If ASKAI chip active and no image AI call already made, call AI for text-only
       if (askAIActive && !attachedMedia) {
+        // Do not lock input during AI
+        setSending(false);
+        const loader = {
+          _id: `ai_loader_${Date.now()}`,
+          chatId: selectedChat._id,
+          type: 'ai_loader',
+          content: 'ASKAI is responding...'
+        };
+        setAiLoaderId(loader._id);
+        setMessages(prev => [...prev, loader]);
         try {
           // Compose a textual message for AI route
           let aiMessage = sentMsg.content || '';
@@ -267,6 +310,8 @@ const Chat = () => {
             type: 'ai'
           });
           const aiMsg = { ...save.data.message };
+          // Remove loader
+          setMessages(prev => prev.filter(m => (m._id || m.id) !== loader._id));
           setMessages(prev => [...prev, aiMsg]);
           socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
           setChats(prev => {
@@ -281,9 +326,14 @@ const Chat = () => {
           });
         } catch (err) {
           console.error('AI error', err);
+          // Remove loader on error
+          setMessages(prev => prev.filter(m => (m._id || m.id) !== loader._id));
+        } finally {
+          setAiLoaderId(null);
         }
       }
     } finally {
+      // Ensure we do not hold the composer disabled because of AI
       setSending(false);
       // After sending, reset ASKAI unless user re-activates
       setAskAIActive(false);
