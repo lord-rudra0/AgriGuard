@@ -207,13 +207,13 @@ const Chat = () => {
             const prompt = sentMsg.content || 'Analyze this image for crop issues and recommendations.';
             const aiRes = await axios.post('/api/chat/ai', { message: prompt, image: { data: base64, mimeType } });
             const aiText = aiRes.data?.message || aiRes.data?.reply || aiRes.data?.text;
-            const aiMsg = {
-              _id: `ai_${Date.now()}`,
+            // Persist AI message so it survives refresh
+            const save = await axios.post('/api/chatSystem/messages', {
               chatId: selectedChat._id,
-              type: 'ai',
               content: aiText || 'I could not generate a response right now.',
-              createdAt: new Date().toISOString(),
-            };
+              type: 'ai'
+            });
+            const aiMsg = { ...save.data.message };
             setMessages(prev => [...prev, aiMsg]);
             socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
             setChats(prev => {
@@ -260,13 +260,13 @@ const Chat = () => {
           let aiMessage = sentMsg.content || '';
           const aiRes = await axios.post('/api/chat/ai', { message: aiMessage });
           const aiText = aiRes.data?.message || aiRes.data?.reply || aiRes.data?.text;
-          const aiMsg = {
-            _id: `ai_${Date.now()}`,
+          // Persist AI message so it survives refresh
+          const save = await axios.post('/api/chatSystem/messages', {
             chatId: selectedChat._id,
-            type: 'ai',
             content: aiText || 'I could not generate a response right now.',
-            createdAt: new Date().toISOString(),
-          };
+            type: 'ai'
+          });
+          const aiMsg = { ...save.data.message };
           setMessages(prev => [...prev, aiMsg]);
           socket.emit('chat:message', { chatId: selectedChat._id, message: aiMsg });
           setChats(prev => {

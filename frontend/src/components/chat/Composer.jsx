@@ -69,14 +69,21 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
         placeholder="Type a message..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
+        disabled={disabled || uploading}
       />
       <button
         type="submit"
-        className="px-4 py-2 rounded-2xl bg-primary-600 text-white font-medium hover:bg-primary-700 transition-all duration-200 active:scale-95 shadow"
-        disabled={!value.trim() || disabled}
+        className="px-4 py-2 rounded-2xl bg-primary-600 text-white font-medium hover:bg-primary-700 transition-all duration-200 active:scale-95 shadow inline-flex items-center min-w-[92px] justify-center"
+        disabled={uploading || disabled || (!value.trim() && !attachedMedia)}
       >
-        Send
+        {uploading ? (
+          <span className="inline-flex items-center">
+            <span className="w-4 h-4 mr-2 border-2 border-white/60 border-t-transparent rounded-full animate-spin"></span>
+            Sending...
+          </span>
+        ) : (
+          'Send'
+        )}
       </button>
     </form>
   );
