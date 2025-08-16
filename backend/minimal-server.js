@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import { put } from '@vercel/blob';
+import multer from 'multer';
 
 // Load environment variables
 dotenv.config();
@@ -14,7 +16,8 @@ const app = express();
 // Basic middleware only
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -34,14 +37,31 @@ if (process.env.MONGO_URI) {
     });
 }
 
-// File uploads directory setup
-import fs from 'fs';
-import path from 'path';
-const uploadsDir = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-app.use('/uploads', express.static(uploadsDir));
+// Note: File uploads directory setup removed for Vercel serverless compatibility
+// Vercel serverless functions cannot create directories or write to filesystem
+
+// Configure multer for memory storage (no disk writes)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow images, documents, and common file types
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf', 'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain', 'text/csv'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('File type not allowed'), false);
+    }
+  }
+});
 
 // Root route
 app.get('/', (req, res) => {
@@ -109,10 +129,116 @@ app.get('/api/route-status', (req, res) => {
       auth: 'available',
       sensors: 'available',
       chat: 'available',
-      gemini: 'available'
+      gemini: 'available',
+      uploads: 'available'
     },
-    totalRoutes: 4,
+    totalRoutes: 5,
     status: 'loaded'
+  });
+});
+
+// File upload routes
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        error: 'No file provided',
+        message: 'Please select a file to upload'
+      });
+    }
+
+    // Upload to Vercel Blob
+    const { url } = await put(req.file.originalname, req.file.buffer, {
+      access: 'public',
+      addRandomSuffix: true, // Prevents filename conflicts
+    });
+
+    res.json({
+      success: true,
+      message: 'File uploaded successfully',
+      file: {
+        originalName: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype,
+        url: url
+      },
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({
+      error: 'Upload failed',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Multiple file upload
+app.post('/api/upload-multiple', upload.array('files', 5), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        error: 'No files provided',
+        message: 'Please select files to upload'
+      });
+    }
+
+    const uploadResults = [];
+
+    for (const file of req.files) {
+      try {
+        const { url } = await put(file.originalname, file.buffer, {
+          access: 'public',
+          addRandomSuffix: true,
+        });
+
+        uploadResults.push({
+          originalName: file.originalname,
+          size: file.size,
+          mimetype: file.mimetype,
+          url: url,
+          status: 'success'
+        });
+      } catch (error) {
+        uploadResults.push({
+          originalName: file.originalname,
+          status: 'failed',
+          error: error.message
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Files processed',
+      results: uploadResults,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Multiple upload error:', error);
+    res.status(500).json({
+      error: 'Upload failed',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Get upload info
+app.get('/api/upload-info', (req, res) => {
+  res.json({
+    message: 'Upload service information',
+    maxFileSize: '10MB',
+    allowedTypes: [
+      'Images: JPEG, PNG, GIF, WebP',
+      'Documents: PDF, DOC, DOCX',
+      'Text: TXT, CSV'
+    ],
+    maxFiles: 5,
+    timestamp: new Date().toISOString()
   });
 });
 
