@@ -5,8 +5,8 @@ const config = {
     socketUrl: 'http://localhost:5000'
   },
   production: {
-    apiUrl: 'https://agro-nex-backend-beta.vercel.app',
-    socketUrl: 'https://agro-nex-backend-beta.vercel.app'
+    apiUrl: 'https://agronex-production.up.railway.app',
+    socketUrl: 'https://agronex-production.up.railway.app'
   }
 };
 
