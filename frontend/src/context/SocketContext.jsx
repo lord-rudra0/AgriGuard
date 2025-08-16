@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
-import { useAuth } from './AuthContext';
+import { useAuth } from './AuthContext.jsx';
+import { SOCKET_URL } from '../config/api.js';
 
 const SocketContext = createContext();
 
@@ -32,11 +33,11 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      // Prefer same-origin connection so Vite proxy (/socket.io) can route to backend
+      // Use configured socket URL for production, undefined for development (Vite proxy)
       const token = localStorage.getItem('token');
       const newSocket = io(
-        // Use same-origin in dev (proxied by Vite). Optionally override with VITE_SOCKET_URL.
-        import.meta.env.VITE_SOCKET_URL || undefined,
+        // Use configured socket URL in production, undefined in dev (proxied by Vite)
+        SOCKET_URL || undefined,
         {
           path: '/socket.io',
           transports: ['websocket'],

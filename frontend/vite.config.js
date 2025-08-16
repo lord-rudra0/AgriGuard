@@ -36,6 +36,9 @@ export default defineConfig(({ mode }) => ({
     }
   },
   define: {
-    'process.env.NODE_ENV': JSON.stringify(mode)
+    'process.env.NODE_ENV': JSON.stringify(mode),
+    // Production environment variables
+    'process.env.VITE_API_URL': mode === 'production' ? JSON.stringify('https://agro-nex-backend.vercel.app') : undefined,
+    'process.env.VITE_SOCKET_URL': mode === 'production' ? JSON.stringify('https://agro-nex-backend.vercel.app') : undefined
   }
 }))
