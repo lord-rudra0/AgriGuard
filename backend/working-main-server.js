@@ -117,87 +117,106 @@ const importRoute = async (routePath, routeName) => {
 
 // Import and register routes one by one with error handling
 const loadRoutes = async () => {
+  const loadedRoutes = {};
+  
   try {
     // Import routes one by one
     const authRoutes = await importRoute('./src/routes/auth.js', 'Auth');
     if (authRoutes) {
       app.use('/api/auth', authRoutes);
+      loadedRoutes.auth = true;
       console.log('✅ Auth routes registered');
     }
 
     const sensorRoutes = await importRoute('./src/routes/sensors.js', 'Sensors');
     if (sensorRoutes) {
       app.use('/api/sensors', sensorRoutes);
+      loadedRoutes.sensors = true;
       console.log('✅ Sensors routes registered');
     }
 
     const chatRoutes = await importRoute('./src/routes/chat.js', 'Chat');
     if (chatRoutes) {
       app.use('/api/chat', chatRoutes);
+      loadedRoutes.chat = true;
       console.log('✅ Chat routes registered');
     }
 
     const chatSystemRoutes = await importRoute('./src/routes/chatSystem.js', 'ChatSystem');
     if (chatSystemRoutes) {
       app.use('/api/chat-system', chatSystemRoutes);
+      loadedRoutes.chatSystem = true;
       console.log('✅ ChatSystem routes registered');
     }
 
     const settingsRoutes = await importRoute('./src/routes/settings.js', 'Settings');
     if (settingsRoutes) {
       app.use('/api/settings', settingsRoutes);
+      loadedRoutes.settings = true;
       console.log('✅ Settings routes registered');
     }
 
     const alertsRoutes = await importRoute('./src/routes/alerts.js', 'Alerts');
     if (alertsRoutes) {
       app.use('/api/alerts', alertsRoutes);
+      loadedRoutes.alerts = true;
       console.log('✅ Alerts routes registered');
     }
 
     const geminiRoutes = await importRoute('./src/routes/gemini.js', 'Gemini');
     if (geminiRoutes) {
       app.use('/api/gemini', geminiRoutes);
+      loadedRoutes.gemini = true;
       console.log('✅ Gemini routes registered');
     }
 
     const analyticsViewsRoutes = await importRoute('./src/routes/analyticsViews.js', 'AnalyticsViews');
     if (analyticsViewsRoutes) {
       app.use('/api/analytics-views', analyticsViewsRoutes);
+      loadedRoutes.analyticsViews = true;
       console.log('✅ AnalyticsViews routes registered');
     }
 
     const reportsRoutes = await importRoute('./src/routes/reports.js', 'Reports');
     if (reportsRoutes) {
       app.use('/api/reports', reportsRoutes);
+      loadedRoutes.reports = true;
       console.log('✅ Reports routes registered');
     }
 
     const recipesRoutes = await importRoute('./src/routes/recipes.js', 'Recipes');
     if (recipesRoutes) {
       app.use('/api/recipes', recipesRoutes);
+      loadedRoutes.recipes = true;
       console.log('✅ Recipes routes registered');
     }
 
     const phasesRoutes = await importRoute('./src/routes/phases.js', 'Phases');
     if (phasesRoutes) {
       app.use('/api/phases', phasesRoutes);
+      loadedRoutes.phases = true;
       console.log('✅ Phases routes registered');
     }
 
     const thresholdsRoutes = await importRoute('./src/routes/thresholds.js', 'Thresholds');
     if (thresholdsRoutes) {
       app.use('/api/thresholds', thresholdsRoutes);
+      loadedRoutes.thresholds = true;
       console.log('✅ Thresholds routes registered');
     }
 
     const calendarRoutes = await importRoute('./src/routes/calendar.js', 'Calendar');
     if (calendarRoutes) {
       app.use('/api/calendar', calendarRoutes);
+      loadedRoutes.calendar = true;
       console.log('✅ Calendar routes registered');
     }
 
     console.log('✅ All routes loaded and registered');
+    
+    // Store loaded routes for status endpoint
+    app.locals.loadedRoutes = loadedRoutes;
+    
   } catch (error) {
     console.error('❌ Error during route loading:', error);
   }
@@ -210,24 +229,20 @@ setTimeout(() => {
 
 // Add route status endpoint
 app.get('/api/route-status', (req, res) => {
+  const loadedRoutes = app.locals.loadedRoutes || {};
   res.json({ 
     message: 'Route loading status',
     timestamp: new Date().toISOString(),
-    routes: {
-      auth: !!authRoutes,
-      sensors: !!sensorRoutes,
-      chat: !!chatRoutes,
-      chatSystem: !!chatSystemRoutes,
-      settings: !!settingsRoutes,
-      alerts: !!alertsRoutes,
-      gemini: !!geminiRoutes,
-      analyticsViews: !!analyticsViewsRoutes,
-      reports: !!reportsRoutes,
-      recipes: !!recipesRoutes,
-      phases: !!phasesRoutes,
-      thresholds: !!thresholdsRoutes,
-      calendar: !!calendarRoutes
-    }
+    routes: loadedRoutes
+  });
+});
+
+// Add a simple test endpoint to verify routes are working
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: 'API test endpoint working!',
+    timestamp: new Date().toISOString(),
+    routesLoaded: !!app.locals.loadedRoutes
   });
 });
 
@@ -239,6 +254,16 @@ app.get('/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     vercel: !!process.env.VERCEL,
     mongoConnected: mongoose ? mongoose.connection.readyState === 1 : false
+  });
+});
+
+// Add a simple test route that's always available
+app.get('/api/simple-test', (req, res) => {
+  res.json({
+    message: 'Simple test route is working!',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    vercel: !!process.env.VERCEL
   });
 });
 
