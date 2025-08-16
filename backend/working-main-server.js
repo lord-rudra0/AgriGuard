@@ -120,6 +120,8 @@ const loadRoutes = async () => {
   const loadedRoutes = {};
   
   try {
+    console.log('🚀 Starting route loading...');
+    
     // Import routes one by one
     const authRoutes = await importRoute('./src/routes/auth.js', 'Auth');
     if (authRoutes) {
@@ -213,6 +215,7 @@ const loadRoutes = async () => {
     }
 
     console.log('✅ All routes loaded and registered');
+    console.log('📊 Routes loaded:', Object.keys(loadedRoutes));
     
     // Store loaded routes for status endpoint
     app.locals.loadedRoutes = loadedRoutes;
@@ -222,10 +225,8 @@ const loadRoutes = async () => {
   }
 };
 
-// Load routes after a short delay to ensure middleware is ready
-setTimeout(() => {
-  loadRoutes();
-}, 1000);
+// Load routes immediately instead of using setTimeout
+loadRoutes();
 
 // Add route status endpoint
 app.get('/api/route-status', (req, res) => {
@@ -233,8 +234,31 @@ app.get('/api/route-status', (req, res) => {
   res.json({ 
     message: 'Route loading status',
     timestamp: new Date().toISOString(),
-    routes: loadedRoutes
+    routes: loadedRoutes,
+    totalRoutes: Object.keys(loadedRoutes).length,
+    status: Object.keys(loadedRoutes).length > 0 ? 'loaded' : 'loading'
   });
+});
+
+// Add a route loading progress endpoint
+app.get('/api/route-progress', (req, res) => {
+  const loadedRoutes = app.locals.loadedRoutes || {};
+  const expectedRoutes = [
+    'auth', 'sensors', 'chat', 'chatSystem', 'settings', 
+    'alerts', 'gemini', 'analyticsViews', 'reports', 
+    'recipes', 'phases', 'thresholds', 'calendar'
+  ];
+  
+  const progress = {
+    loaded: Object.keys(loadedRoutes).length,
+    total: expectedRoutes.length,
+    percentage: Math.round((Object.keys(loadedRoutes).length / expectedRoutes.length) * 100),
+    loadedRoutes: Object.keys(loadedRoutes),
+    missingRoutes: expectedRoutes.filter(route => !loadedRoutes[route]),
+    timestamp: new Date().toISOString()
+  };
+  
+  res.json(progress);
 });
 
 // Add a simple test endpoint to verify routes are working
