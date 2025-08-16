@@ -216,8 +216,29 @@ app.get('/env-info', (req, res) => {
 // Add error handling for route imports
 const importRoute = async (routePath, routeName) => {
   try {
-    const routeModule = await import(routePath);
-    console.log(`✅ ${routeName} routes imported successfully`);
+    // Try multiple path variations for Vercel compatibility
+    let routeModule;
+    const paths = [
+      routePath,
+      `./src${routePath.substring(1)}`,
+      routePath.replace('./routes/', './src/routes/'),
+      routePath.replace('./routes/', '/var/task/backend/src/routes/')
+    ];
+    
+    for (const path of paths) {
+      try {
+        routeModule = await import(path);
+        console.log(`✅ ${routeName} routes imported successfully from: ${path}`);
+        break;
+      } catch (pathError) {
+        console.log(`   Trying path: ${path} - ${pathError.code || 'failed'}`);
+      }
+    }
+    
+    if (!routeModule) {
+      throw new Error(`All import paths failed for ${routeName}`);
+    }
+    
     return routeModule.default;
   } catch (error) {
     console.error(`❌ Failed to import ${routeName} routes:`, error.message);
@@ -227,7 +248,7 @@ const importRoute = async (routePath, routeName) => {
   }
 };
 
-// Import routes with error handling
+// Import routes with error handling - using routes index for reliability
 let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes;
 
 // Import routes one by one with error handling - more robust approach
@@ -235,20 +256,46 @@ const loadRoutes = async () => {
   try {
     console.log('🚀 Starting route loading...');
     
-    // Import routes one by one
-    authRoutes = await importRoute('./routes/auth.js', 'Auth');
-    sensorRoutes = await importRoute('./routes/sensors.js', 'Sensors');
-    chatRoutes = await importRoute('./routes/chat.js', 'Chat');
-    chatSystemRoutes = await importRoute('./routes/chatSystem.js', 'ChatSystem');
-    settingsRoutes = await importRoute('./routes/settings.js', 'Settings');
-    alertsRoutes = await importRoute('./routes/alerts.js', 'Alerts');
-    geminiRoutes = await importRoute('./routes/gemini.js', 'Gemini');
-    analyticsViewsRoutes = await importRoute('./routes/analyticsViews.js', 'AnalyticsViews');
-    reportsRoutes = await importRoute('./routes/reports.js', 'Reports');
-    recipesRoutes = await importRoute('./routes/recipes.js', 'Recipes');
-    phasesRoutes = await importRoute('./routes/phases.js', 'Phases');
-    thresholdsRoutes = await importRoute('./routes/thresholds.js', 'Thresholds');
-    calendarRoutes = await importRoute('./routes/calendar.js', 'Calendar');
+    // Try to import from routes index first (most reliable)
+    try {
+      const routesIndex = await import('./routes/index.js');
+      console.log('✅ Routes index imported successfully');
+      
+      // Extract routes from index
+      authRoutes = routesIndex.authRoutes;
+      sensorRoutes = routesIndex.sensorRoutes;
+      chatRoutes = routesIndex.chatRoutes;
+      chatSystemRoutes = routesIndex.chatSystemRoutes;
+      settingsRoutes = routesIndex.settingsRoutes;
+      alertsRoutes = routesIndex.alertsRoutes;
+      geminiRoutes = routesIndex.geminiRoutes;
+      analyticsViewsRoutes = routesIndex.analyticsViewsRoutes;
+      reportsRoutes = routesIndex.reportsRoutes;
+      recipesRoutes = routesIndex.recipesRoutes;
+      phasesRoutes = routesIndex.phasesRoutes;
+      thresholdsRoutes = routesIndex.thresholdsRoutes;
+      calendarRoutes = routesIndex.calendarRoutes;
+      
+      console.log('✅ All routes loaded from index');
+    } catch (indexError) {
+      console.log('⚠️ Routes index failed, trying individual imports...');
+      console.log('   Index error:', indexError.message);
+      
+      // Fallback to individual imports
+      authRoutes = await importRoute('./routes/auth.js', 'Auth');
+      sensorRoutes = await importRoute('./routes/sensors.js', 'Sensors');
+      chatRoutes = await importRoute('./routes/chat.js', 'Chat');
+      chatSystemRoutes = await importRoute('./routes/chatSystem.js', 'ChatSystem');
+      settingsRoutes = await importRoute('./routes/settings.js', 'Settings');
+      alertsRoutes = await importRoute('./routes/alerts.js', 'Alerts');
+      geminiRoutes = await importRoute('./routes/gemini.js', 'Gemini');
+      analyticsViewsRoutes = await importRoute('./routes/analyticsViews.js', 'AnalyticsViews');
+      reportsRoutes = await importRoute('./routes/reports.js', 'Reports');
+      recipesRoutes = await importRoute('./routes/recipes.js', 'Recipes');
+      phasesRoutes = await importRoute('./routes/phases.js', 'Phases');
+      thresholdsRoutes = await importRoute('./routes/thresholds.js', 'Thresholds');
+      calendarRoutes = await importRoute('./routes/calendar.js', 'Calendar');
+    }
 
     // Use routes only if they imported successfully
     if (authRoutes) app.use('/api/auth', authRoutes);
