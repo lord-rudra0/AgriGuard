@@ -2,11 +2,11 @@
   "name": "agricultural-monitoring-backend",
   "version": "1.0.0",
   "description": "Agricultural monitoring backend with real-time features",
-  "main": "src/server.js",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "DEV_NO_DB=true DEV_OPEN_SOCKET=true NODE_ENV=development nodemon src/server.js"
+    "start": "node server.js",
+    "dev": "DEV_NO_DB=true DEV_OPEN_SOCKET=true NODE_ENV=development nodemon server.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.17.1",
