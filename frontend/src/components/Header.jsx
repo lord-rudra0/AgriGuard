@@ -40,6 +40,10 @@ const Header = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+  // Primary items to surface in the bottom navbar on small screens
+  const primaryMobile = ['Dashboard', 'Chat', 'Thresholds', 'Settings'];
+  const primaryNav = navigation.filter(n => primaryMobile.includes(n.name));
+  const secondaryNav = navigation.filter(n => !primaryMobile.includes(n.name));
 
   return (
     <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
@@ -214,11 +218,11 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile menu (shows only secondary items) */}
       {isMenuOpen && (
         <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
           <div className="px-2 pt-2 pb-3 space-y-1">
-            {navigation.map((item) => {
+            {secondaryNav.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -239,6 +243,29 @@ const Header = () => {
           </div>
         </div>
       )}
+
+      {/* Bottom navbar - always visible on small screens */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-2">
+          <ul className="grid grid-cols-4">
+            {primaryNav.map(item => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              return (
+                <li key={item.name} className="flex">
+                  <Link
+                    to={item.href}
+                    className={`flex-1 flex flex-col items-center justify-center h-14 text-xs ${active ? 'text-primary-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300'} hover:bg-gray-50 dark:hover:bg-gray-700/60`}
+                  >
+                    <Icon className={`w-5 h-5 mb-0.5 ${active ? 'text-primary-600 dark:text-indigo-400' : ''}`} />
+                    <span>{item.name}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </nav>
     </header>
   );
 };
