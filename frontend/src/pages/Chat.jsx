@@ -462,9 +462,9 @@ const Chat = () => {
   }, [isResizing]);
 
   return (
-    <div className="h-[100dvh] min-h-screen flex overflow-x-hidden transition-colors duration-300 bg-white dark:bg-gray-900">
+    <div className="min-h-screen md:h-[100dvh] md:overflow-hidden flex overflow-x-hidden transition-colors duration-300 bg-white dark:bg-gray-900 pb-16 md:pb-0">
       {/* Sidebar: Chat list */}
-      <aside className={`${selectedChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 overflow-x-hidden bg-white dark:bg-gray-900 border-r border-white/50 dark:border-gray-800/60 flex-col shadow-sm`}
+      <aside className={`${selectedChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 overflow-x-hidden bg-white dark:bg-gray-900 border-r border-white/50 dark:border-gray-800/60 flex-col shadow-sm md:sticky md:top-0 md:h-[calc(100dvh-64px)] md:self-start md:overflow-y-auto`}
       >
         <div className="p-4 flex items-center justify-between sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-white/50 dark:border-gray-800/60">
           <span className="font-bold text-lg text-gray-900 dark:text-white">Chats</span>
@@ -588,10 +588,10 @@ const Chat = () => {
       {/* Main chat window */}
       <main className={`${selectedChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col overflow-x-hidden`}
       >
-        <div className="flex-1 flex flex-col md:p-6 max-h-screen">
+        <div className="flex-1 flex flex-col md:p-6 md:h-[calc(100dvh-64px)] md:overflow-hidden md:grid md:grid-rows-[auto,1fr,auto]">
           {selectedChat ? (
             <>
-              <div className={`flex items-center justify-between transition-all duration-500 ease-out transform sticky top-0 z-20 px-4 py-3 md:px-0 md:py-0 bg-white dark:bg-gray-900 border-b border-white/50 dark:border-gray-800/60 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
+              <div className={`flex items-center justify-between transition-all duration-500 ease-out transform sticky top-0 md:static md:top-auto z-20 px-4 py-3 md:px-0 md:py-0 bg-white dark:bg-gray-900 border-b border-white/50 dark:border-gray-800/60 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
                 <div className="font-bold text-lg md:text-xl mb-0.5 text-gray-900 dark:text-white flex items-center gap-2">
                   {/* Back button for mobile */}
                   <button
@@ -675,8 +675,7 @@ const Chat = () => {
                 <div className="h-2" />
               )}
               <div 
-                className={`chat-messages-container flex-1 overflow-y-auto overflow-x-hidden md:rounded-2xl md:shadow-sm md:p-4 p-3 mb-2 md:mb-4 bg-white dark:bg-gray-900 border border-white/50 dark:border-gray-800/60 ring-1 ring-black/5 dark:ring-white/10 hover:shadow-md transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
-                style={{ height: isMdUp ? `${chatHeight}px` : undefined }}
+                className={`chat-messages-container flex-1 overflow-y-auto overflow-x-hidden md:row-[2] md:rounded-2xl md:shadow-sm md:p-4 p-3 pb-24 md:pb-0 mb-2 md:mb-0 bg-white dark:bg-gray-900 border border-white/50 dark:border-gray-800/60 ring-1 ring-black/5 dark:ring-white/10 hover:shadow-md transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
                 ref={messagesContainerRef}
               >
                 {loadingMessages ? (
@@ -749,8 +748,8 @@ const Chat = () => {
                 </div>
               </div>
 
-              {/* Composer (sticky on mobile) */}
-              <div className={`transition-all duration-500 ease-out transform sticky bottom-0 md:static md:bottom-auto bg-white dark:bg-gray-900 md:bg-transparent px-3 md:px-0 pt-2 md:pt-0 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} style={{ transitionDelay: '120ms' }}>
+              {/* Composer: sticky above bottom navbar on mobile; fixed row on desktop */}
+              <div className={`transition-all duration-500 ease-out transform sticky bottom-16 md:static md:row-[3] bg-white dark:bg-gray-900 md:bg-transparent px-3 md:px-0 pt-2 md:py-2 md:pt-2 z-40 shadow-[0_-1px_0_0_rgba(0,0,0,0.05)] md:shadow-none ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} style={{ transitionDelay: '120ms' }}>
                 <Composer
                   value={input}
                   onChange={handleInputChange}
