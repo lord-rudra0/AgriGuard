@@ -571,7 +571,7 @@ const Chat = () => {
               const online = otherId ? !!presence.get(String(otherId)) : false;
               return (
                 <ChatListItem
-                  key={chat._id}
+                  key={`${chat._id}-${idx}`}
                   chat={chat}
                   active={selectedChat?._id === chat._id}
                   currentUser={user}
@@ -701,7 +701,7 @@ const Chat = () => {
                       } catch (e) {}
                       return (
                         <li
-                          key={msgId}
+                          key={`${msgId}-${idx}`}
                           className={`group cursor-pointer transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
                           style={{ transitionDelay: `${Math.min(idx, 12) * 35}ms` }}
                           onClick={() => setActiveMessageId(prev => prev === msgId ? null : msgId)}

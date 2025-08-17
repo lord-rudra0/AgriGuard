@@ -26,11 +26,12 @@ const ChatBot = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post('/api/gemini/chat', { messages: newMessages }, {
+      // Use existing backend AI route, sending only the latest user message
+      const res = await axios.post('/api/chat/ai', { message: trimmed }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      const botText = res.data?.text || 'Sorry, I could not generate a response.';
+      const botText = res.data?.message || res.data?.reply || res.data?.text || 'Sorry, I could not generate a response.';
       setMessages(prev => [...prev, { role: 'model', content: botText }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: 'model', content: 'Error contacting assistant. Please try again.' }]);
@@ -49,7 +50,7 @@ const ChatBot = () => {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 select-none">
+    <div className="fixed right-5 z-50 select-none bottom-24 md:bottom-5">
       {/* Toggle button */}
       {!open && (
         <button
