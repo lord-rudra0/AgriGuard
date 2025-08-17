@@ -23,6 +23,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isBellOpen, setIsBellOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -45,6 +46,11 @@ const Header = () => {
   const primaryNav = navigation.filter(n => primaryMobile.includes(n.name));
   const secondaryNav = navigation.filter(n => !primaryMobile.includes(n.name));
 
+  // Desktop: show core items, move the rest into a compact "More" menu to reduce clutter
+  const primaryDesktop = ['Dashboard', 'Chat', 'Analytics', 'Settings'];
+  const desktopPrimary = navigation.filter(n => primaryDesktop.includes(n.name));
+  const desktopOverflow = navigation.filter(n => !primaryDesktop.includes(n.name));
+
   return (
     <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,17 +68,17 @@ const Header = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navigation.map((item) => {
+          <nav className="hidden md:flex items-center gap-1.5">
+            {desktopPrimary.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center gap-2 h-10 px-3 rounded-md text-sm transition-colors ring-1 ${
+                  className={`flex items-center gap-2 h-10 px-3 rounded-md text-sm transition-colors ${
                     isActive(item.href)
-                      ? 'text-white bg-gradient-to-r from-primary-600 to-indigo-600 shadow-sm ring-black/5'
-                      : 'text-gray-700 dark:text-gray-300 bg-transparent ring-transparent hover:bg-indigo-50/70 dark:hover:bg-gray-800/60 hover:ring-black/5 dark:hover:ring-white/10'
+                      ? 'text-white bg-gradient-to-r from-primary-600 to-indigo-600 shadow-sm'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -80,6 +86,42 @@ const Header = () => {
                 </Link>
               );
             })}
+            {desktopOverflow.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setIsMoreOpen(v => !v)}
+                  className="flex items-center gap-2 h-10 px-3 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"
+                  aria-haspopup="menu"
+                  aria-expanded={isMoreOpen}
+                  aria-label="Open navigation menu"
+                >
+                  <span>Workspace</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                {isMoreOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 mt-2 w-40 rounded-md overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg z-50"
+                  >
+                    {desktopOverflow.map(item => {
+                      const Icon = item.icon;
+                      const active = isActive(item.href);
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          className={`flex items-center gap-2 px-3 py-2 text-sm ${active ? 'text-primary-600 dark:text-indigo-400 bg-gray-50 dark:bg-gray-700/40' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/60'}`}
+                          onClick={() => setIsMoreOpen(false)}
+                        >
+                          <Icon className="w-4 h-4" />
+                          <span>{item.name}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </nav>
 
           {/* Right side controls */}
