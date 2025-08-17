@@ -1,7 +1,7 @@
 import React from 'react';
 import Avatar from './Avatar';
 
-const ChatListItem = ({ chat, active, onClick, currentUser, online = false }) => {
+const ChatListItem = ({ chat, active, onClick, currentUser, online = false, className = '' }) => {
   const names = (chat.members || [])
     .map(m => (typeof m === 'object' ? (m.name || m.username) : null))
     .filter(n => !!n && n !== currentUser?.name && n !== currentUser?.username);
@@ -13,7 +13,7 @@ const ChatListItem = ({ chat, active, onClick, currentUser, online = false }) =>
   return (
     <li
       onClick={onClick}
-      className={`group flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg transition-all duration-200 hover:bg-primary-50/80 dark:hover:bg-primary-900/10 ${active ? 'bg-primary-100/70 dark:bg-primary-900/20' : ''}`}
+      className={`group flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg transition-all duration-200 hover:bg-primary-50/80 dark:hover:bg-primary-900/10 ${active ? 'bg-primary-100/70 dark:bg-primary-900/20' : ''} ${className}`}
     >
   <Avatar name={title} size={40} online={online} />
       <div className="min-w-0 flex-1">

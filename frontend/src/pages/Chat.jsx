@@ -32,12 +32,33 @@ const Chat = () => {
   const phoneRegex = /^\+?[0-9]{7,15}$/;
   // Members modal state
   const [showMembers, setShowMembers] = useState(false);
+  // Header actions dropdown
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const headerMenuRef = useRef(null);
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (!headerMenuRef.current) return;
+      if (!headerMenuRef.current.contains(e.target)) setHeaderMenuOpen(false);
+    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, []);
 
   // Mounted state to trigger entrance animations
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 20);
     return () => clearTimeout(t);
+  }, []);
+
+  // Track if viewport is md and up to enable desktop behaviors
+  const [isMdUp, setIsMdUp] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const update = () => setIsMdUp(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
   }, []);
 
   // Fetch chat list
@@ -441,10 +462,11 @@ const Chat = () => {
   }, [isResizing]);
 
   return (
-    <div className="min-h-screen flex transition-colors duration-300 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+    <div className="h-[100dvh] min-h-screen flex overflow-x-hidden transition-colors duration-300 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
       {/* Sidebar: Chat list */}
-      <aside className="w-80 backdrop-blur bg-white/70 dark:bg-gray-900/40 border-r border-white/50 dark:border-gray-800/60 flex flex-col shadow-sm">
-        <div className="p-4 flex items-center justify-between">
+      <aside className={`${selectedChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 overflow-x-hidden backdrop-blur bg-white/70 dark:bg-gray-900/40 border-r border-white/50 dark:border-gray-800/60 flex-col shadow-sm`}
+      >
+        <div className="p-4 flex items-center justify-between sticky top-0 z-10 bg-white/80 dark:bg-gray-900/50 backdrop-blur border-b border-white/50 dark:border-gray-800/60">
           <span className="font-bold text-lg text-gray-900 dark:text-white">Chats</span>
           <button
             className="ml-2 px-3 py-1.5 rounded-xl text-xs bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99] transition-all duration-200"
@@ -542,37 +564,43 @@ const Chat = () => {
         {loadingChats ? (
           <div className="p-4 text-gray-500">Loading…</div>
         ) : (
-          <ul className="flex-1 overflow-y-auto p-2 space-y-1">
+          <ul className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-1">
             {chats.map((chat, idx) => {
               const otherIds = (chat.members || []).map(m => m._id).filter(id => id !== user?._id);
               const otherId = chat.type === 'one-to-one' ? otherIds[0] : null;
               const online = otherId ? !!presence.get(String(otherId)) : false;
               return (
-                <li
+                <ChatListItem
                   key={chat._id}
+                  chat={chat}
+                  active={selectedChat?._id === chat._id}
+                  currentUser={user}
+                  online={online}
+                  onClick={() => setSelectedChat(chat)}
                   className={`transition-all duration-500 ease-out transform rounded-xl hover:-translate-y-0.5 hover:bg-primary-50/60 dark:hover:bg-primary-900/20 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
                   style={{ transitionDelay: `${Math.min(idx, 12) * 40}ms` }}
-                >
-                  <ChatListItem
-                    chat={chat}
-                    active={selectedChat?._id === chat._id}
-                    currentUser={user}
-                    online={online}
-                    onClick={() => setSelectedChat(chat)}
-                  />
-                </li>
+                />
               );
             })}
           </ul>
         )}
       </aside>
       {/* Main chat window */}
-      <main className="flex-1 flex flex-col">
-        <div className="flex-1 flex flex-col p-6 max-h-screen">
+      <main className={`${selectedChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col overflow-x-hidden`}
+      >
+        <div className="flex-1 flex flex-col md:p-6 max-h-screen">
           {selectedChat ? (
             <>
-              <div className={`flex items-center justify-between transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
-                <div className="font-bold text-xl mb-0.5 text-gray-900 dark:text-white flex items-center gap-2">
+              <div className={`flex items-center justify-between transition-all duration-500 ease-out transform sticky top-0 z-20 px-4 py-3 md:px-0 md:py-0 bg-white/80 dark:bg-gray-900/50 backdrop-blur border-b border-white/50 dark:border-gray-800/60 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
+                <div className="font-bold text-lg md:text-xl mb-0.5 text-gray-900 dark:text-white flex items-center gap-2">
+                  {/* Back button for mobile */}
+                  <button
+                    className="md:hidden mr-1 inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700/60 active:scale-95"
+                    onClick={() => setSelectedChat(null)}
+                    aria-label="Back to chats"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  </button>
                   {(() => {
                     const title = selectedChat.name || selectedChat.members?.map(m => (typeof m === 'object' ? (m.name || m.username) : null)).filter(n => !!n && n !== user?.name && n !== user?.username).join(', ') || 'Chat';
                     // Online badge for one-to-one chats
@@ -599,29 +627,46 @@ const Chat = () => {
                     return <span className="bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">{title}</span>;
                   })()}
                 </div>
-                <div className="flex items-center gap-2">
-                  {selectedChat.type === 'group' && (
-                    <>
-                      <button
-                        onClick={() => setShowMembers(true)}
-                        className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 rounded-md bg-white/70 dark:bg-gray-900/40 ring-1 ring-black/5 dark:ring-white/10 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200"
-                      >
-                        Members
-                      </button>
-                      <button
-                        onClick={() => setShowAddMember(true)}
-                        className="px-3 py-1.5 text-sm rounded-md bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99] transition-all duration-200"
-                      >
-                        Add member
-                      </button>
-                    </>
-                  )}
+                <div className="relative" ref={headerMenuRef}>
                   <button
-                    onClick={deleteChat}
-                    className="px-3 py-1.5 text-sm rounded-md text-white bg-gradient-to-r from-rose-600 to-red-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99] transition-all duration-200"
+                    onClick={() => setHeaderMenuOpen((v) => !v)}
+                    className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/70 dark:bg-gray-900/40 border border-white/60 dark:border-gray-700/60 text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/60 active:scale-95"
+                    title="More"
+                    aria-haspopup="menu"
+                    aria-expanded={headerMenuOpen}
                   >
-                    Delete chat
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M12 6.75a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM12 13.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM12 20.25a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" /></svg>
                   </button>
+                  {headerMenuOpen && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 mt-2 w-44 rounded-xl overflow-hidden border border-white/60 dark:border-gray-700/60 shadow-lg backdrop-blur bg-white/90 dark:bg-gray-900/80 z-30"
+                    >
+                      {selectedChat.type === 'group' && (
+                        <>
+                          <button
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-gray-800/60 text-gray-800 dark:text-gray-100"
+                            onClick={() => { setShowMembers(true); setHeaderMenuOpen(false); }}
+                          >
+                            Members
+                          </button>
+                          <button
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-gray-800/60 text-gray-800 dark:text-gray-100"
+                            onClick={() => { setShowAddMember(true); setHeaderMenuOpen(false); }}
+                          >
+                            Add member
+                          </button>
+                          <div className="h-px bg-gray-200 dark:bg-gray-700" />
+                        </>
+                      )}
+                      <button
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-rose-50 dark:hover:bg-red-900/20 text-rose-600 dark:text-rose-400"
+                        onClick={() => { deleteChat(); setHeaderMenuOpen(false); }}
+                      >
+                        Delete chat
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               {isTyping ? (
@@ -630,8 +675,8 @@ const Chat = () => {
                 <div className="h-2" />
               )}
               <div 
-                className={`chat-messages-container overflow-y-auto rounded-2xl shadow-sm p-4 mb-4 backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60 ring-1 ring-black/5 dark:ring-white/10 hover:shadow-md transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
-                style={{ height: `${chatHeight}px` }}
+                className={`chat-messages-container flex-1 overflow-y-auto overflow-x-hidden md:rounded-2xl md:shadow-sm md:p-4 p-3 mb-2 md:mb-4 backdrop-blur bg-white/70 dark:bg-gray-900/40 border border-white/50 dark:border-gray-800/60 ring-1 ring-black/5 dark:ring-white/10 hover:shadow-md transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+                style={{ height: isMdUp ? `${chatHeight}px` : undefined }}
                 ref={messagesContainerRef}
               >
                 {loadingMessages ? (
@@ -690,10 +735,10 @@ const Chat = () => {
                   </ul>
                 )}
               </div>
-              
-              {/* Resize Handle */}
+
+              {/* Resize Handle (desktop only) */}
               <div 
-                className={`w-full h-2 bg-transparent hover:bg-blue-500/20 cursor-ns-resize transition-all duration-500 ease-out transform relative group mb-2 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
+                className={`hidden md:block w-full h-2 bg-transparent hover:bg-blue-500/20 cursor-ns-resize transition-all duration-500 ease-out transform relative group mb-2 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
                 onMouseDown={handleMouseDown}
               >
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center">
@@ -703,8 +748,9 @@ const Chat = () => {
                   {isResizing ? 'Resizing...' : 'Drag to resize'}
                 </div>
               </div>
-              
-              <div className={`transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} style={{ transitionDelay: '120ms' }}>
+
+              {/* Composer (sticky on mobile) */}
+              <div className={`transition-all duration-500 ease-out transform sticky bottom-0 md:static md:bottom-auto bg-white/80 dark:bg-gray-900/50 backdrop-blur md:bg-transparent md:backdrop-blur-0 px-3 md:px-0 pt-2 md:pt-0 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} style={{ transitionDelay: '120ms' }}>
                 <Composer
                   value={input}
                   onChange={handleInputChange}
@@ -716,12 +762,13 @@ const Chat = () => {
                   onRemoveAttachment={removeAttachment}
                   uploading={sending}
                   onRemoveAskAI={() => setAskAIActive(false)}
-                  disabled={!socket || sending}
                 />
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">Select a chat to start messaging</div>
+            <div className="hidden md:flex flex-1 items-center justify-center text-gray-500 dark:text-gray-400">
+              Select a chat to start messaging
+            </div>
           )}
         </div>
       </main>
