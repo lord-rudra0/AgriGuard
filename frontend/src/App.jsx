@@ -92,8 +92,8 @@ const AppLayout = ({ children }) => {
       <main className={`flex-1 ${isChat ? 'overflow-hidden' : ''}`}>
         {children}
       </main>
-      {/* Floating ChatBot only for authenticated users */}
-      {user && <ChatBot />}
+      {/* Floating ChatBot only for authenticated users and not on Chat page */}
+      {user && !isChat && <ChatBot />}
       {user ? (location.pathname === '/chat' ? null : <Footer />) : <PublicFooter />}
     </div>
   );

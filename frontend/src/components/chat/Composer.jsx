@@ -73,16 +73,24 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
       />
       <button
         type="submit"
-        className="px-4 py-2 rounded-2xl bg-primary-600 text-white font-medium hover:bg-primary-700 transition-all duration-200 active:scale-95 shadow inline-flex items-center min-w-[92px] justify-center"
+        aria-label="Send message"
+        className="rounded-2xl bg-primary-600 text-white font-medium hover:bg-primary-700 transition-all duration-200 active:scale-95 shadow inline-flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2"
         disabled={uploading || disabled || (!value.trim() && !attachedMedia)}
       >
         {uploading ? (
           <span className="inline-flex items-center">
-            <span className="w-4 h-4 mr-2 border-2 border-white/60 border-t-transparent rounded-full animate-spin"></span>
-            Sending...
+            <span className="w-4 h-4 md:mr-2 border-2 border-white/60 border-t-transparent rounded-full animate-spin"></span>
+            <span className="hidden md:inline">Sending...</span>
           </span>
         ) : (
-          'Send'
+          <>
+            {/* Icon on small screens, text on md+ */}
+            <svg className="w-5 h-5 md:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            <span className="hidden md:inline">Send</span>
+          </>
         )}
       </button>
     </form>
