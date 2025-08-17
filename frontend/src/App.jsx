@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { Shield, Sun, Moon } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -54,6 +54,9 @@ const PublicRoute = ({ children }) => {
 const AppLayout = ({ children }) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
+
+  const isChat = location.pathname.startsWith('/chat');
 
   const PublicNav = () => (
     <header className="container mx-auto px-4 py-6 flex items-center justify-between">
@@ -84,14 +87,14 @@ const AppLayout = ({ children }) => {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div className={`min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300 ${isChat ? 'h-screen overflow-hidden' : ''}`}>
       {user ? <Header /> : <PublicNav />}
-      <main className="flex-1">
+      <main className={`flex-1 ${isChat ? 'overflow-hidden' : ''}`}>
         {children}
       </main>
       {/* Floating ChatBot only for authenticated users */}
       {user && <ChatBot />}
-      {user ? <Footer /> : <PublicFooter />}
+      {user ? (location.pathname === '/chat' ? null : <Footer />) : <PublicFooter />}
     </div>
   );
 };

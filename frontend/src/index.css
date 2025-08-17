@@ -103,4 +103,13 @@
   .animate-fade-up {
     animation: fadeInUp 220ms ease-out both;
   }
+
+  /* Hide scrollbar utility (only where applied) */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
 }
