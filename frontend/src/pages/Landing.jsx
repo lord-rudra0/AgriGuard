@@ -39,7 +39,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Nav rendered by AppLayout for public routes */}
 
       {/* Hero */}
@@ -75,8 +75,8 @@ export default function Landing() {
           </div>
         </div>
         <div className={`relative transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}>
-          <div className="absolute inset-0 -z-10 bg-primary-600/20 blur-3xl rounded-full animate-pulse" />
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-900/60 backdrop-blur transform transition-transform duration-500 hover:scale-[1.02]">
+          {/* Removed blurred pulsating background */}
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 transform transition-transform duration-500 hover:scale-[1.02]">
             <div className="rounded-xl bg-gradient-to-br from-primary-600/25 to-emerald-500/25 flex items-center justify-center text-primary-700 dark:text-primary-300 h-56 sm:h-64 md:h-72">
               <div className="text-center">
                 <div className="text-5xl">🌾🤖</div>
@@ -106,7 +106,7 @@ export default function Landing() {
             <div
               key={f.title}
               style={{ transitionDelay: `${i * 120}ms` }}
-              className={`rounded-2xl p-6 border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/60 backdrop-blur transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:shadow-lg hover:-translate-y-0.5`}
+              className={`rounded-2xl p-6 border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:shadow-lg hover:-translate-y-0.5`}
             >
               <div className="w-10 h-10 rounded-lg bg-primary-600/10 text-primary-700 dark:text-primary-300 flex items-center justify-center">
                 {f.icon}

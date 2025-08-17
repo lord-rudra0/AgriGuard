@@ -42,7 +42,7 @@ const Header = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 supports-[backdrop-filter]:dark:bg-gray-800/70 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
+    <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -80,7 +80,7 @@ const Header = () => {
 
           {/* Right side controls */}
           <div className="flex items-center">
-            <div className="flex items-center gap-1 bg-white/70 dark:bg-gray-900/40 ring-1 ring-black/5 dark:ring-white/10 rounded-md p-1">
+            <div className="flex items-center gap-1 bg-white dark:bg-gray-900 ring-1 ring-black/5 dark:ring-white/10 rounded-md p-1">
             {/* Notifications bell */}
             {user && (
               <div className="relative">
@@ -216,7 +216,7 @@ const Header = () => {
 
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white/95 dark:bg-gray-800/95 backdrop-blur border-t border-gray-200 dark:border-gray-700">
+        <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
           <div className="px-2 pt-2 pb-3 space-y-1">
             {navigation.map((item) => {
               const Icon = item.icon;

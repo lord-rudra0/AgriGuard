@@ -26,21 +26,21 @@ const Footer = () => {
             <div className="flex space-x-3">
               <a 
                 href="#" 
-                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white/70 dark:bg-gray-900/40 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
+                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
                 aria-label="Twitter"
               >
                 <Twitter className="w-5 h-5" />
               </a>
               <a 
                 href="#" 
-                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white/70 dark:bg-gray-900/40 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
+                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
                 aria-label="LinkedIn"
               >
                 <Linkedin className="w-5 h-5" />
               </a>
               <a 
                 href="#" 
-                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white/70 dark:bg-gray-900/40 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
+                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
                 aria-label="GitHub"
               >
                 <Github className="w-5 h-5" />

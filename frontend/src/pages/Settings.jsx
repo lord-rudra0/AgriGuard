@@ -603,7 +603,7 @@ const Settings = () => {
                     className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                       activeTab === tab.id
                         ? 'text-white bg-gradient-to-r from-primary-600 to-indigo-600 shadow-sm ring-1 ring-black/5'
-                        : 'text-gray-700 dark:text-gray-300 bg-white/70 dark:bg-gray-900/40 ring-1 ring-black/5 dark:ring-white/10 hover:bg-indigo-50 dark:hover:bg-gray-800/40'
+                        : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 ring-1 ring-black/5 dark:ring-white/10 hover:bg-indigo-50 dark:hover:bg-gray-800/40'
                     }`}
                   >
                     <Icon className="w-5 h-5 mr-3" />
