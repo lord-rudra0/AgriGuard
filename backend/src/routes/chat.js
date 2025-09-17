@@ -93,7 +93,7 @@ router.post('/ai', authenticateToken, async (req, res) => {
       context: context || null
     });
   } catch (error) {
-    console.error('AI chat error:', error?.response?.data || error?.message || error);
+    logError(error, 'AI chat');
     const msg = (error?.response?.data?.error) || error?.message || 'Unknown error';
     if (/api key|unauthorized|permission/i.test(msg)) {
       return res.status(500).json({ 
@@ -152,7 +152,7 @@ router.post('/analyze-data', authenticateToken, async (req, res) => {
       timeframe
     });
   } catch (error) {
-    console.error('Data analysis error:', error?.response?.data || error?.message || error);
+    logError(error, 'AI analysis');
     return res.status(500).json({ message: 'AI analysis failed. Please try again.' });
   }
 });
@@ -202,9 +202,28 @@ router.post('/farming-tips', authenticateToken, async (req, res) => {
       growthStage: growthStage || 'All stages'
     });
   } catch (error) {
-    console.error('Farming tips error:', error?.response?.data || error?.message || error);
+    logError(error, 'AI tips');
     return res.status(500).json({ message: 'AI tips generation failed. Please try again.' });
   }
 });
+
+// Diagnostic ping to verify route is mounted and AI config presence
+router.get('/ping', (req, res) => {
+  res.json({
+    ok: true,
+    aiConfigured: !!process.env.GEMINI_API_KEY,
+    message: 'Chat routes OK'
+  });
+});
+
+// Improve error logging: print stack traces to help debugging in development
+function logError(err, label = 'chat') {
+  try {
+    console.error(`[${label}]`, err?.response?.data || err?.message || err);
+    if (err && err.stack) console.error(err.stack);
+  } catch (e) {
+    console.error('[chat] error while logging error', e);
+  }
+}
 
 export default router;

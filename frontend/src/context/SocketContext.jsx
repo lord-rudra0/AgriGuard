@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext.jsx';
 import { SOCKET_URL } from '../config/api.js';
@@ -19,6 +19,9 @@ export { SocketContext };
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [connectionState, setConnectionState] = useState('disconnected'); // 'connecting' | 'connected' | 'disconnected'
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const messageBufferRef = useRef([]); // buffer outgoing emits while disconnected
   const [presence, setPresence] = useState(new Map()); // userId -> online
   const [sensorData, setSensorData] = useState({
     temperature: 0,
@@ -32,81 +35,123 @@ export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
-      // Use configured socket URL for production, undefined for development (Vite proxy)
-      const token = localStorage.getItem('token');
-      const newSocket = io(
-        // Use configured socket URL in production, undefined in dev (proxied by Vite)
-        SOCKET_URL || undefined,
-        {
-          path: '/socket.io',
-          transports: ['websocket'],
-          withCredentials: true,
-          // Only send auth payload if we actually have a token
-          ...(token ? { auth: { token } } : {}),
-        }
-      );
+    let mounted = true;
 
-      newSocket.on('connect', () => {
-        setConnected(true);
-        console.log('Connected to server');
-      });
-
-      newSocket.on('sensorData', (data) => {
-        setSensorData({
-          ...data,
-          lastUpdated: new Date()
-        });
-      });
-
-      newSocket.on('newAlert', (alert) => {
-        setAlerts(prev => [alert, ...prev]);
-      });
-
-      // Weather alerts pushed from backend
-      newSocket.on('weatherAlert', (alert) => {
-        setAlerts(prev => [alert, ...prev]);
-      });
-
-      // Phase changes (Strain Recipes + Scheduler)
-      newSocket.on('phaseChanged', ({ roomId, action, phase }) => {
-        const title = action === 'completed'
-          ? `Room ${roomId}: Recipe completed`
-          : `Room ${roomId}: Phase ${action}`;
-        const message = action === 'completed'
-          ? 'All phases finished.'
-          : `${phase?.active?.name ?? phase?.name ?? 'Phase'} started`;
-        const alert = { type: 'phase', title, message, severity: 'info', timestamp: new Date() };
-        setAlerts(prev => [alert, ...prev]);
-      });
-
-      newSocket.on('disconnect', () => {
-        setConnected(false);
-        console.log('Disconnected from server');
-      });
-
-      // Presence updates
-      newSocket.on('presence:update', ({ userId, online }) => {
-        setPresence(prev => {
-          const next = new Map(prev);
-          next.set(String(userId), online);
-          return next;
-        });
-      });
-
-      setSocket(newSocket);
-
-      return () => {
-        newSocket.close();
+    if (!user) {
+      // if user logged out, ensure socket is closed
+      if (socket) {
+        socket.close();
         setSocket(null);
         setConnected(false);
-      };
+        setConnectionState('disconnected');
+      }
+      return;
     }
+
+    // create socket with reconnection options and custom backoff
+    const token = localStorage.getItem('token');
+    setConnectionState('connecting');
+    const newSocket = io(
+      SOCKET_URL || undefined,
+      {
+        path: '/socket.io',
+        transports: ['websocket'],
+        withCredentials: true,
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 30000,
+        randomizationFactor: 0.5,
+        // Only send auth payload if we actually have a token
+        ...(token ? { auth: { token } } : {}),
+      }
+    );
+
+    // attach listeners
+    newSocket.on('connect', () => {
+      if (!mounted) return;
+      setConnected(true);
+      setConnectionState('connected');
+      setReconnectAttempts(0);
+      console.log('Socket connected');
+
+      // flush buffered messages
+      while (messageBufferRef.current.length > 0) {
+        const { event, data } = messageBufferRef.current.shift();
+        newSocket.emit(event, data);
+      }
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.warn('Socket connect_error', err?.message ?? err);
+      setConnectionState('connecting');
+    });
+
+    newSocket.on('reconnect_attempt', (attempt) => {
+      setReconnectAttempts(attempt);
+      setConnectionState('connecting');
+    });
+
+    newSocket.on('reconnect_failed', () => {
+      setConnectionState('disconnected');
+      console.error('Socket reconnection failed');
+    });
+
+    newSocket.on('disconnect', (reason) => {
+      setConnected(false);
+      setConnectionState('disconnected');
+      console.log('Socket disconnected:', reason);
+    });
+
+    // App-specific events
+    newSocket.on('sensorData', (data) => {
+      setSensorData(prev => ({ ...data, lastUpdated: new Date() }));
+    });
+
+    newSocket.on('newAlert', (alert) => {
+      setAlerts(prev => [alert, ...prev]);
+    });
+
+    newSocket.on('weatherAlert', (alert) => {
+      setAlerts(prev => [alert, ...prev]);
+    });
+
+    newSocket.on('phaseChanged', ({ roomId, action, phase }) => {
+      const title = action === 'completed'
+        ? `Room ${roomId}: Recipe completed`
+        : `Room ${roomId}: Phase ${action}`;
+      const message = action === 'completed'
+        ? 'All phases finished.'
+        : `${phase?.active?.name ?? phase?.name ?? 'Phase'} started`;
+      const alert = { type: 'phase', title, message, severity: 'info', timestamp: new Date() };
+      setAlerts(prev => [alert, ...prev]);
+    });
+
+    newSocket.on('presence:update', ({ userId, online }) => {
+      setPresence(prev => {
+        const next = new Map(prev);
+        next.set(String(userId), online);
+        return next;
+      });
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      mounted = false;
+      newSocket.close();
+      setSocket(null);
+      setConnected(false);
+      setConnectionState('disconnected');
+    };
   }, [user]);
 
   const emitMessage = (event, data) => {
-    if (socket) {
+    if (socket && socket.connected) {
       socket.emit(event, data);
+    } else {
+      // buffer message to send once reconnected
+      messageBufferRef.current.push({ event, data });
     }
   };
 
@@ -119,6 +164,8 @@ export const SocketProvider = ({ children }) => {
     <SocketContext.Provider value={{ 
       socket,
       connected,
+      connectionState,
+      reconnectAttempts,
       presence,
       sensorData, 
       alerts,
