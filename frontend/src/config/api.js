@@ -5,8 +5,8 @@ const config = {
     socketUrl: 'http://localhost:5000'
   },
   production: {
-    apiUrl: 'https://agronex-production.up.railway.app',
-    socketUrl: 'https://agronex-production.up.railway.app'
+    apiUrl: 'https://agriguard-vgpa.onrender.com/',
+    socketUrl: 'https://agriguard-vgpa.onrender.com/'
   }
 };
 
