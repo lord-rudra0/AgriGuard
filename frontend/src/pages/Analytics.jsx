@@ -117,6 +117,8 @@ export default function Analytics() {
 						<h1 className="text-3xl font-extrabold bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">Analytics</h1>
 						<p className="mt-2 text-indigo-700/90 dark:text-indigo-300">Trends, ranges, and activity over time</p>
 					</div>
+					{/* workspace controls */}
+					<div className="w-full sm:w-auto mt-3 sm:mt-0" />
 						<div className="flex flex-wrap gap-2 items-center justify-end">
 						{TIMEFRAMES.map((tf) => (
 							<button
