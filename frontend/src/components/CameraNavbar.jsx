@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useScan } from '../context/ScanContext';
 
 const CameraNavbar = ({ onCapture }) => {
   const videoRef = useRef(null);
@@ -7,6 +9,9 @@ const CameraNavbar = ({ onCapture }) => {
   const [capturedUrl, setCapturedUrl] = useState(null);
   const [placeholderShown, setPlaceholderShown] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  // shared scan context
+  const { setScannedFile } = useScan();
 
   useEffect(() => {
     return () => {
@@ -63,6 +68,12 @@ const CameraNavbar = ({ onCapture }) => {
       setCapturedUrl(url);
       // Pass File object to parent for upload handling
       if (typeof onCapture === 'function') onCapture(file);
+      try {
+        // Save captured file into shared ScanContext so other pages (like /scan) can auto-pick it
+        setScannedFile(file);
+        // Navigate user to scan page for review and ML placeholders
+        navigate('/scan');
+      } catch (e) {}
       // show placeholder ML info
       setPlaceholderShown(true);
       // stop camera immediately after capture

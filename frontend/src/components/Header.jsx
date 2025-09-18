@@ -48,7 +48,7 @@ const Header = () => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Chat', href: '/chat', icon: MessageSquare },
-    { name: 'Scan', href: '#', icon: Camera },
+  { name: 'Scan', href: '/scan', icon: Camera },
     { name: 'Calendar', href: '/calendar', icon: CalendarIcon },
     { name: 'Thresholds', href: '/thresholds', icon: BarChart3 },
     { name: 'Recipes', href: '/recipes', icon: BarChart3 },
@@ -88,24 +88,7 @@ const Header = () => {
           <nav className="hidden md:flex items-center gap-1.5">
             {desktopPrimary.map((item) => {
               const Icon = item.icon;
-              // Special-case Scan to open modal instead of navigating
-              if (item.name === 'Scan') {
-                return (
-                  <button
-                    key="scan"
-                    onClick={() => setIsScanOpen(true)}
-                    className={`flex items-center gap-2 h-10 px-3 rounded-md text-sm transition-colors ${
-                      isActive(item.href)
-                        ? 'text-white bg-gradient-to-r from-primary-600 to-indigo-600 shadow-sm'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60'
-                    }`}
-                    title="Scan mushroom"
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              }
+              // Render items normally; Scan navigates to /scan
               return (
                 <Link
                   key={item.name}

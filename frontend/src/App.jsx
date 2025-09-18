@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
+import { ScanProvider } from './context/ScanContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ChatBot from './components/ChatBot';
@@ -11,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
 import Chat from './pages/Chat';
 import Analytics from './pages/Analytics';
+import Scan from './pages/Scan';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
@@ -104,8 +106,9 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <Router>
-          <SocketProvider>
-            <AppLayout>
+          <ScanProvider>
+            <SocketProvider>
+              <AppLayout>
               <Routes>
                 {/* Public routes */}
                 <Route
@@ -158,6 +161,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Analytics />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/scan"
+                  element={
+                    <ProtectedRoute>
+                      <Scan />
                     </ProtectedRoute>
                   }
                 />
@@ -234,8 +245,9 @@ function App() {
                   }
                 />
               </Routes>
-            </AppLayout>
-          </SocketProvider>
+              </AppLayout>
+            </SocketProvider>
+          </ScanProvider>
         </Router>
 
         {/* Toast notifications */}
