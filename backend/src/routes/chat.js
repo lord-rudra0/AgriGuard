@@ -17,8 +17,10 @@ try {
   console.error('[chat] Failed to initialize GoogleGenerativeAI:', error.message);
 }
 
-// Helper to lazily get the model, allowing env to be read at request time
-function getModel(modelName = 'gemini-1.5-flash') {
+// Helper to lazily get the model, reading env at request time.
+// IMPORTANT: we do NOT try an unsupported hardcoded default model name because
+// that can result in 404s from the provider. Require `GEMINI_MODEL` to be set.
+function getModel() {
   try {
     if (!genAI) {
       const apiKey = process.env.GEMINI_API_KEY;
@@ -26,9 +28,16 @@ function getModel(modelName = 'gemini-1.5-flash') {
         genAI = new GoogleGenerativeAI(apiKey);
       }
     }
+
+    const modelName = process.env.GEMINI_MODEL;
+    if (!modelName) {
+      console.warn('[chat] GEMINI_MODEL not set; AI model not selected. Set GEMINI_MODEL to a supported model name.');
+      return null;
+    }
+
     return genAI ? genAI.getGenerativeModel({ model: modelName }) : null;
   } catch (e) {
-    console.error('[chat] getModel error:', e.message);
+    console.error('[chat] getModel error:', e?.message || e);
     return null;
   }
 }
@@ -41,8 +50,10 @@ router.post('/ai', authenticateToken, async (req, res) => {
     const model = getModel();
     if (!model) {
       return res.status(503).json({
-        message: 'AI service not configured. Please set GEMINI_API_KEY and restart the backend.',
-        hasGeminiKey: !!process.env.GEMINI_API_KEY
+        message: 'AI service not fully configured. Please set GEMINI_API_KEY and GEMINI_MODEL environment variables and restart the backend.',
+        hasGeminiKey: !!process.env.GEMINI_API_KEY,
+        hasModel: !!process.env.GEMINI_MODEL,
+        required: ['GEMINI_API_KEY', 'GEMINI_MODEL']
       });
     }
 
@@ -213,6 +224,16 @@ router.get('/ping', (req, res) => {
     ok: true,
     aiConfigured: !!process.env.GEMINI_API_KEY,
     message: 'Chat routes OK'
+  });
+});
+
+// Diagnostic configuration endpoint - safe (no external calls)
+router.get('/config', (req, res) => {
+  res.json({
+    ok: true,
+    hasGeminiKey: !!process.env.GEMINI_API_KEY,
+    geminiModel: process.env.GEMINI_MODEL || null,
+    hasModel: !!process.env.GEMINI_MODEL
   });
 });
 

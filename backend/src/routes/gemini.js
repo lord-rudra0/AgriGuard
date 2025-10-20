@@ -45,7 +45,12 @@ router.post('/chat', authenticateToken, async (req, res) => {
     // Keep prompt concise
     const prompt = userContent.slice(0, 4000);
 
-    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-1.5-flash' });
+    const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+    if (!modelName) {
+      return res.status(503).json({ success: false, message: 'GEMINI_MODEL not configured. Please set GEMINI_MODEL to a supported model name.' });
+    }
+
+    const model = genAI.getGenerativeModel({ model: modelName });
     const result = await model.generateContent(prompt);
 
     const text = result?.response?.text?.() || result?.response?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
