@@ -1,0 +1,1 @@
+This folder will hold the ONNX models. The actual ONNX file is large and not copied here to keep repo size small. Place `mushroom_classifier.onnx` here (copied from the attached mushroom_classification_model_ResNet50 folder) when running locally.
