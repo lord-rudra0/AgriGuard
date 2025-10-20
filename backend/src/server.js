@@ -10,6 +10,8 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { authenticateSocket } from './middleware/auth.js';
 import { authRoutes as authRoutesStatic } from './routes/index.js';
+import multer from 'multer';
+import { predictImage } from './onnx/mushroomModel.js';
 
 // Load environment variables
 dotenv.config();
@@ -252,6 +254,20 @@ app.get('/env-info', (req, res) => {
     hasGeminiKey: !!process.env.GEMINI_API_KEY,
     frontendUrl: process.env.FRONTEND_URL || 'not set'
   });
+});
+
+// Image upload handler for predictions
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+app.post('/api/predict/mushroom', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer) return res.status(400).json({ error: 'No image uploaded' });
+    const result = await predictImage(req.file.buffer);
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error('Prediction error', e);
+    res.status(500).json({ error: e.message || String(e) });
+  }
 });
 
 // Serve ONNX model for frontend convenience in development

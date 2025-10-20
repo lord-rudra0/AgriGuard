@@ -10,6 +10,8 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { authenticateSocket } from './src/middleware/auth.js';
 import { authRoutes as authRoutesStatic, chatRoutes as chatRoutesStatic, chatSystemRoutes as chatSystemRoutesStatic } from './src/routes/index.js';
+import multer from 'multer';
+import { predictImage } from './src/onnx/mushroomModel.js';
 
 // Load environment variables
 dotenv.config();
@@ -296,6 +298,19 @@ app.get('/api/model/mushroom', (req, res) => {
   } catch (e) {
     console.error('Error serving model', e);
     res.status(500).json({ error: 'Failed to serve model' });
+  }
+});
+
+// Prediction endpoint: accept image uploads and return server-side prediction
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+app.post('/api/predict/mushroom', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer) return res.status(400).json({ error: 'No image uploaded' });
+    const result = await predictImage(req.file.buffer);
+    return res.json({ success: true, result });
+  } catch (e) {
+    console.error('Prediction error', e);
+    return res.status(500).json({ error: e.message || String(e) });
   }
 });
 

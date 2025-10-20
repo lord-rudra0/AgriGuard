@@ -11,6 +11,8 @@
   "dependencies": {
     "@google/generative-ai": "^0.17.1",
     "@vercel/blob": "^1.1.1",
+    "onnxruntime-node": "^1.16.1",
+    "sharp": "^0.32.5",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

@@ -1,24 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import CameraNavbar from '../components/CameraNavbar';
 import { useScan } from '../context/ScanContext';
-
-// ONNX runtime will be loaded dynamically from CDN when the page mounts
-const ORT_CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.3/dist/ort.min.js';
-// Use the static public model file so frontend can load directly without backend
-const MODEL_URL = '/models/mushroom_classifier.onnx';
-
-// Model preprocessing parameters (copied/adapted from the example)
-const MEAN = [0.485, 0.456, 0.406];
-const STD = [0.229, 0.224, 0.225];
-const INPUT_SIZE = 224;
+import axios from 'axios';
 
 export default function Scan() {
   const { scannedFile, clearScan } = useScan();
   const [preview, setPreview] = useState(null);
   const [file, setFile] = useState(null);
-  const [ortReady, setOrtReady] = useState(false);
-  const [session, setSession] = useState(null);
-  const [loadingModel, setLoadingModel] = useState(false);
+  
   const [predicting, setPredicting] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const inputRef = useRef(null);
@@ -41,6 +30,28 @@ export default function Scan() {
     if (preview) URL.revokeObjectURL(preview);
     setFile(f);
     setPreview(URL.createObjectURL(f));
+    // Send image to backend for prediction
+    (async () => {
+      try {
+        setPredicting(true);
+        setAnalysis(null);
+        const form = new FormData();
+        form.append('image', f, f.name || 'upload.jpg');
+        const resp = await axios.post('/api/predict/mushroom', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+        if (resp.data && resp.data.success) {
+          setAnalysis(resp.data.result);
+        } else if (resp.data && resp.data.error) {
+          setAnalysis({ error: resp.data.error });
+        } else {
+          setAnalysis({ error: 'Unexpected response from server' });
+        }
+      } catch (e) {
+        console.error('Upload/prediction failed', e);
+        setAnalysis({ error: e?.response?.data?.error || e.message || String(e) });
+      } finally {
+        setPredicting(false);
+      }
+    })();
   };
 
   const clear = () => {
@@ -53,59 +64,7 @@ export default function Scan() {
   };
 
   // Load ONNX runtime and model once on mount
-  useEffect(() => {
-    let isMounted = true;
-    const loadOrtAndModel = async () => {
-      try {
-        setLoadingModel(true);
-        // Dynamically load CDN script if ort is not present
-        if (typeof window.ort === 'undefined') {
-          await new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = ORT_CDN;
-            s.onload = resolve;
-            s.onerror = reject;
-            document.head.appendChild(s);
-          });
-        }
-
-        // Create session
-        const sess = await window.ort.InferenceSession.create(MODEL_URL);
-        if (!isMounted) return;
-        setSession(sess);
-        setOrtReady(true);
-      } catch (e) {
-        console.error('Failed to load ORT or model', e);
-        setOrtReady(false);
-      } finally {
-        setLoadingModel(false);
-      }
-    };
-
-    loadOrtAndModel();
-    return () => { isMounted = false; };
-  }, []);
-
-  // When file changes, run prediction automatically
-  useEffect(() => {
-    if (!file) return;
-    if (!session) return; // wait until model loaded
-    let cancelled = false;
-    (async () => {
-      setPredicting(true);
-      try {
-        const res = await predictImage(file, session);
-        if (!cancelled) setAnalysis(res);
-      } catch (e) {
-        console.error('Prediction failed', e);
-        if (!cancelled) setAnalysis({ error: e.message || String(e) });
-      } finally {
-        if (!cancelled) setPredicting(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [file, session]);
+  // Remove client-side model loading: backend will handle inference
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
@@ -147,8 +106,6 @@ export default function Scan() {
                 <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded">
                   <h3 className="font-semibold">Analysis</h3>
                   <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                    {loadingModel && <div>Loading ML model...</div>}
-                    {!loadingModel && !ortReady && <div>ML model not available</div>}
                     {predicting && <div>Running prediction...</div>}
                     {!predicting && analysis && analysis.error && (
                       <div className="text-red-600">Error: {analysis.error}</div>
@@ -180,73 +137,4 @@ export default function Scan() {
   );
 }
 
-// Preprocess image for model input
-async function preprocessImage(imageFile) {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-
-    img.onload = () => {
-      canvas.width = INPUT_SIZE;
-      canvas.height = INPUT_SIZE;
-      ctx.drawImage(img, 0, 0, INPUT_SIZE, INPUT_SIZE);
-      const imageData = ctx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
-      const data = imageData.data;
-
-      const tensorData = new Float32Array(1 * 3 * INPUT_SIZE * INPUT_SIZE);
-      for (let i = 0; i < INPUT_SIZE * INPUT_SIZE; i++) {
-        const pixelIndex = i * 4;
-        tensorData[i] = (data[pixelIndex] / 255.0 - MEAN[0]) / STD[0];
-        tensorData[INPUT_SIZE * INPUT_SIZE + i] = (data[pixelIndex + 1] / 255.0 - MEAN[1]) / STD[1];
-        tensorData[2 * INPUT_SIZE * INPUT_SIZE + i] = (data[pixelIndex + 2] / 255.0 - MEAN[2]) / STD[2];
-      }
-
-      resolve(tensorData);
-    };
-
-    img.onerror = () => reject(new Error('Failed to load image for preprocessing'));
-
-    const blob = new Blob([imageFile], { type: imageFile.type });
-    img.src = URL.createObjectURL(blob);
-  });
-}
-
-// Run prediction using an ONNX session
-async function predictImage(imageFile, session) {
-  // Preprocess
-  const tensorData = await preprocessImage(imageFile);
-  const inputTensor = new window.ort.Tensor('float32', tensorData, [1, 3, INPUT_SIZE, INPUT_SIZE]);
-
-  // Attempt common input name variants
-  const possibleNames = ['input.1', 'input', 'images', 'input0'];
-  let feeds = {};
-  const modelInputs = session.inputNames || (session._metadata && session._metadata.inputNames) || [];
-
-  // prefer matching name from model if available
-  let chosenName = possibleNames.find(n => session.inputNames?.includes(n)) || possibleNames[0];
-  // fallback to first model input
-  if (!chosenName && session.inputNames && session.inputNames.length) chosenName = session.inputNames[0];
-
-  feeds[chosenName] = inputTensor;
-  const results = await session.run(feeds);
-
-  const out = results[Object.keys(results)[0]];
-  if (!out) throw new Error('Model returned no output');
-
-  const predictions = Array.from(out.data);
-  // softmax
-  const max = Math.max(...predictions);
-  const exps = predictions.map(p => Math.exp(p - max));
-  const sum = exps.reduce((a, b) => a + b, 0);
-  const probs = exps.map(e => e / sum);
-
-  // assume binary: [edible, poisonous] as in example
-  const edibleProb = probs[0] ?? 0;
-  const poisonousProb = probs[1] ?? 0;
-  const isEdible = edibleProb > poisonousProb;
-  const confidence = Math.max(edibleProb, poisonousProb);
-  const classLabel = isEdible ? 'edible' : 'poisonous';
-
-  return { isEdible, confidence, classLabel, raw: probs };
-}
+// Server-side prediction is used; client-side ONNX code removed
