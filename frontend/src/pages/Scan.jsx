@@ -4,7 +4,8 @@ import { useScan } from '../context/ScanContext';
 
 // ONNX runtime will be loaded dynamically from CDN when the page mounts
 const ORT_CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.3/dist/ort.min.js';
-const MODEL_URL = '/models/mushroom_classifier.onnx'; // put the ONNX file into frontend/public/models/
+// Use the static public model file so frontend can load directly without backend
+const MODEL_URL = '/models/mushroom_classifier.onnx';
 
 // Model preprocessing parameters (copied/adapted from the example)
 const MEAN = [0.485, 0.456, 0.406];

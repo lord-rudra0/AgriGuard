@@ -1,4 +1,6 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
@@ -259,6 +261,42 @@ app.get('/env-info', (req, res) => {
     hasGeminiKey: !!process.env.GEMINI_API_KEY,
     frontendUrl: process.env.FRONTEND_URL || 'not set'
   });
+});
+
+// Serve ONNX model for frontend convenience in development
+app.get('/api/model/mushroom', (req, res) => {
+  try {
+    const candidates = [
+      path.resolve(process.cwd(), 'mushroom_classification_model_ResNet50', 'mushroom_classifier.onnx'),
+      path.resolve(process.cwd(), '..', 'mushroom_classification_model_ResNet50', 'mushroom_classifier.onnx'),
+      path.resolve(process.cwd(), '..', '..', 'mushroom_classification_model_ResNet50', 'mushroom_classifier.onnx'),
+      path.resolve(process.cwd(), 'public', 'models', 'mushroom_classifier.onnx')
+    ];
+
+    let modelPath = null;
+    for (const p of candidates) {
+      if (fs.existsSync(p)) { modelPath = p; break; }
+    }
+
+    if (!modelPath) {
+      console.warn('ONNX model not found in any candidate path:', candidates);
+      return res.status(404).json({ error: 'Model not found on server' });
+    }
+
+    const stat = fs.statSync(modelPath);
+    console.log('Serving ONNX model from', modelPath, 'size', stat.size);
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Length': stat.size,
+      'Cache-Control': 'public, max-age=3600'
+    });
+    const stream = fs.createReadStream(modelPath);
+    stream.pipe(res);
+    stream.on('error', (err) => { console.error('Model stream error', err); res.end(); });
+  } catch (e) {
+    console.error('Error serving model', e);
+    res.status(500).json({ error: 'Failed to serve model' });
+  }
 });
 
 // DB ping endpoint for diagnostics
