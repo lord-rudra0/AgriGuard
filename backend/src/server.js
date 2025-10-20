@@ -644,6 +644,36 @@ setTimeout(() => {
   startCalendarReminderScheduler();
 }, 5000);
 
+// Start prune job to remove stale push subscriptions periodically
+import { pruneStaleSubscriptions } from './jobs/pruneSubscriptions.js';
+const PRUNE_INTERVAL_MS = 6 * 60 * 60 * 1000; // every 6 hours
+let pruneTimer = null;
+async function startPruneJob() {
+  if (pruneTimer) return;
+  if (!process.env.MONGO_URI) {
+    console.log('Prune job not started: MONGO_URI not configured');
+    return;
+  }
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    console.log('Prune job not started: VAPID keys not configured');
+    return;
+  }
+
+  pruneTimer = setInterval(async () => {
+    try {
+      await pruneStaleSubscriptions({ limit: 300 });
+    } catch (e) {
+      console.error('Prune job error', e);
+    }
+  }, PRUNE_INTERVAL_MS);
+
+  console.log('✅ Prune job scheduled (every 6 hours)');
+}
+
+setTimeout(() => {
+  startPruneJob();
+}, 10000);
+
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...');

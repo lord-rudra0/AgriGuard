@@ -27,6 +27,8 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [pushStatus, setPushStatus] = useState('unknown'); // 'subscribed' | 'not-subscribed' | 'blocked' | 'unknown'
+  const [showBlockedModal, setShowBlockedModal] = useState(false);
 
   // Profile settings state
   const [profileData, setProfileData] = useState({
@@ -85,14 +87,31 @@ const Settings = () => {
   useEffect(() => {
     const checkSubscription = async () => {
       try {
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+          setPushStatus('not-subscribed');
+          return;
+        }
+
+        if (Notification.permission === 'denied') {
+          setPushStatus('blocked');
+          setNotificationData(prev => ({ ...prev, pushNotifications: false }));
+          return;
+        }
+
         const reg = await navigator.serviceWorker.getRegistration();
-        if (!reg) return;
+        if (!reg) {
+          setPushStatus('not-subscribed');
+          setNotificationData(prev => ({ ...prev, pushNotifications: false }));
+          return;
+        }
+
         const sub = await reg.pushManager.getSubscription();
         if (sub) {
           setNotificationData(prev => ({ ...prev, pushNotifications: true }));
+          setPushStatus('subscribed');
         } else {
           setNotificationData(prev => ({ ...prev, pushNotifications: false }));
+          setPushStatus('not-subscribed');
         }
       } catch (err) {
         console.error('Failed to check push subscription', err);
@@ -457,6 +476,75 @@ const Settings = () => {
             />
           </div>
         </div>
+
+        <div className="mt-4">
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-gray-600 dark:text-gray-300">Push status: <span className="font-medium">{
+              pushStatus === 'unknown' ? 'Checking...' : pushStatus === 'subscribed' ? 'Subscribed' : pushStatus === 'blocked' ? 'Blocked' : 'Not subscribed'
+            }</span></p>
+            {pushStatus === 'blocked' && (
+              <button
+                onClick={() => setShowBlockedModal(true)}
+                className="text-sm px-2 py-1 bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-100 rounded-md ring-1 ring-black/5"
+              >
+                How to re-enable
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Blocked help modal */}
+        {showBlockedModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="max-w-lg w-full bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Re-enable Notifications</h3>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Your browser has blocked notifications for this site. Follow the steps below for common browsers to re-enable them.</p>
+
+              <div className="mt-4 space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                <div>
+                  <strong>Chrome (Desktop)</strong>
+                  <ol className="list-decimal list-inside ml-3">
+                    <li>Click the padlock icon next to the URL in the address bar.</li>
+                    <li>Find "Notifications" and set it to "Allow".</li>
+                    <li>Reload the page and try subscribing again.</li>
+                  </ol>
+                </div>
+
+                <div>
+                  <strong>Firefox (Desktop)</strong>
+                  <ol className="list-decimal list-inside ml-3">
+                    <li>Click the information icon (i) or padlock in the address bar.</li>
+                    <li>Under Permissions, find Notifications and choose "Allow".</li>
+                    <li>Reload the page.</li>
+                  </ol>
+                </div>
+
+                <div>
+                  <strong>Safari (macOS)</strong>
+                  <ol className="list-decimal list-inside ml-3">
+                    <li>Open Safari → Preferences → Websites → Notifications.</li>
+                    <li>Find this site and change to "Allow".</li>
+                    <li>Reload the page.</li>
+                  </ol>
+                </div>
+
+                <div>
+                  <strong>Mobile browsers</strong>
+                  <p className="mt-1">Push support varies on mobile. For Android Chrome, open site settings from the address bar and enable notifications. iOS Safari has limited Web Push support.</p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowBlockedModal(false)}
+                  className="px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white ring-1 ring-black/5 hover:brightness-95"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm ring-1 ring-black/5 dark:ring-white/10 transition-shadow hover:shadow-md">
@@ -563,7 +651,23 @@ const Settings = () => {
             </button>
 
             <button
-              onClick={handleNotificationUpdate}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  // If pushNotifications preference differs from actual subscription state, reconcile
+                  const reg = await navigator.serviceWorker.getRegistration();
+                  const sub = reg && (await reg.pushManager.getSubscription());
+                  if (notificationData.pushNotifications && !sub) {
+                    await handleSubscribePush();
+                  }
+                  if (!notificationData.pushNotifications && sub) {
+                    await handleUnsubscribePush();
+                  }
+                  await handleNotificationUpdate();
+                } finally {
+                  setLoading(false);
+                }
+              }}
               disabled={loading}
               className="flex items-center px-4 py-2 rounded-md text-white bg-gradient-to-r from-primary-600 to-indigo-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
             >
