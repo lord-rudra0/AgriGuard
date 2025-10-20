@@ -36,13 +36,24 @@ const corsOptions = {
     // Allow non-browser requests with no Origin
     if (!origin) return callback(null, true);
     const clean = origin.replace(/\/$/, '');
-    const ok = ALLOWED_ORIGINS.includes(clean);
-    return callback(ok ? null : new Error(`CORS: Origin not allowed: ${origin}`), ok);
+    // Allow if explicitly configured
+    if (ALLOWED_ORIGINS.includes(clean)) return callback(null, true);
+    // Fallback: allow Vercel-hosted frontends (convenient for preview deployments)
+    try {
+      const urlObj = new URL(clean);
+      if (urlObj.hostname && urlObj.hostname.endsWith('.vercel.app')) return callback(null, true);
+    } catch (e) {
+      // ignore URL parse errors
+    }
+    // Not allowed
+    return callback(new Error(`CORS: Origin not allowed: ${origin}`), false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
+
+console.log('\u2139\ufe0f ALLOWED_ORIGINS at startup:', ALLOWED_ORIGINS);
 
 // Create HTTP server and Socket.IO
 const server = createServer(app);
