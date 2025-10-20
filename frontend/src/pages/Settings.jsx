@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import axios from 'axios';
+import { registerServiceWorker, subscribeToPush, unsubscribeFromPush } from '../push/registerPush';
 import toast from 'react-hot-toast';
 import {
   User,
@@ -165,6 +166,61 @@ const Settings = () => {
       toast.error(error.response?.data?.message || 'Failed to update notifications');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Push subscription helpers
+  const handleSubscribePush = async () => {
+    try {
+      if (!('Notification' in window)) return toast.error('Notifications not supported in this browser');
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return toast.error('Permission denied for notifications');
+
+      // Get VAPID public key from server (optional endpoint)
+      const token = localStorage.getItem('token');
+      const configResp = await axios.get('/api/config/push', { headers: { Authorization: `Bearer ${token}` } });
+      const vapidKey = configResp.data?.vapidPublicKey;
+      if (!vapidKey) return toast.error('VAPID key not configured on server');
+
+      const sub = await subscribeToPush(vapidKey);
+      // Send subscription to server
+      await axios.post('/api/notifications/subscribe', { subscription: sub }, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Subscribed to push notifications');
+      setNotificationData(prev => ({ ...prev, pushNotifications: true }));
+    } catch (err) {
+      console.error('Subscribe error', err);
+      toast.error(err.message || 'Failed to subscribe');
+    }
+  };
+
+  const handleUnsubscribePush = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      // get current subscription
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = reg && (await reg.pushManager.getSubscription());
+      const endpoint = sub?.endpoint;
+      await unsubscribeFromPush();
+      if (endpoint) {
+        await axios.post('/api/notifications/unsubscribe', { endpoint }, { headers: { Authorization: `Bearer ${token}` } });
+      }
+      toast.success('Unsubscribed from push notifications');
+      setNotificationData(prev => ({ ...prev, pushNotifications: false }));
+    } catch (err) {
+      console.error('Unsubscribe error', err);
+      toast.error('Failed to unsubscribe');
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const resp = await axios.post('/api/notifications/send-test', {}, { headers: { Authorization: `Bearer ${token}` } });
+      if (resp.data.success) toast.success('Test notification sent (attempted)');
+      else toast.error(resp.data.message || 'Failed to send test');
+    } catch (err) {
+      console.error('Send test error', err);
+      toast.error(err.response?.data?.message || 'Failed to send test');
     }
   };
 
@@ -433,18 +489,44 @@ const Settings = () => {
         </div>
 
         <div className="mt-6 flex justify-end">
-          <button
-            onClick={handleNotificationUpdate}
-            disabled={loading}
-            className="flex items-center px-4 py-2 rounded-md text-white bg-gradient-to-r from-primary-600 to-indigo-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            Save Preferences
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleSubscribePush}
+              disabled={loading || notificationData.pushNotifications}
+              className="flex items-center px-4 py-2 rounded-md text-white bg-green-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+            >
+              Subscribe
+            </button>
+
+            <button
+              onClick={handleUnsubscribePush}
+              disabled={loading || !notificationData.pushNotifications}
+              className="flex items-center px-4 py-2 rounded-md text-white bg-red-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+            >
+              Unsubscribe
+            </button>
+
+            <button
+              onClick={handleSendTestPush}
+              disabled={loading}
+              className="flex items-center px-4 py-2 rounded-md text-white bg-indigo-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+            >
+              Send Test
+            </button>
+
+            <button
+              onClick={handleNotificationUpdate}
+              disabled={loading}
+              className="flex items-center px-4 py-2 rounded-md text-white bg-gradient-to-r from-primary-600 to-indigo-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Save Preferences
+            </button>
+          </div>
         </div>
       </div>
     </div>

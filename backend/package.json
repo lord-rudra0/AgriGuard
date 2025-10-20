@@ -21,9 +21,11 @@
     "mongoose": "^8.6.1",
     "multer": "^2.0.2",
     "nodemailer": "^6.9.14",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+    "web-push": "^3.5.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
   }
 }
+

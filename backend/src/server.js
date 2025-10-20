@@ -303,6 +303,7 @@ const importRoute = async (routePath, routeName) => {
 
 // Import routes with error handling - using routes index for reliability
 let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes;
+let notificationsRoutes;
 
 // Import routes one by one with error handling - more robust approach
 const loadRoutes = async () => {
@@ -328,6 +329,7 @@ const loadRoutes = async () => {
       phasesRoutes = routesIndex.phasesRoutes;
       thresholdsRoutes = routesIndex.thresholdsRoutes;
       calendarRoutes = routesIndex.calendarRoutes;
+  notificationsRoutes = routesIndex.notificationsRoutes;
       
       console.log('✅ All routes loaded from index');
     } catch (indexError) {
@@ -364,6 +366,13 @@ const loadRoutes = async () => {
     if (phasesRoutes) app.use('/api/phases', phasesRoutes);
     if (thresholdsRoutes) app.use('/api/thresholds', thresholdsRoutes);
     if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
+    if (notificationsRoutes) app.use('/api/notifications', notificationsRoutes);
+
+    // Expose VAPID public key to frontend (if configured)
+    app.get('/api/config/push', (req, res) => {
+      const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || null;
+      res.json({ vapidPublicKey });
+    });
 
     console.log('✅ All routes configured');
   } catch (error) {
