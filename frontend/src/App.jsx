@@ -91,6 +91,8 @@ const AppLayout = ({ children }) => {
   return (
     <div className={`min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300 ${isChat ? 'h-screen overflow-hidden' : ''}`}>
       {user ? <Header /> : <PublicNav />}
+      {/* Spacer to prevent content from being hidden under the sticky header */}
+      {user && <div className="h-16 md:h-16" aria-hidden="true" />}
       <main className={`flex-1 ${isChat ? 'overflow-hidden' : ''}`}>
         {children}
       </main>
