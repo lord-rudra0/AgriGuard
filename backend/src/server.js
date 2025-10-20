@@ -429,11 +429,8 @@ const loadRoutes = async () => {
     if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
     if (notificationsRoutes) app.use('/api/notifications', notificationsRoutes);
 
-    // Expose VAPID public key to frontend (if configured)
-    app.get('/api/config/push', (req, res) => {
-      const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || null;
-      res.json({ vapidPublicKey });
-    });
+    // Note: /api/config/push is mounted synchronously in the top-level server to
+    // avoid cold-start 404s; do not define it here to prevent duplicate handlers.
 
     console.log('✅ All routes configured');
   } catch (error) {

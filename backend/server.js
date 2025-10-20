@@ -9,7 +9,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { authenticateSocket } from './src/middleware/auth.js';
-import { authRoutes as authRoutesStatic, chatRoutes as chatRoutesStatic, chatSystemRoutes as chatSystemRoutesStatic } from './src/routes/index.js';
+import { authRoutes as authRoutesStatic, chatRoutes as chatRoutesStatic, chatSystemRoutes as chatSystemRoutesStatic, settingsRoutes as settingsRoutesStatic, notificationsRoutes as notificationsRoutesStatic } from './src/routes/index.js';
 import multer from 'multer';
 import { predictImage } from './src/onnx/mushroomModel.js';
 
@@ -208,6 +208,21 @@ if (chatSystemRoutesStatic) {
 if (chatRoutesStatic) {
   app.use('/api/chat', chatRoutesStatic);
 }
+// Settings routes: mount synchronously to avoid cold-start 404s for client
+if (settingsRoutesStatic) {
+  app.use('/api/settings', settingsRoutesStatic);
+}
+
+// Notifications (if exported) mount synchronously as well
+if (notificationsRoutesStatic) {
+  app.use('/api/notifications', notificationsRoutesStatic);
+}
+
+// Expose VAPID public key for push subscription (synchronous endpoint)
+app.get('/api/config/push', (req, res) => {
+  const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || null;
+  res.json({ vapidPublicKey });
+});
 
 // Note: Static file serving removed for Vercel serverless compatibility
 // Vercel serverless functions cannot create directories or serve static files

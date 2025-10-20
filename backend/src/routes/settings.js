@@ -23,7 +23,14 @@ const authenticateToken = (req, res, next) => {
     if (err) {
       return res.status(403).json({ success: false, message: 'Invalid or expired token' });
     }
-    req.user = user;
+
+    // Normalize user id from common fields to ensure downstream code can rely on req.user.userId
+    const normalizedId = user?.userId || user?.id || user?._id || user?.sub;
+    if (!normalizedId) {
+      return res.status(403).json({ success: false, message: 'Invalid token payload' });
+    }
+
+    req.user = { ...user, userId: normalizedId };
     next();
   });
 };
