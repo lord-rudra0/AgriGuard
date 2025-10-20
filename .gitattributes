@@ -3,3 +3,4 @@
 *.mp4 filter=lfs diff=lfs merge=lfs -text
 *.zip filter=lfs diff=lfs merge=lfs -text
 Mushroom[[:space:]]Disease[[:space:]]Dataset[[:space:]](Healthy,[[:space:]]Single[[:space:]]Infected)/** filter=lfs diff=lfs merge=lfs -text
+*.onnx filter=lfs diff=lfs merge=lfs -text
