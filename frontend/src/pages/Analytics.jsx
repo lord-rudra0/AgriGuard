@@ -1,4 +1,4 @@
-																																																														import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import ExportButtons from '../components/analytics/ExportButtons';
 import SavedViews from '../components/analytics/SavedViews';
@@ -35,7 +35,7 @@ export default function Analytics() {
 	const [error, setError] = useState('');
 	const [rows, setRows] = useState([]); // backend analytics array
 	const [inserting, setInserting] = useState(false);
-  const [activeTypes, setActiveTypes] = useState(null); // null => all
+	const [activeTypes, setActiveTypes] = useState(null); // null => all
 
 	useEffect(() => {
 		let active = true;
@@ -100,97 +100,96 @@ export default function Analytics() {
 		return { chartData: data, types: Array.from(typeSet), summary, counts: typeCounts };
 	}, [rows]);
 
-  // Ensure activeTypes defaults to all when data types change
-  useEffect(() => {
-    if (!types || types.length === 0) return;
-    if (activeTypes === null) return; // null means all
-    const filtered = activeTypes.filter((t) => types.includes(t));
-    if (filtered.length !== activeTypes.length) setActiveTypes(filtered);
-  }, [types]);
+	// Ensure activeTypes defaults to all when data types change
+	useEffect(() => {
+		if (!types || types.length === 0) return;
+		if (activeTypes === null) return; // null means all
+		const filtered = activeTypes.filter((t) => types.includes(t));
+		if (filtered.length !== activeTypes.length) setActiveTypes(filtered);
+	}, [types]);
 
 	return (
 		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-up">
 				{/* Header */}
-					<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div>
 						<h1 className="text-3xl font-extrabold bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">Analytics</h1>
 						<p className="mt-2 text-indigo-700/90 dark:text-indigo-300">Trends, ranges, and activity over time</p>
 					</div>
 					{/* workspace controls */}
 					<div className="w-full sm:w-auto mt-3 sm:mt-0" />
-						<div className="flex flex-wrap gap-2 items-center justify-end">
+					<div className="flex flex-wrap gap-2 items-center justify-end">
 						{TIMEFRAMES.map((tf) => (
 							<button
 								key={tf.key}
 								onClick={() => setTimeframe(tf.key)}
-								className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-all duration-200 will-change-transform ${
-									timeframe === tf.key
-										? 'bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-sm ring-2 ring-primary-400/50 hover:brightness-110'
-										: 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-700 dark:hover:text-indigo-300 ring-1 ring-black/5 dark:ring-white/10 hover:scale-105'
+								className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-all duration-200 will-change-transform ${timeframe === tf.key
+									? 'bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-sm ring-2 ring-primary-400/50 hover:brightness-110'
+									: 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-700 dark:hover:text-indigo-300 ring-1 ring-black/5 dark:ring-white/10 hover:scale-105'
 									}`}
 							>
 								{tf.label}
 							</button>
 						))}
-							<ExportButtons timeframe={timeframe} printSelector="#analytics-print-area" />
-							{/* Dev helper: insert mock data if empty */}
-							<button
-								onClick={async () => {
-									setInserting(true);
-									setError('');
-									try {
-										// Create ~50 readings across last 24h
-										const now = Date.now();
-										const make = (type, unit, base, noise, n = 50) =>
-											Array.from({ length: n }, (_, i) => ({
-												type,
-												value: Math.round((base + (Math.random() - 0.5) * noise) * 10) / 10,
-												unit,
-												location: 'Greenhouse 1',
-												metadata: { batteryLevel: 0.8, signalStrength: 0.9 },
-											}));
-										const readings = [
-											...make('temperature', '°C', 25, 4),
-											...make('humidity', '%', 60, 20),
-											...make('co2', 'ppm', 450, 200),
-											...make('light', 'lux', 500, 300),
-											...make('soilMoisture', '%', 55, 15),
-										];
-										await axios.post('/api/sensors/data', {
-											deviceId: 'dev-sim-1',
-											readings,
-										});
-										// Refresh
-										await new Promise((r) => setTimeout(r, 300));
-										const res = await axios.get('/api/sensors/analytics', { params: { timeframe } });
-										setRows(res.data?.analytics || []);
-									} catch (e) {
-										setError(e.response?.data?.message || 'Failed to insert mock data');
-									} finally {
-										setInserting(false);
-									}
-								}}
-								className="px-3 py-1.5 rounded-md text-sm font-medium bg-secondary-600 text-white hover:bg-secondary-700 disabled:opacity-60"
-								disabled={inserting}
-								title="Insert sample data for demo"
-							>
-								{inserting ? 'Adding…' : 'Add sample data'}
-							</button>
-						</div>
+						<ExportButtons timeframe={timeframe} printSelector="#analytics-print-area" />
+						{/* Dev helper: insert mock data if empty */}
+						<button
+							onClick={async () => {
+								setInserting(true);
+								setError('');
+								try {
+									// Create ~50 readings across last 24h
+									const now = Date.now();
+									const make = (type, unit, base, noise, n = 50) =>
+										Array.from({ length: n }, (_, i) => ({
+											type,
+											value: Math.round((base + (Math.random() - 0.5) * noise) * 10) / 10,
+											unit,
+											location: 'Greenhouse 1',
+											metadata: { batteryLevel: 0.8, signalStrength: 0.9 },
+										}));
+									const readings = [
+										...make('temperature', '°C', 25, 4),
+										...make('humidity', '%', 60, 20),
+										...make('co2', 'ppm', 450, 200),
+										...make('light', 'lux', 500, 300),
+										...make('soilMoisture', '%', 55, 15),
+									];
+									await axios.post('/api/sensors/data', {
+										deviceId: 'dev-sim-1',
+										readings,
+									});
+									// Refresh
+									await new Promise((r) => setTimeout(r, 300));
+									const res = await axios.get('/api/sensors/analytics', { params: { timeframe } });
+									setRows(res.data?.analytics || []);
+								} catch (e) {
+									setError(e.response?.data?.message || 'Failed to insert mock data');
+								} finally {
+									setInserting(false);
+								}
+							}}
+							className="px-3 py-1.5 rounded-md text-sm font-medium bg-secondary-600 text-white hover:bg-secondary-700 disabled:opacity-60"
+							disabled={inserting}
+							title="Insert sample data for demo"
+						>
+							{inserting ? 'Adding…' : 'Add sample data'}
+						</button>
+					</div>
 				</div>
 
-        {/* Saved Views row */}
-        <div className="mb-6">
-          <SavedViews
-            currentTimeframe={timeframe}
-            currentTypes={activeTypes ?? types}
-            onApply={({ timeframe: tf, types: ty = [] }) => {
-              if (tf) setTimeframe(tf);
-              setActiveTypes(ty.length ? ty : null);
-            }}
-          />
-        </div>
+				{/* Saved Views row */}
+				<div className="mb-6">
+					<SavedViews
+						currentTimeframe={timeframe}
+						currentTypes={activeTypes ?? types}
+						onApply={({ timeframe: tf, types: ty = [] }) => {
+							if (tf) setTimeframe(tf);
+							setActiveTypes(ty.length ? ty : null);
+						}}
+					/>
+				</div>
 
 				{error && (
 					<div className="card p-4 mb-6 text-red-600 dark:text-red-400">{error}</div>
@@ -198,34 +197,34 @@ export default function Analytics() {
 
 				{/* Summary cards */}
 				<div id="analytics-print-area" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
-						{(activeTypes ?? types).map((t) => (
-							<div key={t} className="card p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10">
-								<div className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">{t}</div>
-								<div className="mt-2 flex items-baseline gap-3">
-									<div className="text-2xl font-semibold text-gray-900 dark:text-white">
-										{summary[t]?.avg ?? '—'}
-									</div>
-									<div className="text-sm text-gray-500 dark:text-gray-400">avg</div>
+					{(activeTypes ?? types).map((t) => (
+						<div key={t} className="card p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10">
+							<div className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">{t}</div>
+							<div className="mt-2 flex items-baseline gap-3">
+								<div className="text-2xl font-semibold text-gray-900 dark:text-white">
+									{summary[t]?.avg ?? '—'}
 								</div>
-								<div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-									min {summary[t]?.min ?? '—'} · max {summary[t]?.max ?? '—'}
-								</div>
-								<div className="mt-2 text-xs text-gray-500 dark:text-gray-400">records {counts[t] ?? 0}</div>
+								<div className="text-sm text-gray-500 dark:text-gray-400">avg</div>
 							</div>
-						))}
+							<div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+								min {summary[t]?.min ?? '—'} · max {summary[t]?.max ?? '—'}
+							</div>
+							<div className="mt-2 text-xs text-gray-500 dark:text-gray-400">records {counts[t] ?? 0}</div>
+						</div>
+					))}
 				</div>
 
-						{/* Empty state */}
-						{rows.length === 0 && !loading && !error && (
-							<div className="card p-8 text-center mb-8">
-								<p className="text-gray-700 dark:text-gray-200">
-									No analytics available for this timeframe. Add readings via your device
-									or use “Add sample data”.
-								</p>
-							</div>
-						)}
+				{/* Empty state */}
+				{rows.length === 0 && !loading && !error && (
+					<div className="card p-8 text-center mb-8">
+						<p className="text-gray-700 dark:text-gray-200">
+							No analytics available for this timeframe. Add readings via your device
+							or use “Add sample data”.
+						</p>
+					</div>
+				)}
 
-						{/* Charts */}
+				{/* Charts */}
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 					{/* Combined time-series */}
 					<div className="lg:col-span-2">
@@ -280,10 +279,10 @@ export default function Analytics() {
 					<div className="mt-6 text-center text-gray-600 dark:text-gray-300">Loading analytics…</div>
 				)}
 
-        {/* Scheduler */}
-        <div className="mt-8">
-          <ReportScheduler />
-        </div>
+				{/* Scheduler */}
+				<div className="mt-8">
+					<ReportScheduler />
+				</div>
 			</div>
 		</div>
 	);

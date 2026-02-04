@@ -2,20 +2,20 @@ import { useState, useEffect } from 'react';
 import { useSocket } from '../context/SocketContext';
 import useAlertsSocket from '../hooks/useAlertsSocket';
 import SensorCard from '../components/SensorCard';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
 } from 'recharts';
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
   RefreshCw,
   Wifi,
   WifiOff
@@ -29,29 +29,19 @@ const Dashboard = () => {
   const [chartData, setChartData] = useState([]);
   const [mounted, setMounted] = useState(false);
 
-  // Simulate chart data generation
+  // Historical data management
   useEffect(() => {
-    const generateChartData = () => {
-      const data = [];
-      const now = new Date();
-      
-      for (let i = 23; i >= 0; i--) {
-        const time = new Date(now.getTime() - i * 60 * 60 * 1000);
-        data.push({
-          time: time.getHours() + ':00',
-          temperature: Math.floor(Math.random() * 10) + 20 + (sensorData.temperature || 25),
-          humidity: Math.floor(Math.random() * 20) + 40 + (sensorData.humidity || 60),
-          co2: Math.floor(Math.random() * 100) + 300 + (sensorData.co2 || 400),
-        });
-      }
-      
-      setChartData(data);
-    };
-
-    generateChartData();
-    const interval = setInterval(generateChartData, 60000); // Update every minute
-
-    return () => clearInterval(interval);
+    if (sensorData && sensorData.timestamp) {
+      setChartData(prev => {
+        const newData = [...prev, {
+          time: new Date(sensorData.timestamp).getHours() + ':' + new Date(sensorData.timestamp).getMinutes().toString().padStart(2, '0'),
+          temperature: sensorData.temperature,
+          humidity: sensorData.humidity,
+          co2: sensorData.co2,
+        }].slice(-24); // Keep last 24 readings
+        return newData;
+      });
+    }
   }, [sensorData]);
 
   // Mount animations trigger
@@ -74,7 +64,7 @@ const Dashboard = () => {
   const getStatus = (type, value) => {
     const threshold = getThreshold(type);
     if (!threshold) return 'unknown';
-    
+
     if (value >= threshold.min && value <= threshold.max) {
       return 'safe';
     } else if (
@@ -88,33 +78,34 @@ const Dashboard = () => {
   };
 
   const sensorConfigs = [
-    { 
-      type: 'temperature', 
-      value: sensorData.temperature || 25, 
-      unit: '°C' 
+    {
+      type: 'temperature',
+      value: sensorData.temperature,
+      unit: '°C'
     },
-    { 
-      type: 'humidity', 
-      value: sensorData.humidity || 65, 
-      unit: '%' 
+    {
+      type: 'humidity',
+      value: sensorData.humidity,
+      unit: '%'
     },
-    { 
-      type: 'co2', 
-      value: sensorData.co2 || 420, 
-      unit: 'ppm' 
+    {
+      type: 'co2',
+      value: sensorData.co2,
+      unit: 'ppm'
     },
-    { 
-      type: 'light', 
-      value: sensorData.light || 450, 
-      unit: 'lux' 
+    {
+      type: 'light',
+      value: sensorData.light,
+      unit: 'lux'
     },
-    { 
-      type: 'soilMoisture', 
-      value: sensorData.soilMoisture || 55, 
-      unit: '%' 
+    {
+      type: 'soilMoisture',
+      value: sensorData.soilMoisture,
+      unit: '%'
     }
   ];
 
+  const hasSensorData = sensorData && sensorData.temperature !== undefined;
   const recentAlerts = alerts.slice(0, 3);
 
   return (
@@ -149,14 +140,16 @@ const Dashboard = () => {
                   {connected ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
-              
+
               {/* Last update */}
-              <div className="flex items-center space-x-2 text-gray-500">
-                <Clock className="w-4 h-4" />
-                <span className="text-sm">
-                  {formatDistanceToNow(sensorData.lastUpdated)} ago
-                </span>
-              </div>
+              {hasSensorData && (
+                <div className="flex items-center space-x-2 text-gray-500">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm">
+                    {formatDistanceToNow(sensorData.lastUpdated)} ago
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -197,53 +190,61 @@ const Dashboard = () => {
                   <span>Refresh</span>
                 </button>
               </div>
-              
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis 
-                      dataKey="time" 
-                      className="text-gray-600 dark:text-gray-400"
-                    />
-                    <YAxis className="text-gray-600 dark:text-gray-400" />
-                    {/* Add a right-side Y axis to match the Line with yAxisId="right" */}
-                    <YAxis yAxisId="right" orientation="right" className="text-gray-600 dark:text-gray-400" />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'var(--tw-color-white)',
-                        border: '1px solid var(--tw-color-gray-200)',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="temperature"
-                      stroke="#f59e0b"
-                      strokeWidth={2.5}
-                      dot={{ fill: '#f59e0b', r: 3 }}
-                      name="Temperature (°C)"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="humidity"
-                      stroke="#3b82f6"
-                      strokeWidth={2.5}
-                      dot={{ fill: '#3b82f6', r: 3 }}
-                      name="Humidity (%)"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="co2"
-                      stroke="#10b981"
-                      strokeWidth={2.5}
-                      dot={{ fill: '#10b981', r: 3 }}
-                      name="CO₂ (ppm)"
-                      yAxisId="right"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+
+              <div className="h-80 flex items-center justify-center">
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <XAxis
+                        dataKey="time"
+                        className="text-gray-600 dark:text-gray-400"
+                      />
+                      <YAxis className="text-gray-600 dark:text-gray-400" />
+                      {/* Add a right-side Y axis to match the Line with yAxisId="right" */}
+                      <YAxis yAxisId="right" orientation="right" className="text-gray-600 dark:text-gray-400" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'var(--tw-color-white)',
+                          border: '1px solid var(--tw-color-gray-200)',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="temperature"
+                        stroke="#f59e0b"
+                        strokeWidth={2.5}
+                        dot={{ fill: '#f59e0b', r: 3 }}
+                        name="Temperature (°C)"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="humidity"
+                        stroke="#3b82f6"
+                        strokeWidth={2.5}
+                        dot={{ fill: '#3b82f6', r: 3 }}
+                        name="Humidity (%)"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="co2"
+                        stroke="#10b981"
+                        strokeWidth={2.5}
+                        dot={{ fill: '#10b981', r: 3 }}
+                        name="CO₂ (ppm)"
+                        yAxisId="right"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-center text-gray-500 dark:text-gray-400">
+                    <Clock className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                    <p>No historical data collected yet.</p>
+                    <p className="text-sm">Connect a sensor to start monitoring.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -254,20 +255,19 @@ const Dashboard = () => {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 Recent Alerts
               </h2>
-              
+
               {recentAlerts.length > 0 ? (
                 <div className="space-y-4">
                   {recentAlerts.map((alert, index) => (
                     <div
                       key={index}
                       style={{ transitionDelay: `${index * 100}ms` }}
-                      className={`p-4 rounded-lg border-l-4 transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'} ${
-                        alert.severity === 'high'
-                          ? 'alert-danger border-red-500/80'
-                          : alert.severity === 'medium'
+                      className={`p-4 rounded-lg border-l-4 transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'} ${alert.severity === 'high'
+                        ? 'alert-danger border-red-500/80'
+                        : alert.severity === 'medium'
                           ? 'alert-warning border-yellow-500/80'
                           : 'alert-safe border-green-500/80'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start space-x-3">
                         {alert.severity === 'high' ? (
@@ -302,7 +302,7 @@ const Dashboard = () => {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 System Status
               </h2>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600 dark:text-gray-300">Sensors</span>
@@ -311,7 +311,7 @@ const Dashboard = () => {
                     <span className="text-sm text-green-600">Online</span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600 dark:text-gray-300">Database</span>
                   <div className="flex items-center space-x-2">
@@ -319,7 +319,7 @@ const Dashboard = () => {
                     <span className="text-sm text-green-600">Connected</span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600 dark:text-gray-300">AI Assistant</span>
                   <div className="flex items-center space-x-2">

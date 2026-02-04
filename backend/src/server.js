@@ -80,65 +80,9 @@ io.on('connection', (socket) => {
   setForUser.add(socket.id);
   onlineUsers.set(userId, setForUser);
   io.emit('presence:update', { userId, online: true });
-  
+
   // Join user to their personal room
   socket.join(`user_${userId}`);
-  
-  // Handle sensor data simulation (in production, this would come from actual sensors)
-  const sensorInterval = setInterval(() => {
-    const sensorData = {
-      temperature: Math.round((Math.random() * 10 + 20) * 10) / 10, // 20-30°C
-      humidity: Math.round((Math.random() * 40 + 40) * 10) / 10, // 40-80%
-      co2: Math.round(Math.random() * 300 + 300), // 300-600 ppm
-      light: Math.round(Math.random() * 600 + 200), // 200-800 lux
-      soilMoisture: Math.round((Math.random() * 40 + 30) * 10) / 10, // 30-70%
-      timestamp: new Date()
-    };
-    
-    socket.emit('sensorData', sensorData);
-    
-    // Check for alerts
-    const alerts = checkForAlerts(sensorData);
-    if (alerts.length > 0) {
-      alerts.forEach(alert => {
-        socket.emit('newAlert', alert);
-      });
-    }
-  }, 5000); // Send data every 5 seconds
-
-  // Lightweight weather alert simulation (replace with real API integration later)
-  const weatherAlertInterval = setInterval(() => {
-    // Randomly emit a weather alert ~1/6 times
-    if (Math.random() < 0.166) {
-      const kinds = [
-        { type: 'weather', title: 'High Heat Warning', message: 'Ambient temperature rising; adjust HVAC for grow rooms.', severity: 'medium' },
-        { type: 'weather', title: 'Storm Incoming', message: 'Possible power fluctuations. Verify backup systems.', severity: 'high' },
-        { type: 'weather', title: 'High Humidity Outside', message: 'Dehumidification load will increase.', severity: 'medium' },
-      ];
-      const alert = { ...kinds[Math.floor(Math.random() * kinds.length)], timestamp: new Date() };
-      socket.emit('weatherAlert', alert);
-    }
-  }, 60000); // Check roughly every minute
-
-  // Chat room management
-  socket.on('chat:join', ({ chatId }) => {
-    if (chatId) socket.join(`chat_${chatId}`);
-  });
-  socket.on('chat:leave', ({ chatId }) => {
-    if (chatId) socket.leave(`chat_${chatId}`);
-  });
-
-  // Typing indicators
-  socket.on('chat:typing', ({ chatId, typing }) => {
-    if (!chatId) return;
-    socket.to(`chat_${chatId}`).emit('chat:typing', { chatId, userId, typing, name: socket.user.name });
-  });
-
-  // Forward chat messages (after REST save on client)
-  socket.on('chat:message', ({ chatId, message }) => {
-    if (!chatId || !message) return;
-    socket.to(`chat_${chatId}`).emit('chat:message', message);
-  });
 
   // Handle disconnect
   socket.on('disconnect', () => {
@@ -153,8 +97,6 @@ io.on('connection', (socket) => {
       }
     }
     console.log(`User ${userId} disconnected`);
-    clearInterval(sensorInterval);
-    clearInterval(weatherAlertInterval);
   });
 });
 
@@ -225,8 +167,8 @@ if (process.env.MONGO_URI) {
 
 // Add a basic health check route at the top
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     mongoConnected: mongoose.connection.readyState === 1,
@@ -236,7 +178,7 @@ app.get('/health', (req, res) => {
 
 // Add root route for testing
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Agricultural Monitoring Server is running!',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
@@ -338,7 +280,7 @@ const importRoute = async (routePath, routeName) => {
       routePath.replace('./routes/', './src/routes/'),
       routePath.replace('./routes/', '/var/task/backend/src/routes/')
     ];
-    
+
     for (const path of paths) {
       try {
         routeModule = await import(path);
@@ -348,11 +290,11 @@ const importRoute = async (routePath, routeName) => {
         console.log(`   Trying path: ${path} - ${pathError.code || 'failed'}`);
       }
     }
-    
+
     if (!routeModule) {
       throw new Error(`All import paths failed for ${routeName}`);
     }
-    
+
     return routeModule.default;
   } catch (error) {
     console.error(`❌ Failed to import ${routeName} routes:`, error.message);
@@ -370,12 +312,12 @@ let notificationsRoutes;
 const loadRoutes = async () => {
   try {
     console.log('🚀 Starting route loading...');
-    
+
     // Try to import from routes index first (most reliable)
     try {
       const routesIndex = await import('./routes/index.js');
       console.log('✅ Routes index imported successfully');
-      
+
       // Extract routes from index
       authRoutes = routesIndex.authRoutes;
       sensorRoutes = routesIndex.sensorRoutes;
@@ -390,13 +332,13 @@ const loadRoutes = async () => {
       phasesRoutes = routesIndex.phasesRoutes;
       thresholdsRoutes = routesIndex.thresholdsRoutes;
       calendarRoutes = routesIndex.calendarRoutes;
-  notificationsRoutes = routesIndex.notificationsRoutes;
-      
+      notificationsRoutes = routesIndex.notificationsRoutes;
+
       console.log('✅ All routes loaded from index');
     } catch (indexError) {
       console.log('⚠️ Routes index failed, trying individual imports...');
       console.log('   Index error:', indexError.message);
-      
+
       // Fallback to individual imports
       authRoutes = await importRoute('./routes/auth.js', 'Auth');
       sensorRoutes = await importRoute('./routes/sensors.js', 'Sensors');
@@ -457,10 +399,10 @@ loadRoutes();
 //   setForUser.add(socket.id);
 //   onlineUsers.set(userId, setForUser);
 //   io.emit('presence:update', { userId, online: true });
-  
+
 //   // Join user to their personal room
 //   socket.join(`user_${userId}`);
-  
+
 //   // Handle sensor data simulation (in production, this would come from actual sensors)
 //   const sensorInterval = setInterval(() => {
 //     const sensorData = {
@@ -471,9 +413,9 @@ loadRoutes();
 //       soilMoisture: Math.round((Math.random() * 40 + 30) * 10) / 10, // 30-70%
 //       timestamp: new Date()
 //     };
-    
+
 //     socket.emit('sensorData', sensorData);
-    
+
 //     // Check for alerts
 //     const alerts = checkForAlerts(sensorData);
 //     if (alerts.length > 0) {
@@ -549,7 +491,7 @@ const checkForAlerts = (data) => {
   Object.keys(thresholds).forEach(sensor => {
     const value = data[sensor];
     const { min, max } = thresholds[sensor];
-    
+
     if (value < min || value > max) {
       alerts.push({
         type: sensor,
@@ -599,12 +541,12 @@ const SCHEDULER_INTERVAL_MS = 5 * 60 * 1000;
 let schedulerTimer = null;
 async function startScheduler() {
   if (schedulerTimer) return;
-  
+
   try {
     // Dynamically import required modules
     const { default: ReportSchedule } = await import('./models/ReportSchedule.js');
     const { runScheduleAndEmail } = await import('./routes/reports.js');
-    
+
     schedulerTimer = setInterval(async () => {
       try {
         const now = new Date();
@@ -626,7 +568,7 @@ async function startScheduler() {
         console.error('Scheduler error', e);
       }
     }, SCHEDULER_INTERVAL_MS);
-    
+
     console.log('✅ Scheduler started successfully');
   } catch (error) {
     console.error('❌ Failed to start scheduler:', error.message);
@@ -638,12 +580,12 @@ const CAL_REMINDER_INTERVAL_MS = 60 * 1000;
 let calTimer = null;
 async function startCalendarReminderScheduler() {
   if (calTimer) return;
-  
+
   try {
     // Dynamically import required modules
     const { default: CalendarEvent } = await import('./models/CalendarEvent.js');
     const { default: Alert } = await import('./models/Alert.js');
-    
+
     calTimer = setInterval(async () => {
       try {
         const now = new Date();
@@ -689,7 +631,7 @@ async function startCalendarReminderScheduler() {
         console.error('Calendar reminder scheduler error', e);
       }
     }, CAL_REMINDER_INTERVAL_MS);
-    
+
     console.log('✅ Calendar reminder scheduler started successfully');
   } catch (error) {
     console.error('❌ Failed to start calendar reminder scheduler:', error.message);
