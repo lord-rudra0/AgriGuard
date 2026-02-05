@@ -416,34 +416,6 @@ const loadRoutes = async () => {
 // Load routes immediately
 loadRoutes();
 
-// Function to check for alerts based on sensor data
-const checkForAlerts = (data) => {
-  const alerts = [];
-  const thresholds = {
-    temperature: { min: 18, max: 28 },
-    humidity: { min: 40, max: 80 },
-    co2: { min: 300, max: 600 },
-    light: { min: 200, max: 800 },
-    soilMoisture: { min: 30, max: 70 }
-  };
-
-  Object.keys(thresholds).forEach(sensor => {
-    const value = data[sensor];
-    const { min, max } = thresholds[sensor];
-
-    if (value < min || value > max) {
-      alerts.push({
-        type: sensor,
-        severity: value < min * 0.8 || value > max * 1.2 ? 'high' : 'medium',
-        message: `${sensor} is ${value < min ? 'too low' : 'too high'}: ${value}`,
-        timestamp: new Date()
-      });
-    }
-  });
-
-  return alerts;
-};
-
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
