@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { 
-  Thermometer, 
-  Droplets, 
-  Wind, 
-  Sun, 
+import {
+  Thermometer,
+  Droplets,
+  Wind,
+  Sun,
   Sprout,
   TrendingUp,
   TrendingDown,
@@ -63,6 +63,8 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
         return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400';
       case 'danger':
         return 'text-red-600 bg-red-100 dark:bg-red-900/20 dark:text-red-400';
+      case 'inactive':
+        return 'text-gray-500 bg-gray-100 dark:bg-gray-800 dark:text-gray-400';
       default:
         return 'text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-300';
     }
@@ -86,6 +88,7 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
   };
 
   const formatTime = (date) => {
+    if (!date) return '--:--';
     return new Date(date).toLocaleTimeString('en-US', {
       hour12: true,
       hour: 'numeric',
@@ -116,7 +119,7 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
       {/* Value */}
       <div className="mb-4">
         <div className="text-3xl font-bold text-gray-900 dark:text-white">
-          {value}
+          {value !== undefined && value !== null ? value : '--'}
           <span className="text-lg font-normal text-gray-500 dark:text-gray-400 ml-1">
             {unit}
           </span>
@@ -143,16 +146,15 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
 
       {/* Status indicator */}
       <div className="mt-3 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div 
-          className={`h-full transition-all duration-500 ${
-            status === 'safe' 
-              ? 'bg-green-500' 
-              : status === 'warning' 
-              ? 'bg-yellow-500' 
-              : 'bg-red-500'
-          }`}
+        <div
+          className={`h-full transition-all duration-500 ${status === 'safe'
+              ? 'bg-green-500'
+              : status === 'warning'
+                ? 'bg-yellow-500'
+                : 'bg-red-500'
+            }`}
           style={{
-            width: threshold 
+            width: threshold
               ? `${Math.min(100, (value / threshold.max) * 100)}%`
               : '100%'
           }}

@@ -10,20 +10,20 @@ const router = express.Router();
 // @access  Private
 router.get('/data', authenticateToken, async (req, res) => {
   try {
-    const { 
-      sensorType, 
-      startDate, 
-      endDate, 
-      limit = 50, 
-      page = 1 
+    const {
+      sensorType,
+      startDate,
+      endDate,
+      limit = 50,
+      page = 1
     } = req.query;
 
     const query = { userId: req.user._id };
-    
+
     if (sensorType) {
       query.sensorType = sensorType;
     }
-    
+
     if (startDate || endDate) {
       query.createdAt = {};
       if (startDate) query.createdAt.$gte = new Date(startDate);
@@ -31,7 +31,7 @@ router.get('/data', authenticateToken, async (req, res) => {
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
+
     const data = await SensorData.find(query)
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
@@ -59,7 +59,7 @@ router.get('/data', authenticateToken, async (req, res) => {
 router.post('/data', authenticateToken, async (req, res) => {
   try {
     const { deviceId, readings } = req.body;
-    
+
     if (!deviceId || !readings || !Array.isArray(readings)) {
       return res.status(400).json({ message: 'Device ID and readings array are required' });
     }
@@ -76,9 +76,28 @@ router.post('/data', authenticateToken, async (req, res) => {
     }));
 
     const savedData = await SensorData.insertMany(sensorDataArray);
-    
+
     // Check for alerts
     const alerts = await checkAndCreateAlerts(req.user._id, savedData);
+
+    // Emit live updates via Socket.IO
+    const io = req.app.get('io');
+    if (io) {
+      // Create a combined sensor data object for the dashboard
+      const dashboardData = {};
+      readings.forEach(r => {
+        dashboardData[r.type] = r.value;
+      });
+      dashboardData.timestamp = new Date();
+      dashboardData.lastUpdated = dashboardData.timestamp;
+
+      io.to(`user_${req.user._id}`).emit('sensorData', dashboardData);
+
+      // Emit alerts
+      alerts.forEach(alert => {
+        io.to(`user_${req.user._id}`).emit('newAlert', alert);
+      });
+    }
 
     res.status(201).json({
       message: 'Sensor data saved successfully',
@@ -97,7 +116,7 @@ router.post('/data', authenticateToken, async (req, res) => {
 router.get('/analytics', authenticateToken, async (req, res) => {
   try {
     const { timeframe = '24h' } = req.query;
-    
+
     let startDate;
     switch (timeframe) {
       case '1h':
@@ -193,7 +212,7 @@ const checkAndCreateAlerts = async (userId, sensorDataArray) => {
 
     if (value < min || value > max) {
       const severity = value < min * 0.8 || value > max * 1.2 ? 'high' : 'medium';
-      
+
       const alert = new Alert({
         userId,
         type: data.sensorType,

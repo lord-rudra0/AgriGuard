@@ -24,12 +24,12 @@ export const SocketProvider = ({ children }) => {
   const messageBufferRef = useRef([]); // buffer outgoing emits while disconnected
   const [presence, setPresence] = useState(new Map()); // userId -> online
   const [sensorData, setSensorData] = useState({
-    temperature: 0,
-    humidity: 0,
-    co2: 0,
-    light: 0,
-    soilMoisture: 0,
-    lastUpdated: new Date()
+    temperature: undefined,
+    humidity: undefined,
+    co2: undefined,
+    light: undefined,
+    soilMoisture: undefined,
+    lastUpdated: null
   });
   const [alerts, setAlerts] = useState([]);
   const { user } = useAuth();
@@ -161,13 +161,13 @@ export const SocketProvider = ({ children }) => {
   const clearAlerts = () => setAlerts([]);
 
   return (
-    <SocketContext.Provider value={{ 
+    <SocketContext.Provider value={{
       socket,
       connected,
       connectionState,
       reconnectAttempts,
       presence,
-      sensorData, 
+      sensorData,
       alerts,
       clearAlerts,
       emitMessage,

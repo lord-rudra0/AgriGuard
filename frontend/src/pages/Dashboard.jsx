@@ -28,6 +28,8 @@ const Dashboard = () => {
   useAlertsSocket();
   const [chartData, setChartData] = useState([]);
   const [mounted, setMounted] = useState(false);
+  const [isIotActive, setIsIotActive] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   // Historical data management
   useEffect(() => {
@@ -50,6 +52,32 @@ const Dashboard = () => {
     return () => clearTimeout(t);
   }, []);
 
+  // Heartbeat check for IoT connectivity
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!connected) {
+      setIsIotActive(false);
+      return;
+    }
+
+    if (sensorData && sensorData.lastUpdated) {
+      const lastUpdate = new Date(sensorData.lastUpdated).getTime();
+      const now = currentTime.getTime();
+      const twoMinutes = 2 * 60 * 1000;
+
+      setIsIotActive(now - lastUpdate < twoMinutes);
+    } else {
+      setIsIotActive(false);
+    }
+  }, [sensorData, connected, currentTime]);
+
   const getThreshold = (type) => {
     const thresholds = {
       temperature: { min: 18, max: 28 },
@@ -62,6 +90,8 @@ const Dashboard = () => {
   };
 
   const getStatus = (type, value) => {
+    if (value === undefined || value === null) return 'inactive';
+
     const threshold = getThreshold(type);
     if (!threshold) return 'unknown';
 
@@ -126,18 +156,18 @@ const Dashboard = () => {
               {/* Connection status */}
               <div className="flex items-center space-x-2">
                 <span className="relative inline-flex items-center">
-                  <span className={`h-2.5 w-2.5 rounded-full ${connected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
-                  {connected && (
+                  <span className={`h-2.5 w-2.5 rounded-full ${isIotActive ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                  {isIotActive && (
                     <span className="absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
                   )}
                 </span>
-                {connected ? (
+                {isIotActive ? (
                   <Wifi className="w-5 h-5 text-emerald-600" />
                 ) : (
                   <WifiOff className="w-5 h-5 text-red-600" />
                 )}
-                <span className={`text-sm ${connected ? 'text-emerald-700' : 'text-red-600'}`}>
-                  {connected ? 'Connected' : 'Disconnected'}
+                <span className={`text-sm ${isIotActive ? 'text-emerald-700' : 'text-red-600'}`}>
+                  {isIotActive ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
 
