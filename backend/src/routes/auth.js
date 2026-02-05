@@ -4,7 +4,18 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 
+import { rateLimit } from 'express-rate-limit';
+
 const router = express.Router();
+
+// Strict rate limiter for registration: 3 accounts per hour per IP
+const registrationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // Limit each IP to 3 create account requests per `window` (here, per hour)
+  message: { message: 'Too many accounts created from this IP, please try again after an hour' },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 // @route   GET /api/auth/users
 // @desc    Find user by username, email or phone
@@ -28,7 +39,7 @@ const generateToken = (userId) => {
   if (!process.env.JWT_SECRET) {
     throw new Error('JWT_SECRET not configured');
   }
-  
+
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: '7d'
   });
@@ -37,7 +48,7 @@ const generateToken = (userId) => {
 // @route   POST /api/auth/register
 // @desc    Register new user
 // @access  Public
-router.post('/register', async (req, res) => {
+router.post('/register', registrationLimiter, async (req, res) => {
   try {
     const { name, username, email, phone, password, farmName, location } = req.body;
 
@@ -86,16 +97,16 @@ router.post('/register', async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
-    
+
     if (error.code === 11000) {
       return res.status(400).json({ message: 'Email, phone, or username already exists' });
     }
-    
+
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({ message: errors.join(', ') });
     }
-    
+
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -135,7 +146,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Check password
-  const isMatch = await user.comparePassword(password);
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -177,7 +188,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 router.put('/profile', authenticateToken, async (req, res) => {
   try {
     const { name, farmName, location, preferences } = req.body;
-    
+
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       {
@@ -195,12 +206,12 @@ router.put('/profile', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Profile update error:', error);
-    
+
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({ message: errors.join(', ') });
     }
-    
+
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -211,18 +222,18 @@ router.put('/profile', authenticateToken, async (req, res) => {
 router.post('/change-password', authenticateToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     // Validate input
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ message: 'Current password and new password are required' });
     }
-    
+
     if (newPassword.length < 6) {
       return res.status(400).json({ message: 'New password must be at least 6 characters long' });
     }
 
     const user = await User.findById(req.user._id);
-    
+
     // Check current password
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
