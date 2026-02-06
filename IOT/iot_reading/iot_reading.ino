@@ -18,6 +18,11 @@ const char *deviceToken = "0b2b5df83612d51f7edbf5d5f38abd81d6e0d49071367238062e6
 #define LDR_PIN   32
 #define SOIL_PIN  33
 
+// Calibrate these with your sensor (raw ADC values)
+// Put probe in dry soil and note raw value, then in wet soil
+#define SOIL_RAW_DRY  4095
+#define SOIL_RAW_WET  1200
+
 /* -------- OBJECTS -------- */
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -78,21 +83,15 @@ void loop() {
 
   int gasPercent = map(gasRaw, 0, 4095, 0, 100);
 
-  /* -------- LIGHT (INVERTED LDR) -------- */
+  /* -------- LIGHT -------- */
   String lightStatus;
-  int lightPercent = 0;
-
-  if (ldrRaw > 300) {              // Dark
-    lightStatus = "OFF";
-  } else {
-    lightStatus = "ON";
-    lightPercent = map(ldrRaw, 3000, 0, 0, 100);
-    lightPercent = constrain(lightPercent, 0, 100);
-  }
+  int lightPercent = map(ldrRaw, 3000, 0, 0, 100);
+  lightPercent = constrain(lightPercent, 0, 100);
+  lightStatus = (lightPercent > 5) ? "ON" : "OFF";
 
   /* -------- SOIL MOISTURE -------- */
   String soilStatus;
-  int soilPercent = map(soilRaw, 4095, 0, 0, 100);
+  int soilPercent = map(soilRaw, SOIL_RAW_DRY, SOIL_RAW_WET, 0, 100);
   soilPercent = constrain(soilPercent, 0, 100);
 
   if (soilRaw > 3000) {
