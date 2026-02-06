@@ -15,3 +15,4 @@ export { default as phasesRoutes } from './phases.js';
 export { default as thresholdsRoutes } from './thresholds.js';
 export { default as calendarRoutes } from './calendar.js';
 export { default as notificationsRoutes } from './notifications.js';
+export { default as iotRoutes } from './iot.js';

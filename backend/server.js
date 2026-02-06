@@ -9,7 +9,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { authenticateSocket } from './src/middleware/auth.js';
-import { authRoutes as authRoutesStatic, chatRoutes as chatRoutesStatic, chatSystemRoutes as chatSystemRoutesStatic, settingsRoutes as settingsRoutesStatic, notificationsRoutes as notificationsRoutesStatic } from './src/routes/index.js';
+import { authRoutes as authRoutesStatic, chatRoutes as chatRoutesStatic, chatSystemRoutes as chatSystemRoutesStatic, settingsRoutes as settingsRoutesStatic, notificationsRoutes as notificationsRoutesStatic, iotRoutes as iotRoutesStatic } from './src/routes/index.js';
 import multer from 'multer';
 import { predictImage } from './src/onnx/mushroomModel.js';
 
@@ -167,6 +167,9 @@ if (settingsRoutesStatic) {
 // Notifications (if exported) mount synchronously as well
 if (notificationsRoutesStatic) {
   app.use('/api/notifications', notificationsRoutesStatic);
+}
+if (iotRoutesStatic) {
+  app.use('/api/iot', iotRoutesStatic);
 }
 
 // Expose VAPID public key for push subscription (synchronous endpoint)
@@ -340,7 +343,7 @@ const importRoute = async (routePath, routeName) => {
 };
 
 // Import routes with error handling - using routes index for reliability
-let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes;
+let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes, iotRoutes;
 
 // Import routes one by one with error handling - more robust approach
 const loadRoutes = async () => {
@@ -366,6 +369,7 @@ const loadRoutes = async () => {
       phasesRoutes = routesIndex.phasesRoutes;
       thresholdsRoutes = routesIndex.thresholdsRoutes;
       calendarRoutes = routesIndex.calendarRoutes;
+      iotRoutes = routesIndex.iotRoutes;
 
       console.log('✅ All routes loaded from index');
     } catch (indexError) {
@@ -386,6 +390,7 @@ const loadRoutes = async () => {
       phasesRoutes = await importRoute('./src/routes/phases.js', 'Phases');
       thresholdsRoutes = await importRoute('./src/routes/thresholds.js', 'Thresholds');
       calendarRoutes = await importRoute('./src/routes/calendar.js', 'Calendar');
+      iotRoutes = await importRoute('./src/routes/iot.js', 'IoT');
     }
 
     // Use routes only if they imported successfully
@@ -406,6 +411,7 @@ const loadRoutes = async () => {
     if (phasesRoutes) app.use('/api/phases', phasesRoutes);
     if (thresholdsRoutes) app.use('/api/thresholds', thresholdsRoutes);
     if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
+    if (iotRoutes) app.use('/api/iot', iotRoutes);
 
     console.log('✅ All routes configured');
   } catch (error) {
@@ -437,7 +443,7 @@ const PORT = process.env.PORT || 5000;
 
 // Only start the server if we're not in a serverless environment
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📊 Socket.IO server ready`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
