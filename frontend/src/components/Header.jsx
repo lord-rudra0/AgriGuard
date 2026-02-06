@@ -55,6 +55,7 @@ const Header = () => {
     { name: 'Alerts', href: '/alerts', icon: Bell },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Settings', href: '/settings', icon: Settings },
+    { name: 'Devices', href: '/devices', icon: Shield },
   ];
 
   const isActive = (path) => location.pathname === path;

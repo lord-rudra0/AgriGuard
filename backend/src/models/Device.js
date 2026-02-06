@@ -4,7 +4,7 @@ const deviceSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false
   },
   name: {
     type: String,
@@ -19,12 +19,20 @@ const deviceSchema = new mongoose.Schema({
   },
   tokenHash: {
     type: String,
-    required: true,
-    unique: true
+    unique: true,
+    sparse: true
   },
   tokenLast4: {
     type: String,
     trim: true
+  },
+  factoryTokenHash: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  claimedAt: {
+    type: Date
   },
   active: {
     type: Boolean,

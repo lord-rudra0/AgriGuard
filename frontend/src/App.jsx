@@ -21,6 +21,7 @@ import Thresholds from './pages/Thresholds';
 import Alerts from './pages/Alerts';
 import UserProfile from './pages/UserProfile';
 import Calendar from './pages/Calendar';
+import Devices from './pages/Devices';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -213,6 +214,15 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Settings />
+                    </ProtectedRoute>
+                  }
+                />
+                
+                <Route
+                  path="/devices"
+                  element={
+                    <ProtectedRoute>
+                      <Devices />
                     </ProtectedRoute>
                   }
                 />

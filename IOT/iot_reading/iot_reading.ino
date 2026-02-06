@@ -1,13 +1,14 @@
 #include "DHT.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiManager.h>
+#include <Preferences.h>
 
 /* -------- WIFI + API CONFIG -------- */
-#define WIFI_SSID     "iqooneo10"
-#define WIFI_PASSWORD "12345678"
-const char *serverUrl = "http://10.52.132.132:5000/api/iot/ingest";
 const char *deviceId = "esp32-greenhouse-1";
-const char *deviceToken = "0b2b5df83612d51f7edbf5d5f38abd81d6e0d49071367238062e651b931553af";
+String serverUrlStr = "http://10.52.132.132:5000/api/iot/ingest";
+String deviceTokenStr = "";
+Preferences prefs;
 
 
 /* -------- PIN DEFINITIONS -------- */
@@ -31,21 +32,30 @@ void setup() {
   dht.begin();
   delay(2000);
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting to WiFi");
-  unsigned long startAttempt = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < 20000) {
-    delay(500);
-    Serial.print(".");
+  prefs.begin("agri", false);
+  serverUrlStr = prefs.getString("serverUrl", serverUrlStr);
+  deviceTokenStr = prefs.getString("deviceToken", deviceTokenStr);
+
+  WiFiManager wm;
+  WiFiManagerParameter p_server("server", "Server URL", serverUrlStr.c_str(), 120);
+  WiFiManagerParameter p_token("token", "Device Token", deviceTokenStr.c_str(), 80);
+  wm.addParameter(&p_server);
+  wm.addParameter(&p_token);
+
+  bool res = wm.autoConnect("AgriGuard-Setup");
+  if (!res) {
+    Serial.println("WiFiManager failed, restarting...");
+    delay(3000);
+    ESP.restart();
   }
-  Serial.println();
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.print("WiFi connected, IP: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("WiFi connection failed");
-  }
+
+  serverUrlStr = String(p_server.getValue());
+  deviceTokenStr = String(p_token.getValue());
+  prefs.putString("serverUrl", serverUrlStr);
+  prefs.putString("deviceToken", deviceTokenStr);
+
+  Serial.print("WiFi connected, IP: ");
+  Serial.println(WiFi.localIP());
 
   Serial.println("System starting...");
   Serial.println("Warming up MQ sensor...");
@@ -149,9 +159,9 @@ void loop() {
     Serial.println(payload);
 
     HTTPClient http;
-    http.begin(serverUrl);
+    http.begin(serverUrlStr.c_str());
     http.addHeader("Content-Type", "application/json");
-    http.addHeader("x-device-token", String(deviceToken));
+    http.addHeader("x-device-token", deviceTokenStr);
 
     int httpCode = http.POST(payload);
     Serial.print("POST /api/iot/ingest -> ");

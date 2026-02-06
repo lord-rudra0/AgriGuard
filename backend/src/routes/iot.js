@@ -163,6 +163,9 @@ router.post('/ingest', async (req, res) => {
       if (!device) {
         return res.status(401).json({ message: 'Invalid device token' });
       }
+      if (!device.userId) {
+        return res.status(403).json({ message: 'Device not claimed' });
+      }
       resolvedUserId = device.userId;
       resolvedDeviceId = device.deviceId;
       device.lastSeenAt = new Date();
