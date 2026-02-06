@@ -195,4 +195,21 @@ router.post('/:deviceId/rotate', authenticateToken, async (req, res) => {
   }
 });
 
+// @route   DELETE /api/devices/:deviceId
+// @desc    Delete a device owned by the user
+// @access  Private
+router.delete('/:deviceId', authenticateToken, async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const device = await Device.findOne({ userId: req.user._id, deviceId });
+    if (!device) return res.status(404).json({ message: 'Device not found' });
+
+    await Device.deleteOne({ _id: device._id });
+    res.json({ success: true, message: 'Device deleted' });
+  } catch (error) {
+    console.error('Delete device error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 export default router;

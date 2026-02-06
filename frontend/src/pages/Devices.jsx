@@ -10,6 +10,7 @@ const Devices = () => {
   const [factoryToken, setFactoryToken] = useState('');
   const [deviceName, setDeviceName] = useState('');
   const [lastToken, setLastToken] = useState(null);
+  const [showClaim, setShowClaim] = useState(true);
 
   const fetchDevices = async () => {
     try {
@@ -52,6 +53,17 @@ const Devices = () => {
     }
   };
 
+  const handleDelete = async (deviceId) => {
+    if (!window.confirm('Delete this device? This cannot be undone.')) return;
+    try {
+      await axios.delete(`/api/devices/${deviceId}`);
+      await fetchDevices();
+      toast.success('Device deleted');
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to delete device');
+    }
+  };
+
   const copyToken = async () => {
     if (!lastToken) return;
     await navigator.clipboard.writeText(lastToken);
@@ -73,10 +85,19 @@ const Devices = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm ring-1 ring-black/5 dark:ring-white/10">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Claim Device
-              </h2>
-              <form onSubmit={handleClaim} className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Claim Device
+                </h2>
+                <button
+                  onClick={() => setShowClaim(v => !v)}
+                  className="text-xs text-gray-600 dark:text-gray-300 hover:underline"
+                >
+                  {showClaim ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              {showClaim && (
+                <form onSubmit={handleClaim} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Factory Token
@@ -107,7 +128,8 @@ const Devices = () => {
                   <Plus className="w-4 h-4" />
                   {claiming ? 'Claiming...' : 'Claim Device'}
                 </button>
-              </form>
+                </form>
+              )}
             </div>
 
             {lastToken && (
@@ -162,6 +184,14 @@ const Devices = () => {
                       </div>
                       <div className="text-right text-xs text-gray-500 dark:text-gray-400">
                         {d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleString() : 'Never'}
+                        <div>
+                          <button
+                            onClick={() => handleDelete(d.deviceId)}
+                            className="mt-1 text-xs text-red-600 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
