@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import SensorData from '../models/SensorData.js';
 import Alert from '../models/Alert.js';
 import Device from '../models/Device.js';
+import UserSettings from '../models/UserSettings.js';
 
 const router = express.Router();
 
@@ -101,8 +102,9 @@ const determineStatus = (type, value) => {
   return 'danger';
 };
 
-const checkAndCreateAlerts = async (userId, sensorDataArray) => {
+const checkAndCreateAlerts = async (userId, sensorDataArray, debounceMs) => {
   const alerts = [];
+  const effectiveDebounceMs = Number(debounceMs ?? process.env.ALERT_DEBOUNCE_MS ?? 5 * 60 * 1000);
   const thresholds = {
     temperature: { min: 18, max: 28 },
     humidity: { min: 40, max: 80 },
@@ -119,6 +121,15 @@ const checkAndCreateAlerts = async (userId, sensorDataArray) => {
     const { value } = data;
 
     if (value < min || value > max) {
+      // Debounce: skip if a recent alert for same sensor/device exists
+      const recent = await Alert.findOne({
+        userId,
+        type: data.sensorType,
+        deviceId: data.deviceId,
+        createdAt: { $gte: new Date(Date.now() - effectiveDebounceMs) }
+      }).sort({ createdAt: -1 });
+      if (recent) continue;
+
       const severity = value < min * 0.8 || value > max * 1.2 ? 'high' : 'medium';
 
       const alert = new Alert({
@@ -213,7 +224,12 @@ router.post('/ingest', async (req, res) => {
       console.log(`✅ ESP connected: deviceId=${resolvedDeviceId} userId=${resolvedUserId}`);
     }
     deviceLastSeen.set(resolvedDeviceId, now);
-    const alerts = await checkAndCreateAlerts(resolvedUserId, savedData);
+    const settings = await UserSettings.findOne({ userId: resolvedUserId }).lean();
+    const alerts = await checkAndCreateAlerts(
+      resolvedUserId,
+      savedData,
+      settings?.system?.alertDebounceMs
+    );
 
     const io = req.app.get('io');
     if (io) {
@@ -221,6 +237,7 @@ router.post('/ingest', async (req, res) => {
       normalized.forEach(r => {
         dashboardData[r.type] = r.value;
       });
+      dashboardData.deviceId = resolvedDeviceId;
       dashboardData.timestamp = new Date();
       dashboardData.lastUpdated = dashboardData.timestamp;
       io.to(`user_${String(resolvedUserId)}`).emit('sensorData', dashboardData);

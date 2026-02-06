@@ -63,6 +63,10 @@ const userSettingsSchema = new mongoose.Schema({
       enum: ['celsius', 'fahrenheit'],
       default: 'celsius'
     },
+    alertDebounceMs: {
+      type: Number,
+      default: 5 * 60 * 1000
+    },
     autoSave: {
       type: Boolean,
       default: true

@@ -62,6 +62,7 @@ router.get('/', authenticateToken, async (req, res) => {
           timezone: 'UTC',
           dateFormat: 'MM/DD/YYYY',
           temperatureUnit: 'celsius',
+          alertDebounceMs: 5 * 60 * 1000,
           autoSave: true
         }
       });

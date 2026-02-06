@@ -1,6 +1,7 @@
 import express from 'express';
 import SensorData from '../models/SensorData.js';
 import Alert from '../models/Alert.js';
+import UserSettings from '../models/UserSettings.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -77,8 +78,13 @@ router.post('/data', authenticateToken, async (req, res) => {
 
     const savedData = await SensorData.insertMany(sensorDataArray);
 
-    // Check for alerts
-    const alerts = await checkAndCreateAlerts(req.user._id, savedData);
+    // Check for alerts (respect per-user debounce)
+    const settings = await UserSettings.findOne({ userId: req.user._id }).lean();
+    const alerts = await checkAndCreateAlerts(
+      req.user._id,
+      savedData,
+      settings?.system?.alertDebounceMs
+    );
 
     // Emit live updates via Socket.IO
     const io = req.app.get('io');
@@ -193,8 +199,9 @@ const determineStatus = (type, value) => {
 };
 
 // Helper function to check and create alerts
-const checkAndCreateAlerts = async (userId, sensorDataArray) => {
+const checkAndCreateAlerts = async (userId, sensorDataArray, debounceMs) => {
   const alerts = [];
+  const effectiveDebounceMs = Number(debounceMs ?? process.env.ALERT_DEBOUNCE_MS ?? 5 * 60 * 1000);
   const thresholds = {
     temperature: { min: 18, max: 28 },
     humidity: { min: 40, max: 80 },
@@ -211,6 +218,15 @@ const checkAndCreateAlerts = async (userId, sensorDataArray) => {
     const { value } = data;
 
     if (value < min || value > max) {
+      // Debounce: skip if a recent alert for same sensor/device exists
+      const recent = await Alert.findOne({
+        userId,
+        type: data.sensorType,
+        deviceId: data.deviceId,
+        createdAt: { $gte: new Date(Date.now() - effectiveDebounceMs) }
+      }).sort({ createdAt: -1 });
+      if (recent) continue;
+
       const severity = value < min * 0.8 || value > max * 1.2 ? 'high' : 'medium';
 
       const alert = new Alert({

@@ -65,6 +65,7 @@ const Settings = () => {
     timezone: 'UTC',
     dateFormat: 'MM/DD/YYYY',
     temperatureUnit: 'celsius',
+    alertDebounceMs: 5 * 60 * 1000,
     autoSave: true
   });
 
@@ -132,7 +133,11 @@ const Settings = () => {
         const { notifications, security, system } = response.data.settings;
         setNotificationData(notifications || notificationData);
         setSecurityData(prev => ({ ...prev, twoFactorEnabled: security?.twoFactorEnabled || false }));
-        setSystemData(system || systemData);
+        setSystemData(prev => ({
+          ...prev,
+          ...(system || {}),
+          alertDebounceMs: system?.alertDebounceMs ?? prev.alertDebounceMs
+        }));
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -689,6 +694,11 @@ const Settings = () => {
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm ring-1 ring-black/5 dark:ring-white/10 transition-shadow hover:shadow-md">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">System Preferences</h3>
         
+        {(() => {
+          const debounceOptions = [1, 5, 10, 30, 60];
+          const currentMinutes = Math.max(1, Math.round((systemData.alertDebounceMs || 0) / 60000));
+          return (
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -751,7 +761,31 @@ const Settings = () => {
               <option value="fahrenheit">Fahrenheit (°F)</option>
             </select>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Alert Debounce
+            </label>
+            <select
+              value={String(currentMinutes)}
+              onChange={(e) => {
+                const minutes = Number(e.target.value);
+                setSystemData(prev => ({ ...prev, alertDebounceMs: minutes * 60 * 1000 }));
+              }}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+            >
+              {debounceOptions.map(m => (
+                <option key={m} value={String(m)}>{m} minute{m === 1 ? '' : 's'}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Minimum time between alerts for the same sensor/device.
+            </p>
+          </div>
         </div>
+
+          );
+        })()}
 
         <div className="mt-6">
           <div className="flex items-center justify-between">
