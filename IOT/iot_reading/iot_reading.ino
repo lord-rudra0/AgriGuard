@@ -3,12 +3,11 @@
 #include <HTTPClient.h>
 
 /* -------- WIFI + API CONFIG -------- */
-#define WIFI_SSID     "12th man"
-#define WIFI_PASSWORD "23232323"
+#define WIFI_SSID     "iqooneo10"
+#define WIFI_PASSWORD "12345678"
 const char *serverUrl = "http://10.52.132.132:5000/api/iot/ingest";
 const char *deviceId = "esp32-greenhouse-1";
-const char *iotApiKey = "some-strong-key";
-const char *userId = "68a0ff564cbfd4081d6d7972";
+const char *deviceToken = "YOUR_DEVICE_TOKEN";
 
 
 /* -------- PIN DEFINITIONS -------- */
@@ -132,22 +131,28 @@ void loop() {
   if (WiFi.status() == WL_CONNECTED) {
     float co2ppm = gasPercent * 100.0;   // map 0-100% to 0-10000 ppm scale
     float lightLux = lightPercent * 10.0; // map 0-100% to 0-1000 lux scale
+    if (!isfinite(temperature)) temperature = 0.0;
+    if (!isfinite(humidity)) humidity = 0.0;
+    if (!isfinite(co2ppm)) co2ppm = 0.0;
+    if (!isfinite(lightLux)) lightLux = 0.0;
 
     String payload = "{";
     payload += "\"deviceId\":\"" + String(deviceId) + "\",";
-    payload += "\"userId\":\"" + String(userId) + "\",";
     payload += "\"readings\":[";
     payload += "{\"type\":\"temperature\",\"value\":" + String(temperature, 2) + ",\"unit\":\"C\"},";
     payload += "{\"type\":\"humidity\",\"value\":" + String(humidity, 2) + ",\"unit\":\"%\"},";
     payload += "{\"type\":\"co2\",\"value\":" + String(co2ppm, 1) + ",\"unit\":\"ppm\"},";
     payload += "{\"type\":\"light\",\"value\":" + String(lightLux, 1) + ",\"unit\":\"lux\"},";
-    payload += "{\"type\":\"soilMoisture\",\"value\":" + String(soilPercent, 1) + ",\"unit\":\"%\"}";
+    payload += "{\"type\":\"soilMoisture\",\"value\":" + String(soilPercent) + ",\"unit\":\"%\"}";
     payload += "]}";
+
+    Serial.print("Payload: ");
+    Serial.println(payload);
 
     HTTPClient http;
     http.begin(serverUrl);
     http.addHeader("Content-Type", "application/json");
-    http.addHeader("x-iot-key", String(iotApiKey));
+    http.addHeader("x-device-token", String(deviceToken));
 
     int httpCode = http.POST(payload);
     Serial.print("POST /api/iot/ingest -> ");

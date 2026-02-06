@@ -1,6 +1,8 @@
 import express from 'express';
+import crypto from 'crypto';
 import SensorData from '../models/SensorData.js';
 import Alert from '../models/Alert.js';
+import Device from '../models/Device.js';
 
 const router = express.Router();
 
@@ -140,20 +142,39 @@ const checkAndCreateAlerts = async (userId, sensorDataArray) => {
 
 router.post('/ingest', async (req, res) => {
   try {
-    const expectedKey = process.env.IOT_API_KEY;
-    if (!expectedKey) {
-      return res.status(503).json({ message: 'IOT_API_KEY not set on server' });
+    let resolvedUserId = null;
+    let resolvedDeviceId = null;
+
+    const deviceToken = req.headers['x-device-token'] || req.query.deviceToken || req.body?.deviceToken;
+    if (deviceToken) {
+      const tokenHash = crypto.createHash('sha256').update(String(deviceToken)).digest('hex');
+      const device = await Device.findOne({ tokenHash, active: true });
+      if (!device) {
+        return res.status(401).json({ message: 'Invalid device token' });
+      }
+      resolvedUserId = device.userId;
+      resolvedDeviceId = device.deviceId;
+      device.lastSeenAt = new Date();
+      await device.save();
+    } else {
+      // Legacy / fallback flow using shared IoT API key + explicit userId
+      const expectedKey = process.env.IOT_API_KEY;
+      if (!expectedKey) {
+        return res.status(503).json({ message: 'IOT_API_KEY not set on server' });
+      }
+      const providedKey = req.headers['x-iot-key'] || req.query.key || req.body?.apiKey;
+      if (String(providedKey || '') !== String(expectedKey)) {
+        return res.status(401).json({ message: 'Invalid IoT API key' });
+      }
+      const { deviceId, userId } = req.body || {};
+      if (!deviceId || !userId) {
+        return res.status(400).json({ message: 'deviceId and userId are required' });
+      }
+      resolvedUserId = userId;
+      resolvedDeviceId = deviceId;
     }
 
-    const providedKey = req.headers['x-iot-key'] || req.query.key || req.body?.apiKey;
-    if (String(providedKey || '') !== String(expectedKey)) {
-      return res.status(401).json({ message: 'Invalid IoT API key' });
-    }
-
-    const { deviceId, userId, readings, line } = req.body || {};
-    if (!deviceId || !userId) {
-      return res.status(400).json({ message: 'deviceId and userId are required' });
-    }
+    const { readings, line } = req.body || {};
 
     let incomingReadings = Array.isArray(readings) ? readings : null;
     if (!incomingReadings && typeof line === 'string') {
@@ -173,8 +194,8 @@ router.post('/ingest', async (req, res) => {
     }
 
     const sensorDataArray = normalized.map(reading => ({
-      userId,
-      deviceId,
+      userId: resolvedUserId,
+      deviceId: resolvedDeviceId,
       sensorType: reading.type,
       value: reading.value,
       unit: reading.unit,
@@ -187,11 +208,11 @@ router.post('/ingest', async (req, res) => {
 
     // Log device connection when first seen or after offline window
     const now = Date.now();
-    const lastSeen = deviceLastSeen.get(deviceId);
+    const lastSeen = deviceLastSeen.get(resolvedDeviceId);
     if (!lastSeen || (now - lastSeen) > DEVICE_ONLINE_WINDOW_MS) {
-      console.log(`✅ ESP connected: deviceId=${deviceId} userId=${userId}`);
+      console.log(`✅ ESP connected: deviceId=${resolvedDeviceId} userId=${resolvedUserId}`);
     }
-    deviceLastSeen.set(deviceId, now);
+    deviceLastSeen.set(resolvedDeviceId, now);
     const alerts = await checkAndCreateAlerts(userId, savedData);
 
     const io = req.app.get('io');
@@ -202,10 +223,10 @@ router.post('/ingest', async (req, res) => {
       });
       dashboardData.timestamp = new Date();
       dashboardData.lastUpdated = dashboardData.timestamp;
-      io.to(`user_${String(userId)}`).emit('sensorData', dashboardData);
+      io.to(`user_${String(resolvedUserId)}`).emit('sensorData', dashboardData);
 
       alerts.forEach(alert => {
-        io.to(`user_${String(userId)}`).emit('newAlert', alert);
+        io.to(`user_${String(resolvedUserId)}`).emit('newAlert', alert);
       });
     }
 

@@ -9,7 +9,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { authenticateSocket } from './src/middleware/auth.js';
-import { authRoutes as authRoutesStatic, chatRoutes as chatRoutesStatic, chatSystemRoutes as chatSystemRoutesStatic, settingsRoutes as settingsRoutesStatic, notificationsRoutes as notificationsRoutesStatic, iotRoutes as iotRoutesStatic } from './src/routes/index.js';
+import { authRoutes as authRoutesStatic, chatRoutes as chatRoutesStatic, chatSystemRoutes as chatSystemRoutesStatic, settingsRoutes as settingsRoutesStatic, notificationsRoutes as notificationsRoutesStatic, iotRoutes as iotRoutesStatic, devicesRoutes as devicesRoutesStatic } from './src/routes/index.js';
 import multer from 'multer';
 import { predictImage } from './src/onnx/mushroomModel.js';
 
@@ -170,6 +170,9 @@ if (notificationsRoutesStatic) {
 }
 if (iotRoutesStatic) {
   app.use('/api/iot', iotRoutesStatic);
+}
+if (devicesRoutesStatic) {
+  app.use('/api/devices', devicesRoutesStatic);
 }
 
 // Expose VAPID public key for push subscription (synchronous endpoint)
@@ -343,7 +346,7 @@ const importRoute = async (routePath, routeName) => {
 };
 
 // Import routes with error handling - using routes index for reliability
-let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes, iotRoutes;
+let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes, iotRoutes, devicesRoutes;
 
 // Import routes one by one with error handling - more robust approach
 const loadRoutes = async () => {
@@ -370,6 +373,7 @@ const loadRoutes = async () => {
       thresholdsRoutes = routesIndex.thresholdsRoutes;
       calendarRoutes = routesIndex.calendarRoutes;
       iotRoutes = routesIndex.iotRoutes;
+      devicesRoutes = routesIndex.devicesRoutes;
 
       console.log('✅ All routes loaded from index');
     } catch (indexError) {
@@ -391,6 +395,7 @@ const loadRoutes = async () => {
       thresholdsRoutes = await importRoute('./src/routes/thresholds.js', 'Thresholds');
       calendarRoutes = await importRoute('./src/routes/calendar.js', 'Calendar');
       iotRoutes = await importRoute('./src/routes/iot.js', 'IoT');
+      devicesRoutes = await importRoute('./src/routes/devices.js', 'Devices');
     }
 
     // Use routes only if they imported successfully
@@ -412,6 +417,7 @@ const loadRoutes = async () => {
     if (thresholdsRoutes) app.use('/api/thresholds', thresholdsRoutes);
     if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
     if (iotRoutes) app.use('/api/iot', iotRoutes);
+    if (devicesRoutes) app.use('/api/devices', devicesRoutes);
 
     console.log('✅ All routes configured');
   } catch (error) {
