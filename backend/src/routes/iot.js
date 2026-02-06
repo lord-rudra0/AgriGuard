@@ -213,7 +213,7 @@ router.post('/ingest', async (req, res) => {
       console.log(`✅ ESP connected: deviceId=${resolvedDeviceId} userId=${resolvedUserId}`);
     }
     deviceLastSeen.set(resolvedDeviceId, now);
-    const alerts = await checkAndCreateAlerts(userId, savedData);
+    const alerts = await checkAndCreateAlerts(resolvedUserId, savedData);
 
     const io = req.app.get('io');
     if (io) {

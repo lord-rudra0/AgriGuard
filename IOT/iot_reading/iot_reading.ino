@@ -7,7 +7,7 @@
 #define WIFI_PASSWORD "12345678"
 const char *serverUrl = "http://10.52.132.132:5000/api/iot/ingest";
 const char *deviceId = "esp32-greenhouse-1";
-const char *deviceToken = "YOUR_DEVICE_TOKEN";
+const char *deviceToken = "0b2b5df83612d51f7edbf5d5f38abd81d6e0d49071367238062e651b931553af";
 
 
 /* -------- PIN DEFINITIONS -------- */

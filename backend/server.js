@@ -146,7 +146,11 @@ const limiter = rateLimit({
     return req.headers['x-forwarded-for']?.split(',')[0] || req.ip || req.connection.remoteAddress;
   }
 });
-app.use('/api', limiter);
+// Skip rate limit for IoT ingest (devices post frequently)
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/iot')) return next();
+  return limiter(req, res, next);
+});
 
 // Synchronously mount critical routes to avoid cold-start 404s
 app.use('/api/auth', authRoutesStatic);
