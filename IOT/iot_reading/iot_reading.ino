@@ -5,13 +5,11 @@
 /* -------- WIFI + API CONFIG -------- */
 #define WIFI_SSID     "12th man"
 #define WIFI_PASSWORD "23232323"
-// const char *serverUrl = "http://10.210.237.142:5000/api/sensors/data";
 const char *serverUrl = "http://10.52.132.132:5000/api/iot/ingest";
-const char *authToken =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
-    "eyJpZCI6IjY4YWRkNTljY2VjMmU2MjNjZDE5NWFlMyIsImlhdCI6MTc3MDMxNDAzNSwiZXhwIj"
-    "oxNzcyOTA2MDM1fQ.8OiJvtQJ6VFWZJF_4HMEpM_nF7x7atDx9sRruIuiaxo";
 const char *deviceId = "esp32-greenhouse-1";
+const char *iotApiKey = "some-strong-key";
+const char *userId = "68a0ff564cbfd4081d6d7972";
+
 
 /* -------- PIN DEFINITIONS -------- */
 #define DHTPIN 4
@@ -137,6 +135,7 @@ void loop() {
 
     String payload = "{";
     payload += "\"deviceId\":\"" + String(deviceId) + "\",";
+    payload += "\"userId\":\"" + String(userId) + "\",";
     payload += "\"readings\":[";
     payload += "{\"type\":\"temperature\",\"value\":" + String(temperature, 2) + ",\"unit\":\"C\"},";
     payload += "{\"type\":\"humidity\",\"value\":" + String(humidity, 2) + ",\"unit\":\"%\"},";
@@ -148,7 +147,7 @@ void loop() {
     HTTPClient http;
     http.begin(serverUrl);
     http.addHeader("Content-Type", "application/json");
-    http.addHeader("Authorization", String("Bearer ") + authToken);
+    http.addHeader("x-iot-key", String(iotApiKey));
 
     int httpCode = http.POST(payload);
     Serial.print("POST /api/iot/ingest -> ");

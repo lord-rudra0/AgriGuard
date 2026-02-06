@@ -4,6 +4,10 @@ import Alert from '../models/Alert.js';
 
 const router = express.Router();
 
+// Track last-seen time per device for simple connection logging
+const deviceLastSeen = new Map();
+const DEVICE_ONLINE_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
+
 const normalizeType = (type) => {
   if (!type) return null;
   const t = String(type).toLowerCase();
@@ -180,6 +184,14 @@ router.post('/ingest', async (req, res) => {
     }));
 
     const savedData = await SensorData.insertMany(sensorDataArray);
+
+    // Log device connection when first seen or after offline window
+    const now = Date.now();
+    const lastSeen = deviceLastSeen.get(deviceId);
+    if (!lastSeen || (now - lastSeen) > DEVICE_ONLINE_WINDOW_MS) {
+      console.log(`✅ ESP connected: deviceId=${deviceId} userId=${userId}`);
+    }
+    deviceLastSeen.set(deviceId, now);
     const alerts = await checkAndCreateAlerts(userId, savedData);
 
     const io = req.app.get('io');
