@@ -255,6 +255,14 @@ const Header = () => {
                           <History className="w-4 h-4 mr-3" />
                           Scan History
                         </Link>
+                        <Link
+                          to="/devices"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700/60 transition-all duration-200"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          <Shield className="w-4 h-4 mr-3" />
+                          Devices
+                        </Link>
                         <hr className="my-1 border-gray-200 dark:border-gray-700" />
                         <button
                           onClick={() => {
