@@ -7,9 +7,13 @@ export default function Scan() {
   const { scannedFile, clearScan } = useScan();
   const [preview, setPreview] = useState(null);
   const [file, setFile] = useState(null);
-  
+
   const [predicting, setPredicting] = useState(false);
   const [analysis, setAnalysis] = useState(null);
+
+  const [geminiAnalysis, setGeminiAnalysis] = useState(null);
+  const [geminiLoading, setGeminiLoading] = useState(false);
+
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -54,11 +58,37 @@ export default function Scan() {
     })();
   };
 
+  const handleGeminiAnalysis = async () => {
+    if (!file) return;
+    try {
+      setGeminiLoading(true);
+      setGeminiAnalysis(null);
+      const form = new FormData();
+      form.append('image', file, file.name || 'upload.jpg');
+
+      const resp = await axios.post('/api/gemini-mushroom/analyze', form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (resp.data && resp.data.success) {
+        setGeminiAnalysis(resp.data.analysis || resp.data.result); // Handle both structure just in case
+      } else {
+        setGeminiAnalysis({ error: resp.data.error || 'Failed to analyze' });
+      }
+    } catch (e) {
+      console.error('Gemini analysis failed', e);
+      setGeminiAnalysis({ error: e?.response?.data?.error || e.message });
+    } finally {
+      setGeminiLoading(false);
+    }
+  };
+
   const clear = () => {
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
     setFile(null);
     setAnalysis(null);
+    setGeminiAnalysis(null);
     // clear shared context as well
     clearScan();
   };
@@ -181,7 +211,73 @@ export default function Scan() {
                   </div>
 
                   <div className="mt-4">
-                    <button onClick={clear} className="px-4 py-2 rounded border">Remove</button>
+                    <button onClick={clear} className="px-4 py-2 rounded border hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-gray-300">Remove</button>
+                  </div>
+
+                  {/* Gemini Section */}
+                  <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={handleGeminiAnalysis}
+                      disabled={geminiLoading || !file}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                    >
+                      {geminiLoading ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                          </svg>
+                          <span>Asking Gemini...</span>
+                        </>
+                      ) : (
+                        <span>✨ Ask Gemini (Detailed Analysis)</span>
+                      )}
+                    </button>
+
+                    {geminiAnalysis && (
+                      <div className="mt-4 p-4 bg-purple-50 dark:bg-gray-700/50 rounded-lg border border-purple-100 dark:border-gray-600">
+                        {geminiAnalysis.error ? (
+                          <div className="text-red-600 text-sm">Error: {geminiAnalysis.error}</div>
+                        ) : (
+                          <div className="space-y-3 text-sm">
+                            <h4 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                              <span>🤖 Gemini Insights</span>
+                              <span className="text-xs font-normal px-2 py-0.5 bg-purple-200 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
+                                {geminiAnalysis.confidence}% Conf.
+                              </span>
+                            </h4>
+
+                            <div className="grid grid-cols-1 gap-2">
+                              <div className="flex justify-between border-b border-purple-100 dark:border-gray-600 pb-1">
+                                <span className="text-gray-600 dark:text-gray-400">Type</span>
+                                <span className="font-medium text-gray-900 dark:text-white text-right">{geminiAnalysis.type}</span>
+                              </div>
+
+                              <div className="flex justify-between border-b border-purple-100 dark:border-gray-600 pb-1">
+                                <span className="text-gray-600 dark:text-gray-400">Edible</span>
+                                <span className={`font-medium ${geminiAnalysis.edible ? 'text-green-600' : 'text-red-600'}`}>
+                                  {geminiAnalysis.edible ? '✅ Yes' : '❌ No'}
+                                </span>
+                              </div>
+
+                              <div className="flex justify-between border-b border-purple-100 dark:border-gray-600 pb-1">
+                                <span className="text-gray-600 dark:text-gray-400">Health</span>
+                                <span className={`font-medium ${geminiAnalysis.disease ? 'text-red-600' : 'text-green-600'}`}>
+                                  {geminiAnalysis.disease ? '⚠️ Diseased' : '✅ Healthy'}
+                                </span>
+                              </div>
+
+                              {geminiAnalysis.disease && (
+                                <div className="flex justify-between border-b border-purple-100 dark:border-gray-600 pb-1">
+                                  <span className="text-gray-600 dark:text-gray-400">Disease Type</span>
+                                  <span className="font-medium text-red-600 text-right">{geminiAnalysis.diseaseType}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

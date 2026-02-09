@@ -8,6 +8,7 @@ export { default as chatSystemRoutes } from './chatSystem.js';
 export { default as settingsRoutes } from './settings.js';
 export { default as alertsRoutes } from './alerts.js';
 export { default as geminiRoutes } from './gemini.js';
+export { default as geminiMushroomRoutes } from './geminiMushroom.js';
 export { default as analyticsViewsRoutes } from './analyticsViews.js';
 export { default as reportsRoutes } from './reports.js';
 export { default as recipesRoutes } from './recipes.js';
