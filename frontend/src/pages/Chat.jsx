@@ -462,7 +462,7 @@ const Chat = () => {
   }, [isResizing]);
 
   return (
-    <div className="relative h-full min-h-0 flex overflow-x-hidden overflow-y-hidden text-gray-100 selection:bg-indigo-500/30 bg-gray-950">
+    <div className="relative h-full min-h-0 flex overflow-x-hidden overflow-y-hidden text-gray-900 dark:text-gray-100 selection:bg-indigo-500/30 bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
       {/* Mesh Gradient Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-indigo-500/20 blur-[120px] rounded-full animate-pulse-slow" />
@@ -473,12 +473,12 @@ const Chat = () => {
       </div>
 
       {/* Sidebar: Chat list */}
-      <aside className={`relative z-10 ${selectedChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 overflow-x-hidden overflow-y-auto no-scrollbar h-[calc(100vh-4rem)] bg-white/5 backdrop-blur-xl border-r border-white/10 flex-col shadow-2xl`}
+      <aside className={`relative z-10 ${selectedChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 overflow-x-hidden overflow-y-auto no-scrollbar h-[calc(100vh-4rem)] bg-white/60 dark:bg-white/5 backdrop-blur-xl border-r border-gray-200 dark:border-white/10 flex-col shadow-2xl`}
       >
-        <div className="p-4 flex items-center justify-between sticky top-0 z-10 bg-white/5 backdrop-blur-xl border-b border-white/10">
-          <span className="font-bold text-lg text-white tracking-wide">Chats</span>
+        <div className="p-4 flex items-center justify-between sticky top-0 z-10 bg-white/60 dark:bg-white/5 backdrop-blur-xl border-b border-gray-200 dark:border-white/10">
+          <span className="font-bold text-lg text-gray-900 dark:text-white tracking-wide">Chats</span>
           <button
-            className="ml-2 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 text-indigo-300 border border-white/10 transition-all hover:scale-105 active:scale-95"
+            className="ml-2 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-indigo-600 dark:text-indigo-300 border border-gray-200 dark:border-white/10 transition-all hover:scale-105 active:scale-95"
             onClick={() => setShowNewChat(true)}
             title="New chat"
           >
@@ -603,11 +603,11 @@ const Chat = () => {
         <div className="flex-1 flex flex-col md:px-6 md:pb-6 md:pt-0 min-h-0">
           {selectedChat ? (
             <>
-              <div className={`flex items-center justify-between transition-all duration-500 ease-out transform sticky top-0 z-30 px-4 py-3 md:px-0 md:py-0 bg-white/5 backdrop-blur-xl border-b border-white/10 md:bg-transparent md:border-b-0 md:pt-4 md:mb-2 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
-                <div className="font-bold text-lg md:text-2xl mb-0.5 text-white flex items-center gap-2 filter drop-shadow-md">
+              <div className={`flex items-center justify-between transition-all duration-500 ease-out transform sticky top-0 z-30 px-4 py-3 md:px-0 md:py-0 bg-white/60 dark:bg-white/5 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 md:bg-transparent md:border-b-0 md:pt-4 md:mb-2 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
+                <div className="font-bold text-lg md:text-2xl mb-0.5 text-gray-900 dark:text-white flex items-center gap-2 filter drop-shadow-md">
                   {/* Back button for mobile */}
                   <button
-                    className="md:hidden mr-1 inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/10 text-white border border-white/10 active:scale-95 hover:bg-white/20"
+                    className="md:hidden mr-1 inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/10 active:scale-95 hover:bg-gray-200 dark:hover:bg-white/20"
                     onClick={() => setSelectedChat(null)}
                     aria-label="Back to chats"
                   >
@@ -642,7 +642,7 @@ const Chat = () => {
                 <div className="relative" ref={headerMenuRef}>
                   <button
                     onClick={() => setHeaderMenuOpen((v) => !v)}
-                    className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 active:scale-95 backdrop-blur-md"
+                    className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/60 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white hover:bg-white/80 dark:hover:bg-white/10 active:scale-95 backdrop-blur-md"
                     title="More"
                     aria-haspopup="menu"
                     aria-expanded={headerMenuOpen}
@@ -687,7 +687,7 @@ const Chat = () => {
                 <div className="h-2" />
               )}
               <div
-                className={`chat-messages-container flex-1 min-h-0 overflow-y-auto no-scrollbar overflow-x-hidden pb-24 md:pb-6 md:rounded-[24px] md:shadow-2xl md:p-6 p-3 mb-2 md:mb-4 bg-white/5 backdrop-blur-xl border border-white/10 shadow-black/20 transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                className={`chat-messages-container flex-1 min-h-0 overflow-y-auto no-scrollbar overflow-x-hidden pb-24 md:pb-6 md:rounded-[24px] md:shadow-2xl md:p-6 p-3 mb-2 md:mb-4 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 shadow-gray-200/50 dark:shadow-black/20 transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 ref={messagesContainerRef}
               >
                 {loadingMessages ? (

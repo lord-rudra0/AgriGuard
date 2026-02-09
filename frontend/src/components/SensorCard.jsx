@@ -58,15 +58,15 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
   const getStatusColor = () => {
     switch (status) {
       case 'safe':
-        return 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]';
+        return 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]';
       case 'warning':
-        return 'text-amber-400 bg-amber-500/10 border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.2)]';
+        return 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]';
       case 'danger':
-        return 'text-rose-400 bg-rose-500/10 border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.2)]';
+        return 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]';
       case 'inactive':
-        return 'text-gray-400 bg-gray-500/10 border border-gray-500/20';
+        return 'text-gray-500 dark:text-gray-400 bg-gray-500/10 border border-gray-500/20';
       default:
-        return 'text-gray-400 bg-gray-500/10 border border-gray-500/20';
+        return 'text-gray-500 dark:text-gray-400 bg-gray-500/10 border border-gray-500/20';
     }
   };
 
@@ -97,7 +97,7 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
   };
 
   return (
-    <div className="relative p-6 rounded-[24px] bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 shadow-xl shadow-black/20 group">
+    <div className="relative p-6 rounded-[24px] bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-white/10 hover:bg-white/80 dark:hover:bg-white/10 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 shadow-xl shadow-gray-200/50 dark:shadow-black/20 group">
       {/* Header with icon and status */}
       <div className="flex items-center justify-between mb-6">
         <div className={`p-3 rounded-2xl ${getStatusColor()} transition-colors duration-300 group-hover:scale-110 transform`}>
@@ -112,15 +112,15 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
       </div>
 
       {/* Title */}
-      <h3 className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-1 text-left">
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1 text-left">
         {formatTitle(type)}
       </h3>
 
       {/* Value */}
       <div className="mb-6 text-left">
-        <div className="text-4xl font-black text-white tracking-tight flex items-baseline gap-1">
+        <div className="text-4xl font-black text-gray-900 dark:text-white tracking-tight flex items-baseline gap-1">
           {value !== undefined && value !== null ? value : '--'}
-          <span className="text-lg font-bold text-white/40">
+          <span className="text-lg font-bold text-gray-400 dark:text-white/40">
             {unit}
           </span>
         </div>
@@ -139,7 +139,7 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
       )}
 
       {/* Last updated */}
-      <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-widest border-t border-white/5 pt-4">
+      <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-t border-gray-200 dark:border-white/5 pt-4">
         <span>Updated</span>
         <span className="text-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.4)] animate-pulse">{formatTime(lastReading)}</span>
       </div>

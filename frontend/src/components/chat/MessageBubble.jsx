@@ -5,8 +5,8 @@ const MessageBubble = ({ me, author, content, time, type, mediaUrl, mediaType, s
     <div className={`flex ${me ? 'justify-end' : 'justify-start'} animate-fade-up transition-all duration-300`}>
       <div
         className={`max-w-[90%] sm:max-w-[75%] px-4 py-3 rounded-2xl shadow-lg transition-all duration-300 backdrop-blur-md will-change-transform ${me
-            ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-sm border border-white/20 shadow-indigo-500/20 hover:scale-[1.01]'
-            : 'bg-white/10 text-gray-100 border border-white/10 rounded-tl-sm hover:bg-white/15 hover:scale-[1.01] shadow-black/10'
+          ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-sm border border-white/20 shadow-indigo-500/20 hover:scale-[1.01]'
+          : 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-white/10 rounded-tl-sm hover:bg-gray-50 dark:hover:bg-white/15 hover:scale-[1.01] shadow-sm shadow-black/5 dark:shadow-black/10'
           }`}
       >
         {!me && (
@@ -29,14 +29,14 @@ const MessageBubble = ({ me, author, content, time, type, mediaUrl, mediaType, s
               <img
                 src={src}
                 alt="attachment"
-                className="max-w-full h-auto max-h-64 rounded-md border border-black/10 transition-transform duration-300 ease-out hover:scale-[1.02]"
+                className="max-w-full h-auto max-h-64 rounded-md border border-gray-200 dark:border-black/10 transition-transform duration-300 ease-out hover:scale-[1.02]"
               />
             </a>
           );
         })() : (
           <p className="text-base leading-relaxed whitespace-pre-wrap break-words break-all text-shadow-sm">{content}</p>
         )}
-        <div className={`text-[10px] mt-1.5 font-medium ${me ? 'text-white/60' : 'text-gray-400'}`}>
+        <div className={`text-[10px] mt-1.5 font-medium ${me ? 'text-white/60' : 'text-gray-500 dark:text-gray-400'}`}>
           {time}
           {me && totalOthers > 0 && (
             <span className="ml-1 opacity-80">

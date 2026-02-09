@@ -181,7 +181,7 @@ const Dashboard = () => {
   const lastSeenWindowMs = 2 * 60 * 1000;
 
   return (
-    <div className="relative min-h-screen bg-gray-950 overflow-hidden text-gray-100 selection:bg-indigo-500/30">
+    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden text-gray-900 dark:text-gray-100 selection:bg-indigo-500/30 transition-colors duration-300">
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-indigo-500/20 blur-[120px] rounded-full animate-pulse-slow" />
         <div className="absolute top-[20%] -right-[5%] w-[40%] h-[40%] bg-purple-500/20 blur-[100px] rounded-full animate-float" />
@@ -198,8 +198,8 @@ const Dashboard = () => {
               <h1 className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent filter drop-shadow-lg">
                 Farm Dashboard
               </h1>
-              <p className="mt-2 text-lg text-gray-400 font-light">
-                Real-time monitoring of your <span className="text-indigo-400 font-medium">mycelium</span> environment
+              <p className="mt-2 text-lg text-gray-600 dark:text-gray-400 font-light">
+                Real-time monitoring of your <span className="text-indigo-600 dark:text-indigo-400 font-medium">mycelium</span> environment
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -260,12 +260,12 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Historical Chart */}
           <div className={`lg:col-span-2 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-            <div className="relative p-6 rounded-[32px] bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/20">
+            <div className="relative p-6 rounded-[32px] bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 shadow-2xl shadow-gray-200/50 dark:shadow-black/20">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl font-bold text-white tracking-wide">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-wide">
                   Environmental Trends
                 </h2>
-                <button className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-white/5 hover:bg-white/10 text-indigo-300 border border-white/10 transition-all hover:scale-105 active:scale-95">
+                <button className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-indigo-600 dark:text-indigo-300 border border-gray-200 dark:border-white/10 transition-all hover:scale-105 active:scale-95">
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>Sync</span>
                 </button>
@@ -302,7 +302,7 @@ const Dashboard = () => {
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: 'rgba(17, 24, 39, 0.8)',
+                          backgroundColor: 'rgba(17, 24, 39, 0.8)', // Keep dark for charts usually looks better
                           backdropFilter: 'blur(12px)',
                           border: '1px solid rgba(255, 255, 255, 0.1)',
                           borderRadius: '16px',
@@ -358,8 +358,8 @@ const Dashboard = () => {
 
           {/* Recent Alerts */}
           <div className="space-y-6">
-            <div className={`relative p-6 rounded-[32px] bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/20 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-              <h2 className="text-xl font-bold text-white tracking-wide mb-6">
+            <div className={`relative p-6 rounded-[32px] bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 shadow-2xl shadow-gray-200/50 dark:shadow-black/20 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-wide mb-6">
                 Recent Alerts
               </h2>
 
@@ -369,7 +369,7 @@ const Dashboard = () => {
                     <div
                       key={index}
                       style={{ transitionDelay: `${index * 100}ms` }}
-                      className={`p-4 rounded-2xl border border-white/5 transition-all duration-500 hover:bg-white/5 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'} ${alert.severity === 'high'
+                      className={`p-4 rounded-2xl border border-gray-100 dark:border-white/5 transition-all duration-500 hover:bg-gray-50 dark:hover:bg-white/5 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'} ${alert.severity === 'high'
                         ? 'bg-rose-500/10 text-rose-300'
                         : alert.severity === 'medium'
                           ? 'bg-amber-500/10 text-amber-300'
@@ -405,8 +405,8 @@ const Dashboard = () => {
             </div>
 
             {/* Devices */}
-            <div className={`relative p-6 rounded-[32px] bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/20 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-              <h2 className="text-xl font-bold text-white tracking-wide mb-6">
+            <div className={`relative p-6 rounded-[32px] bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 shadow-2xl shadow-gray-200/50 dark:shadow-black/20 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-wide mb-6">
                 Connected Hardware
               </h2>
 
@@ -449,8 +449,8 @@ const Dashboard = () => {
             </div>
 
             {/* System Status */}
-            <div className={`relative p-6 rounded-[32px] bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/20 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-              <h2 className="text-xl font-bold text-white tracking-wide mb-6">
+            <div className={`relative p-6 rounded-[32px] bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 shadow-2xl shadow-gray-200/50 dark:shadow-black/20 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-wide mb-6">
                 System Status
               </h2>
 

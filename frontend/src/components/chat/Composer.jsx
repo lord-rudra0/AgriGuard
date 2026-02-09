@@ -17,7 +17,7 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
       <button
         type="button"
         onClick={() => fileRef.current?.click()}
-        className="px-4 py-3 rounded-2xl bg-white/10 text-indigo-300 hover:bg-white/20 hover:text-white transition-all active:scale-95 backdrop-blur-md border border-white/10"
+        className="px-4 py-3 rounded-2xl bg-gray-100 dark:bg-white/10 text-indigo-600 dark:text-indigo-300 hover:bg-gray-200 dark:hover:bg-white/20 hover:text-indigo-800 dark:hover:text-white transition-all active:scale-95 backdrop-blur-md border border-gray-200 dark:border-white/10"
         disabled={disabled || uploading}
         title="Attach image"
       >
@@ -26,7 +26,7 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
       <button
         type="button"
         onClick={() => onInsertAskAI && onInsertAskAI()}
-        className="px-4 py-3 rounded-2xl bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-300 hover:from-indigo-500/30 hover:to-purple-500/30 hover:text-white transition-all active:scale-95 backdrop-blur-md border border-white/10 shadow-lg shadow-indigo-500/10"
+        className="px-4 py-3 rounded-2xl bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-500/20 dark:to-purple-500/20 text-indigo-600 dark:text-indigo-300 hover:from-indigo-200 hover:to-purple-200 dark:hover:from-indigo-500/30 dark:hover:to-purple-500/30 hover:text-indigo-800 dark:hover:text-white transition-all active:scale-95 backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-lg shadow-indigo-500/10"
         disabled={disabled}
         title="Ask AI (@ASKAI)"
       >
@@ -66,7 +66,7 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
       )}
       <input
         type="text"
-        className="flex-1 px-6 py-4 rounded-3xl border border-white/10 bg-white/5 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:bg-white/10 transition-all backdrop-blur-md shadow-inner"
+        className="flex-1 px-6 py-4 rounded-3xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:bg-white/80 dark:focus:bg-white/10 transition-all backdrop-blur-md shadow-inner"
         placeholder="Type a message..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
