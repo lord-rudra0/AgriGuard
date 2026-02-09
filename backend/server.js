@@ -351,7 +351,7 @@ const importRoute = async (routePath, routeName) => {
 };
 
 // Import routes with error handling - using routes index for reliability
-let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, geminiMushroomRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes, iotRoutes, devicesRoutes;
+let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, mushroomAnalysisRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes, iotRoutes, devicesRoutes;
 
 // Import routes one by one with error handling - more robust approach
 const loadRoutes = async () => {
@@ -371,7 +371,7 @@ const loadRoutes = async () => {
       settingsRoutes = routesIndex.settingsRoutes;
       alertsRoutes = routesIndex.alertsRoutes;
       geminiRoutes = routesIndex.geminiRoutes;
-      geminiMushroomRoutes = routesIndex.geminiMushroomRoutes;
+      mushroomAnalysisRoutes = routesIndex.mushroomAnalysisRoutes;
       analyticsViewsRoutes = routesIndex.analyticsViewsRoutes;
       reportsRoutes = routesIndex.reportsRoutes;
       recipesRoutes = routesIndex.recipesRoutes;
@@ -394,7 +394,7 @@ const loadRoutes = async () => {
       settingsRoutes = await importRoute('./src/routes/settings.js', 'Settings');
       alertsRoutes = await importRoute('./src/routes/alerts.js', 'Alerts');
       geminiRoutes = await importRoute('./src/routes/gemini.js', 'Gemini');
-      geminiMushroomRoutes = await importRoute('./src/routes/geminiMushroom.js', 'GeminiMushroom');
+      mushroomAnalysisRoutes = await importRoute('./src/routes/mushroomAnalysis.js', 'MushroomAnalysis');
       analyticsViewsRoutes = await importRoute('./src/routes/analyticsViews.js', 'AnalyticsViews');
       reportsRoutes = await importRoute('./src/routes/reports.js', 'Reports');
       recipesRoutes = await importRoute('./src/routes/recipes.js', 'Recipes');
@@ -417,7 +417,7 @@ const loadRoutes = async () => {
     if (settingsRoutes) app.use('/api/settings', settingsRoutes);
     if (alertsRoutes) app.use('/api/alerts', alertsRoutes);
     if (geminiRoutes) app.use('/api/gemini', geminiRoutes);
-    if (geminiMushroomRoutes) app.use('/api/gemini-mushroom', geminiMushroomRoutes);
+    if (mushroomAnalysisRoutes) app.use('/api/analyze/mushroom', mushroomAnalysisRoutes);
     if (analyticsViewsRoutes) app.use('/api/analytics-views', analyticsViewsRoutes);
     if (reportsRoutes) app.use('/api/reports', reportsRoutes);
     if (recipesRoutes) app.use('/api/recipes', recipesRoutes);
@@ -428,6 +428,7 @@ const loadRoutes = async () => {
     if (devicesRoutes) app.use('/api/devices', devicesRoutes);
 
     console.log('✅ All routes configured');
+    console.log('🍄 Mushroom Analysis Routes loaded:', !!mushroomAnalysisRoutes);
   } catch (error) {
     console.error('❌ Error during route loading:', error);
   }

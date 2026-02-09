@@ -17,16 +17,16 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
         const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
         if (!apiKey) {
-            console.warn('[GeminiMushroom] GEMINI_API_KEY is missing in process.env');
-            return res.status(503).json({ error: 'GEMINI_API_KEY not configured on server' });
+            console.warn('[MushroomAnalysis] API configuration missing.');
+            return res.status(503).json({ error: 'Analysis service not configured' });
         }
 
         if (!genAI) {
             try {
                 genAI = new GoogleGenerativeAI(apiKey);
             } catch (e) {
-                console.error('[GeminiMushroom] Failed to initialize GoogleGenerativeAI:', e.message);
-                return res.status(503).json({ error: 'AI Service initialization failed' });
+                console.error('[MushroomAnalysis] Failed to initialize AI model:', e.message);
+                return res.status(503).json({ error: 'Analysis service initialization failed' });
             }
         }
 
