@@ -235,45 +235,79 @@ export default function Scan() {
                     </button>
 
                     {detailedAnalysis && (
-                      <div className="mt-4 p-4 bg-emerald-50 dark:bg-gray-700/50 rounded-lg border border-emerald-100 dark:border-gray-600">
+                      <div className="mt-6 p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-sm relative overflow-hidden">
+
+                        {/* Decorative background element */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+
                         {detailedAnalysis.error ? (
-                          <div className="text-red-600 text-sm">Error: {detailedAnalysis.error}</div>
+                          <div className="text-red-600 text-sm font-medium flex items-center gap-2">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            Error: {detailedAnalysis.error}
+                          </div>
                         ) : (
-                          <div className="space-y-3 text-sm">
-                            <h4 className="font-semibold text-emerald-900 dark:text-emerald-100 flex items-center gap-2">
-                              <span>🔬 Model Insights</span>
-                              <span className="text-xs font-normal px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 rounded-full">
-                                {detailedAnalysis.confidence}% Conf.
-                              </span>
-                            </h4>
-
-                            <div className="grid grid-cols-1 gap-2">
-                              <div className="flex justify-between border-b border-emerald-100 dark:border-gray-600 pb-1">
-                                <span className="text-gray-600 dark:text-gray-400">Type</span>
-                                <span className="font-medium text-gray-900 dark:text-white text-right">{detailedAnalysis.type}</span>
+                          <div className="relative z-10">
+                            <div className="flex items-start justify-between mb-4">
+                              <div>
+                                <div className="text-xs font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase mb-1">Detected Object</div>
+                                <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white leading-tight">
+                                  {detailedAnalysis.type || 'Unknown'}
+                                </h3>
                               </div>
-
-                              <div className="flex justify-between border-b border-emerald-100 dark:border-gray-600 pb-1">
-                                <span className="text-gray-600 dark:text-gray-400">Edible</span>
-                                <span className={`font-medium ${detailedAnalysis.edible ? 'text-green-600' : 'text-red-600'}`}>
-                                  {detailedAnalysis.edible ? '✅ Yes' : '❌ No'}
-                                </span>
-                              </div>
-
-                              <div className="flex justify-between border-b border-emerald-100 dark:border-gray-600 pb-1">
-                                <span className="text-gray-600 dark:text-gray-400">Health</span>
-                                <span className={`font-medium ${detailedAnalysis.disease ? 'text-red-600' : 'text-green-600'}`}>
-                                  {detailedAnalysis.disease ? '⚠️ Diseased' : '✅ Healthy'}
-                                </span>
-                              </div>
-
-                              {detailedAnalysis.disease && (
-                                <div className="flex justify-between border-b border-emerald-100 dark:border-gray-600 pb-1">
-                                  <span className="text-gray-600 dark:text-gray-400">Disease Type</span>
-                                  <span className="font-medium text-red-600 text-right">{detailedAnalysis.diseaseType}</span>
+                              <div className="flex flex-col items-end">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">CONFIDENCE</div>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${detailedAnalysis.confidence}%` }}></div>
+                                  </div>
+                                  <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{detailedAnalysis.confidence}%</span>
                                 </div>
-                              )}
+                              </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-3 mt-4">
+                              {/* Edibility Card */}
+                              <div className={`p-3 rounded-lg border ${detailedAnalysis.edible ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'}`}>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">EDIBILITY</div>
+                                <div className={`flex items-center gap-2 font-bold ${detailedAnalysis.edible ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                                  {detailedAnalysis.edible ? (
+                                    <>
+                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                      <span>Edible</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                      <span>Toxic / Inedible</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Health Card */}
+                              <div className={`p-3 rounded-lg border ${!detailedAnalysis.disease ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' : 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'}`}>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">CONDITION</div>
+                                <div className={`flex items-center gap-2 font-bold ${!detailedAnalysis.disease ? 'text-blue-700 dark:text-blue-400' : 'text-orange-700 dark:text-orange-400'}`}>
+                                  {!detailedAnalysis.disease ? (
+                                    <>
+                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                                      <span>Healthy</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                      <span>Diseased</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {detailedAnalysis.disease && detailedAnalysis.diseaseType && (
+                              <div className="mt-3 text-sm text-center bg-gray-100 dark:bg-gray-800 py-1 px-3 rounded text-gray-600 dark:text-gray-300">
+                                <strong>Diagnosis:</strong> {detailedAnalysis.diseaseType}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
