@@ -112,4 +112,13 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
+
+  /* Neon Chart Glow */
+  .recharts-line path {
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+  
+  .recharts-active-dot circle {
+    filter: drop-shadow(0 0 8px currentColor);
+  }
 }

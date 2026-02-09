@@ -18,6 +18,7 @@ import {
   CheckCircle,
   Clock,
   RefreshCw,
+  TrendingUp,
   Wifi,
   WifiOff
 } from 'lucide-react';
@@ -180,17 +181,25 @@ const Dashboard = () => {
   const lastSeenWindowMs = 2 * 60 * 1000;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-up">
+    <div className="relative min-h-screen bg-gray-950 overflow-hidden text-gray-100 selection:bg-indigo-500/30">
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-indigo-500/20 blur-[120px] rounded-full animate-pulse-slow" />
+        <div className="absolute top-[20%] -right-[5%] w-[40%] h-[40%] bg-purple-500/20 blur-[100px] rounded-full animate-float" />
+        <div className="absolute bottom-[10%] left-[20%] w-[30%] h-[30%] bg-emerald-500/20 blur-[80px] rounded-full animate-pulse-slow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-500/10 blur-[120px] rounded-full animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[40%] left-[10%] w-[20%] h-[20%] bg-cyan-500/10 blur-[60px] rounded-full animate-pulse-slow" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-up">
         {/* Header */}
         <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent filter drop-shadow-lg">
                 Farm Dashboard
               </h1>
-              <p className="mt-2 text-indigo-700/90 dark:text-indigo-300">
-                Real-time monitoring of your agricultural environment
+              <p className="mt-2 text-lg text-gray-400 font-light">
+                Real-time monitoring of your <span className="text-indigo-400 font-medium">mycelium</span> environment
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -232,7 +241,7 @@ const Dashboard = () => {
               <div
                 key={config.type}
                 style={{ transitionDelay: `${i * 80 + 100}ms` }}
-                className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:-translate-y-0.5`}
+                className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
               >
                 <SensorCard
                   type={config.type}
@@ -251,14 +260,14 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Historical Chart */}
           <div className={`lg:col-span-2 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-            <div className="card p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  24-Hour Trends
+            <div className="relative p-6 rounded-[32px] bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/20">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-bold text-white tracking-wide">
+                  Environmental Trends
                 </h2>
-                <button className="flex items-center space-x-2 px-3 py-2 text-sm rounded-md bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99] transition-all duration-200">
-                  <RefreshCw className="w-4 h-4" />
-                  <span>Refresh</span>
+                <button className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-white/5 hover:bg-white/10 text-indigo-300 border border-white/10 transition-all hover:scale-105 active:scale-95">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Sync</span>
                 </button>
               </div>
 
@@ -266,46 +275,73 @@ const Dashboard = () => {
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                       <XAxis
                         dataKey="time"
-                        className="text-gray-600 dark:text-gray-400"
+                        stroke="#6b7280"
+                        tick={{ fill: '#9ca3af', fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                        dy={10}
                       />
-                      <YAxis className="text-gray-600 dark:text-gray-400" />
-                      {/* Add a right-side Y axis to match the Line with yAxisId="right" */}
-                      <YAxis yAxisId="right" orientation="right" className="text-gray-600 dark:text-gray-400" />
+                      <YAxis
+                        stroke="#6b7280"
+                        tick={{ fill: '#9ca3af', fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                        dx={-10}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        stroke="#6b7280"
+                        tick={{ fill: '#9ca3af', fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                        dx={10}
+                      />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: 'var(--tw-color-white)',
-                          border: '1px solid var(--tw-color-gray-200)',
-                          borderRadius: '8px'
+                          backgroundColor: 'rgba(17, 24, 39, 0.8)',
+                          backdropFilter: 'blur(12px)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '16px',
+                          color: '#f3f4f6',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                         }}
+                        itemStyle={{ color: '#fff' }}
                       />
-                      <Legend />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
                       <Line
                         type="monotone"
                         dataKey="temperature"
-                        stroke="#f59e0b"
-                        strokeWidth={2.5}
-                        dot={{ fill: '#f59e0b', r: 3 }}
+                        stroke="#fbbf24"
+                        strokeWidth={3}
+                        dot={{ fill: '#fbbf24', r: 4, strokeWidth: 0 }}
+                        activeDot={{ r: 6, stroke: '#fbbf24', strokeWidth: 2 }}
                         name="Temperature (°C)"
+                        animationDuration={1500}
                       />
                       <Line
                         type="monotone"
                         dataKey="humidity"
-                        stroke="#3b82f6"
-                        strokeWidth={2.5}
-                        dot={{ fill: '#3b82f6', r: 3 }}
+                        stroke="#60a5fa"
+                        strokeWidth={3}
+                        dot={{ fill: '#60a5fa', r: 4, strokeWidth: 0 }}
+                        activeDot={{ r: 6, stroke: '#60a5fa', strokeWidth: 2 }}
                         name="Humidity (%)"
+                        animationDuration={1700}
                       />
                       <Line
                         type="monotone"
                         dataKey="co2"
-                        stroke="#10b981"
-                        strokeWidth={2.5}
-                        dot={{ fill: '#10b981', r: 3 }}
+                        stroke="#34d399"
+                        strokeWidth={3}
+                        dot={{ fill: '#34d399', r: 4, strokeWidth: 0 }}
+                        activeDot={{ r: 6, stroke: '#34d399', strokeWidth: 2 }}
                         name="CO₂ (ppm)"
                         yAxisId="right"
+                        animationDuration={1900}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -322,8 +358,8 @@ const Dashboard = () => {
 
           {/* Recent Alerts */}
           <div className="space-y-6">
-            <div className={`card p-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:shadow-lg hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10`}>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+            <div className={`relative p-6 rounded-[32px] bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/20 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+              <h2 className="text-xl font-bold text-white tracking-wide mb-6">
                 Recent Alerts
               </h2>
 
@@ -333,11 +369,11 @@ const Dashboard = () => {
                     <div
                       key={index}
                       style={{ transitionDelay: `${index * 100}ms` }}
-                      className={`p-4 rounded-lg border-l-4 transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'} ${alert.severity === 'high'
-                        ? 'alert-danger border-red-500/80'
+                      className={`p-4 rounded-2xl border border-white/5 transition-all duration-500 hover:bg-white/5 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'} ${alert.severity === 'high'
+                        ? 'bg-rose-500/10 text-rose-300'
                         : alert.severity === 'medium'
-                          ? 'alert-warning border-yellow-500/80'
-                          : 'alert-safe border-green-500/80'
+                          ? 'bg-amber-500/10 text-amber-300'
+                          : 'bg-emerald-500/10 text-emerald-300'
                         }`}
                     >
                       <div className="flex items-start space-x-3">
@@ -369,9 +405,9 @@ const Dashboard = () => {
             </div>
 
             {/* Devices */}
-            <div className={`card p-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:shadow-lg hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10`}>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                Devices
+            <div className={`relative p-6 rounded-[32px] bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/20 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+              <h2 className="text-xl font-bold text-white tracking-wide mb-6">
+                Connected Hardware
               </h2>
 
               {devicesLoading ? (
@@ -413,8 +449,8 @@ const Dashboard = () => {
             </div>
 
             {/* System Status */}
-            <div className={`card p-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'} hover:shadow-lg hover:-translate-y-0.5 ring-1 ring-black/5 dark:ring-white/10`}>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+            <div className={`relative p-6 rounded-[32px] bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/20 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+              <h2 className="text-xl font-bold text-white tracking-wide mb-6">
                 System Status
               </h2>
 
