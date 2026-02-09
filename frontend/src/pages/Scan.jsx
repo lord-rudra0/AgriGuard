@@ -91,6 +91,11 @@ export default function Scan() {
     setDetailedAnalysis(null);
     // clear shared context as well
     clearScan();
+
+    // Reset file input so onChange triggers even if same file is selected again
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
   };
 
   function formatBytes(bytes) {
