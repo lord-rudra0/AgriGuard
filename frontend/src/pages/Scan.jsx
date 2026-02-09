@@ -189,16 +189,16 @@ export default function Scan() {
 
                       <div className="flex justify-between items-start mb-6">
                         <div>
-                          <div className="text-xs font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase mb-1">Deep Analysis Result</div>
+                          <div className="text-xs font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase mb-1">Detected Object</div>
                           <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white leading-tight mb-2">
                             {detailedAnalysis.type || 'Unknown Object'}
                           </h3>
-                          {/* Confidence Bar */}
+                          {/* Overall Confidence Bar */}
                           <div className="flex items-center gap-3">
                             <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${detailedAnalysis.confidence}%` }}></div>
+                              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${detailedAnalysis.typeConfidence || detailedAnalysis.confidence}%` }}></div>
                             </div>
-                            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{detailedAnalysis.confidence}% Match</span>
+                            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{detailedAnalysis.typeConfidence || detailedAnalysis.confidence}% Confidence</span>
                           </div>
                         </div>
                         <div className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-800">
@@ -208,7 +208,12 @@ export default function Scan() {
 
                       <div className="grid grid-cols-2 gap-4 mb-6">
                         <div className={`p-4 rounded-xl border ${detailedAnalysis.edible ? 'bg-white dark:bg-gray-800 border-emerald-100 dark:border-gray-700' : 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'}`}>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold mb-2">Edibility</div>
+                          <div className="flex justify-between items-center mb-2">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Edibility</div>
+                            {detailedAnalysis.edibleConfidence && (
+                              <span className="text-xs font-mono text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">{detailedAnalysis.edibleConfidence}%</span>
+                            )}
+                          </div>
                           <div className={`text-lg font-bold flex items-center gap-2 ${detailedAnalysis.edible ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                             {detailedAnalysis.edible ? (
                               <><span>✅</span> <span>Edible</span></>
@@ -219,7 +224,12 @@ export default function Scan() {
                         </div>
 
                         <div className="p-4 rounded-xl border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700">
-                          <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold mb-2">Condition</div>
+                          <div className="flex justify-between items-center mb-2">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Condition</div>
+                            {detailedAnalysis.diseaseConfidence && (
+                              <span className="text-xs font-mono text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">{detailedAnalysis.diseaseConfidence}%</span>
+                            )}
+                          </div>
                           <div className="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-gray-200">
                             {detailedAnalysis.disease ? (
                               <span className="text-amber-500">⚠️ {detailedAnalysis.diseaseType || 'Diseased'}</span>
@@ -227,6 +237,11 @@ export default function Scan() {
                               <span className="text-blue-500">💙 Healthy</span>
                             )}
                           </div>
+                          {detailedAnalysis.disease && detailedAnalysis.diseaseTypeConfidence && (
+                            <div className="mt-1 text-xs text-gray-400 text-right">
+                              Diagnosis Confidence: {detailedAnalysis.diseaseTypeConfidence}%
+                            </div>
+                          )}
                         </div>
                       </div>
 

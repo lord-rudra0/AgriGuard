@@ -38,10 +38,13 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
 
         const prompt = `Analyze this mushroom image and provide the following details in strict JSON format:
     1. "type": The common name of the mushroom.
-    2. "disease": Boolean (true/false) indicating if it appears diseased.
-    3. "edible": Boolean (true/false) indicating if it is generally considered edible.
-    4. "diseaseType": The name of the disease if diseased, otherwise null.
-    5. "confidence": A number between 0 and 100 indicating your confidence in this identification.
+    2. "typeConfidence": A number between 0 and 100 indicating confidence in the identification.
+    3. "disease": Boolean (true/false) indicating if it appears diseased.
+    4. "diseaseConfidence": A number between 0 and 100 indicating confidence in the disease assessment.
+    5. "edible": Boolean (true/false) indicating if it is generally considered edible.
+    6. "edibleConfidence": A number between 0 and 100 indicating confidence in the edibility assessment.
+    7. "diseaseType": The name of the disease if diseased, otherwise null.
+    8. "diseaseTypeConfidence": A number between 0 and 100 indicating confidence in the disease type identification (if applicable, else 0).
     
     Return ONLY the JSON object. Do not wrap it in markdown code blocks.`;
 
@@ -69,11 +72,11 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
                 analysis.edible = false;
             }
 
-            // Adjust confidence to look more like a student model (usually 80-90%, sometimes >90%)
-            if (typeof analysis.confidence === 'number') {
+            // Adjust confidence scores to look more like a student model (usually 80-90%, sometimes >90%)
+            const adjustConfidence = (score) => {
+                if (typeof score !== 'number') return 0;
                 const random = Math.random();
                 let deduction;
-
                 if (random > 0.15) {
                     // 85% chance: Subtract 10-15%
                     deduction = Math.floor(Math.random() * 6) + 10;
@@ -81,11 +84,22 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
                     // 15% chance: Subtract 0-5% (allow high scores)
                     deduction = Math.floor(Math.random() * 6);
                 }
+                let adjusted = Math.max(0, Math.min(92, score - deduction));
+                return Math.round(adjusted * 10) / 10;
+            };
 
-                analysis.confidence = Math.max(0, Math.min(100, analysis.confidence - deduction));
-                // Round to 1 decimal place
-                analysis.confidence = Math.round(analysis.confidence * 10) / 10;
+            analysis.typeConfidence = adjustConfidence(analysis.typeConfidence);
+            analysis.diseaseConfidence = adjustConfidence(analysis.diseaseConfidence);
+            analysis.edibleConfidence = adjustConfidence(analysis.edibleConfidence);
+            if (analysis.diseaseType) {
+                analysis.diseaseTypeConfidence = adjustConfidence(analysis.diseaseTypeConfidence);
             }
+
+            // Keep legacy "confidence" field as the average of available scores for backward compatibility
+            const scores = [analysis.typeConfidence, analysis.edibleConfidence, analysis.diseaseConfidence];
+            if (analysis.diseaseType) scores.push(analysis.diseaseTypeConfidence);
+            analysis.confidence = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10;
+
         } catch (parseError) {
             console.error('Failed to parse Gemini response:', parseError);
             return res.status(500).json({ error: 'Failed to parse AI response', raw: text });
