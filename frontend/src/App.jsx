@@ -96,7 +96,7 @@ const AppLayout = ({ children }) => {
 
   const PublicFooter = () => (
     <footer className="container mx-auto px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-      © {new Date().getFullYear()} AgriGuard. All rights reserved.
+      © {new Date().getFullYear()} AgriGuard Mycology. All rights reserved.
     </footer>
   );
 

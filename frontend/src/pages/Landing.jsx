@@ -2,35 +2,38 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Shield,
-  Sprout,
+  Microscope,
   Camera,
   Bell,
   ChevronRight,
   ArrowRight,
   CheckCircle2,
   Zap,
-  Globe,
-  Lock
+  Framer,
+  Lock,
+  Thermometer,
+  Droplets,
+  Skull
 } from 'lucide-react';
 
 const features = [
   {
-    title: 'Smart Crop Insights',
-    desc: 'Leverage Gemini AI to monitor crop health, detect issues early, and optimize yield with real-time data analysis.',
-    icon: <Sprout className="w-6 h-6 text-primary-600 dark:text-indigo-400" />,
-    gradient: 'from-emerald-500/20 to-teal-500/20'
+    title: 'Precision Mycology',
+    desc: 'Leverage Gemini AI to monitor mycelium health, detect contamination early, and optimize fruiting conditions with real-time data.',
+    icon: <Microscope className="w-6 h-6 text-primary-600 dark:text-indigo-400" />,
+    gradient: 'from-indigo-500/20 to-purple-500/20'
   },
   {
-    title: 'Visual Diagnosis',
-    desc: 'Upload images of your crops and get instant AI-powered health assessments and treatment suggestions.',
+    title: 'Visual ID & Safety',
+    desc: 'Instant visual analysis of mushroom species. Our AI identifies varieties and flags toxic look-alikes to ensure total harvest safety.',
     icon: <Camera className="w-6 h-6 text-primary-600 dark:text-indigo-400" />,
     gradient: 'from-blue-500/20 to-indigo-500/20'
   },
   {
-    title: 'Intelligent Alerts',
-    desc: 'Receive proactive notifications about weather risks, pest threats, and soil moisture anomalies.',
-    icon: <Bell className="w-6 h-6 text-primary-600 dark:text-indigo-400" />,
-    gradient: 'from-orange-500/20 to-red-500/20'
+    title: 'Climate Orchestration',
+    desc: 'Automated monitoring of CO2, humidity, and temperature. Receive proactive alerts if conditions drift from the ideal phenotype.',
+    icon: <Thermometer className="w-6 h-6 text-primary-600 dark:text-indigo-400" />,
+    gradient: 'from-emerald-500/20 to-teal-500/20'
   }
 ];
 
@@ -46,7 +49,7 @@ export default function Landing() {
       {/* Background Decorative Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary-500/10 dark:bg-primary-500/5 blur-[120px] rounded-full" />
-        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-emerald-500/10 dark:bg-emerald-500/5 blur-[100px] rounded-full" />
+        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-indigo-500/10 dark:bg-indigo-500/5 blur-[100px] rounded-full" />
       </div>
 
       {/* Hero Section */}
@@ -56,28 +59,28 @@ export default function Landing() {
           <div className={`space-y-8 transition-all duration-1000 ease-out ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'}`}>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 border border-primary-100 dark:border-primary-800 text-primary-700 dark:text-primary-300 text-sm font-medium">
               <Zap className="w-4 h-4 fill-primary-500/20" />
-              <span>Next-Gen Agriculture Platform</span>
+              <span>AI-Powered Mycology Intelligence</span>
             </div>
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900 dark:text-white leading-[1.1]">
-              Smart Farming <br />
-              <span className="bg-gradient-to-r from-primary-600 via-indigo-500 to-emerald-500 bg-clip-text text-transparent">
-                Perfected by AI.
+              Next-Gen <br />
+              <span className="bg-gradient-to-r from-primary-600 via-indigo-500 to-purple-500 bg-clip-text text-transparent">
+                Mushroom Tech.
               </span>
             </h1>
 
             <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-xl leading-relaxed">
-              AgriGuard transforms traditional farming with the power of Gemini AI.
-              Real-time scouting, visual diagnostics, and smart analytics—all in one place.
+              AgriGuard specializes in precision cultivation and identification.
+              From mycelium monitoring to edible status verification—all powered by Gemini AI.
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
               <Link
                 to="/register"
-                className="group relative px-8 py-4 rounded-2xl bg-primary-600 text-white font-bold text-lg shadow-xl shadow-primary-600/20 hover:shadow-primary-600/40 hover:-translate-y-1 transition-all"
+                className="group relative px-8 py-4 rounded-2xl bg-indigo-600 text-white font-bold text-lg shadow-xl shadow-indigo-600/20 hover:shadow-indigo-600/40 hover:-translate-y-1 transition-all"
               >
                 <span className="relative z-10 flex items-center gap-2">
-                  Get Started Free <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  Start Monitoring <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </span>
               </Link>
               <Link
@@ -91,36 +94,36 @@ export default function Landing() {
             <div className="flex items-center gap-6 pt-4">
               <div className="flex -space-x-3">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-950 bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-500">
-                    <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-400 to-gray-500 opacity-20" />
+                  <div key={i} className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-950 bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-500 overflow-hidden">
+                    <img src={`https://i.pravatar.cc/100?u=myco${i}`} alt="User" />
                   </div>
                 ))}
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                Trusted by <span className="text-gray-900 dark:text-white font-bold">500+</span> modern farms
+                Used by <span className="text-gray-900 dark:text-white font-bold">500+</span> mycologists
               </p>
             </div>
           </div>
 
           {/* Hero Image / Visualization */}
           <div className={`relative transition-all duration-1000 delay-300 ease-out ${mounted ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-90 -rotate-2'}`}>
-            <div className="absolute -inset-4 bg-gradient-to-tr from-primary-500/20 to-emerald-500/20 blur-3xl opacity-50 rounded-[40px]" />
+            <div className="absolute -inset-4 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 blur-3xl opacity-50 rounded-[40px]" />
             <div className="relative rounded-[32px] overflow-hidden border border-white/20 dark:border-gray-800 shadow-2xl shadow-indigo-500/10">
               <img
-                src="/images/landing/hero.png"
-                alt="AgriGuard AI Visualization"
+                src="/images/landing/hero_mushroom.png"
+                alt="AgriGuard Mushroom Lab AI"
                 className="w-full aspect-[4/3] object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 via-transparent to-transparent pointer-events-none" />
 
               {/* Floating Badge */}
               <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-white/10 dark:bg-gray-900/30 backdrop-blur-xl border border-white/20 flex items-center gap-4 animate-float">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                  <Globe className="w-6 h-6 text-emerald-400" />
+                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Framer className="w-6 h-6 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-white text-sm font-bold">Climate-Sync Active</p>
-                  <p className="text-white/60 text-xs">Real-time weather integration enabled</p>
+                  <p className="text-white text-sm font-bold">Mycelium Analysis</p>
+                  <p className="text-white/60 text-xs">Vigor: Optimal | Contam: 0%</p>
                 </div>
                 <div className="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </div>
@@ -133,7 +136,7 @@ export default function Landing() {
       <section className="border-y border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-950/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-60">
-            {['Sensor Integration', 'Gemini 2.5', 'Data Security', 'Zero Downtime'].map(t => (
+            {['Species Database', 'Safety Validation', 'Growth Analytics', 'Contam Detection'].map(t => (
               <span key={t} className="text-lg font-bold tracking-tighter text-gray-900 dark:text-white uppercase italic">
                 {t}
               </span>
@@ -146,10 +149,10 @@ export default function Landing() {
       <section className="container mx-auto px-4 py-24 max-w-7xl">
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white">
-            Built for the <span className="italic font-light">New</span> Generation
+            Cultivate with <span className="italic font-light text-primary-600 dark:text-indigo-400">Intelligence</span>
           </h2>
           <p className="text-gray-600 dark:text-gray-400 text-lg">
-            Powerful tools designed to simplify complex data and put high-level agronomy in the palm of your hand.
+            Specialized tools for professional cultivators and foragers. Scientific analysis at your fingertips.
           </p>
         </div>
 
@@ -170,7 +173,7 @@ export default function Landing() {
                 {f.desc}
               </p>
               <div className="flex items-center gap-2 text-primary-600 dark:text-indigo-400 font-bold group-hover:gap-3 transition-all cursor-pointer">
-                <span>Learn more</span>
+                <span>Explore Tech</span>
                 <ChevronRight className="w-5 h-5" />
               </div>
             </div>
@@ -178,42 +181,42 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Security Section (Glassmorphic) */}
+      {/* Safety Section (Glassmorphic) */}
       <section className="container mx-auto px-4 py-24 max-w-7xl">
         <div className="relative rounded-[40px] overflow-hidden bg-gray-900 p-8 md:p-16">
-          <div className="absolute top-0 right-0 w-[60%] h-full bg-primary-600/10 blur-[100px] rounded-full" />
+          <div className="absolute top-0 right-0 w-[60%] h-full bg-indigo-600/10 blur-[100px] rounded-full" />
           <div className="relative grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">
-                Your data, <br />
-                <span className="text-emerald-400">Safeguarded.</span>
+                Safety First. <br />
+                <span className="text-emerald-400">No Unknowns.</span>
               </h2>
               <p className="text-gray-400 text-lg leading-relaxed max-w-md">
-                We use bank-level encryption and private cloud infrastructure to ensure your farm's
-                data remains yours. Built-in compliance and secure handshakes come standard.
+                Our AI is trained on rigorous botanical datasets to distinguish edible gourmet mushrooms
+                from dangerous toxic species. Harvest with confidence.
               </p>
               <div className="grid grid-cols-2 gap-6 pt-4">
                 <div className="flex items-center gap-3 text-white">
-                  <Lock className="w-6 h-6 text-primary-500" />
-                  <span className="font-semibold">End-to-End Encryption</span>
+                  <Skull className="w-6 h-6 text-red-500" />
+                  <span className="font-semibold">Toxin Warning System</span>
                 </div>
                 <div className="flex items-center gap-3 text-white">
                   <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-                  <span className="font-semibold">Local Compliance</span>
+                  <span className="font-semibold">Edibility Verification</span>
                 </div>
               </div>
             </div>
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 space-y-6">
               <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
                 <div className="w-3 h-3 rounded-full bg-emerald-400" />
-                <span className="text-white font-medium">Security Audit: PASS</span>
-                <span className="ml-auto text-emerald-400 text-sm font-bold">100%</span>
+                <span className="text-white font-medium">Species Match Confidence</span>
+                <span className="ml-auto text-emerald-400 text-sm font-bold">99.8%</span>
               </div>
               <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full w-[100%] bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.5)]" />
+                <div className="h-full w-[99.8%] bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
               </div>
               <p className="text-gray-400 text-sm italic">
-                AgriGuard adheres to ISO 27001 standards for data security and management.
+                AI validation uses deep learning models cross-referenced with mycological databases.
               </p>
             </div>
           </div>
@@ -224,17 +227,17 @@ export default function Landing() {
       <section className="container mx-auto px-4 py-24 text-center max-w-5xl">
         <div className="space-y-8">
           <h2 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white tracking-tight">
-            Ready to <span className="italic font-light">Elevate</span> Your Yield?
+            Elevate Your <span className="italic font-light">Culture.</span>
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Join thousands of modern farmers using AgriGuard to optimize their daily operations.
+            Ready to integrate professional AI intelligence into your mushroom grow?
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
               to="/register"
               className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold text-xl hover:scale-105 active:scale-95 transition-all shadow-2xl"
             >
-              Start Free Trial
+              Get Started Now
             </Link>
           </div>
         </div>
