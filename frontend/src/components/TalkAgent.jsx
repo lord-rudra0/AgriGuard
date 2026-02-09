@@ -5,13 +5,13 @@ import { useSocket } from '../context/SocketContext';
 
 const availableVoices = [
     { name: 'Puck', desc: 'Upbeat and friendly (Default voice)', gender: 'Male' },
-    { name: 'Charon', desc: 'Informative, calm, and professional', gender: 'Male' },
     { name: 'Kore', desc: 'Firm, focused, and professional', gender: 'Female' },
-    { name: 'Fenrir', desc: 'Excitable, warm, and approachable', gender: 'Male' },
+    { name: 'Charon', desc: 'Informative, calm, and professional', gender: 'Male' },
     { name: 'Aoede', desc: 'Breezy, bright, and youthful', gender: 'Female' },
+    { name: 'Fenrir', desc: 'Excitable, warm, and approachable', gender: 'Male' },
     { name: 'Leda', desc: 'Youthful and clear', gender: 'Female' },
-    { name: 'Zephyr', desc: 'Bright and clear', gender: 'Female' },
-    { name: 'Orus', desc: 'Firm and steady', gender: 'Male' }
+    { name: 'Orus', desc: 'Firm and steady', gender: 'Male' },
+    { name: 'Zephyr', desc: 'Bright and clear', gender: 'Female' }
 ];
 
 const TalkAgent = () => {
@@ -32,12 +32,11 @@ const TalkAgent = () => {
     useEffect(() => {
         if (status === 'connected' && isOpen) {
             console.log(`[TalkAgent] Voice changed to ${selectedVoice} during active session. Restarting...`);
-            closeAgent();
+            cleanupSession();
             // Wait a small bit for cleanup before restarting
             setTimeout(() => {
-                setIsOpen(true);
                 setStatus('connecting');
-                console.log(`[TalkAgent] Auto-restarting with voice: ${selectedVoice}`);
+                console.log(`[TalkAgent] Auto-restarting connection with voice: ${selectedVoice}`);
                 socket.emit('talk:connect', { voice: selectedVoice });
                 startMic();
             }, 300);
@@ -201,8 +200,7 @@ const TalkAgent = () => {
         };
     };
 
-    const closeAgent = () => {
-        setIsOpen(false);
+    const cleanupSession = () => {
         setIsListening(false);
         setIsSpeaking(false);
         socket.emit('talk:disconnect');
@@ -216,6 +214,11 @@ const TalkAgent = () => {
             processorRef.current = null;
         }
         nextPlaybackTimeRef.current = 0;
+    };
+
+    const closeAgent = () => {
+        setIsOpen(false);
+        cleanupSession();
     };
 
     return (
