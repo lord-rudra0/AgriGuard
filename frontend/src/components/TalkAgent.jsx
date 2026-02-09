@@ -17,6 +17,8 @@ const TalkAgent = () => {
     const streamRef = useRef(null);
     const playbackContextRef = useRef(null);
     const nextPlaybackTimeRef = useRef(0);
+    const isListeningRef = useRef(false);
+    const pcmChunkCountRef = useRef(0);
 
     // Close on route change
     const location = useLocation();
@@ -37,19 +39,21 @@ const TalkAgent = () => {
         };
 
         const onResponse = (content) => {
-            if (content.modelDraft && content.modelDraft.parts) {
-                // Future: handle incremental text if needed
-            }
+            console.log('[TalkAgent] Received response:', content);
 
-            // Handle Audio Data
-            if (content.modelDraft?.parts?.[0]?.inlineData?.data) {
-                const base64Data = content.modelDraft.parts[0].inlineData.data;
-                playAudioChunk(base64Data);
+            // Handle Audio Data - check modelTurn, modelDraft, and serverContent paths
+            const audioData = content.modelTurn?.parts?.[0]?.inlineData?.data ||
+                content.modelDraft?.parts?.[0]?.inlineData?.data ||
+                content.serverContent?.modelDraft?.parts?.[0]?.inlineData?.data;
+
+            if (audioData) {
+                console.log('[TalkAgent] Playing audio chunk...', audioData.length);
+                playAudioChunk(audioData);
             }
 
             // Handle turn complete
-            if (content.turnComplete) {
-                // Logic for end of assistant turn
+            if (content.turnComplete || content.generationComplete) {
+                console.log('[TalkAgent] Turn complete');
             }
         };
 
@@ -62,13 +66,16 @@ const TalkAgent = () => {
         };
     }, [socket]);
 
-    const initAudioContexts = () => {
+    const initAudioContexts = async () => {
         if (!audioContextRef.current) {
             audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
         }
         if (!playbackContextRef.current) {
             playbackContextRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
         }
+        // Interaction required to resume audio contexts in some browsers
+        if (audioContextRef.current.state === 'suspended') await audioContextRef.current.resume();
+        if (playbackContextRef.current.state === 'suspended') await playbackContextRef.current.resume();
     };
 
     const handleMicClick = () => {
@@ -84,39 +91,48 @@ const TalkAgent = () => {
 
     const startMic = async () => {
         try {
-            initAudioContexts();
+            console.log('[TalkAgent] Starting mic...');
+            await initAudioContexts();
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
+            console.log('[TalkAgent] Mic stream acquired');
 
             const source = audioContextRef.current.createMediaStreamSource(stream);
-            // ScriptProcessor handles PCM conversion (bufferSize 4096 is stable)
             const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
             processorRef.current = processor;
 
             processor.onaudioprocess = (e) => {
-                if (!isListening) return;
+                if (!isListeningRef.current) return;
 
                 const inputData = e.inputBuffer.getChannelData(0);
-                // Convert Float32 to Int16 PCM
                 const pcmData = new Int16Array(inputData.length);
                 for (let i = 0; i < inputData.length; i++) {
                     const s = Math.max(-1, Math.min(1, inputData[i]));
                     pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
                 }
 
-                // Send as Base64 chunk
-                const base64Chunk = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+                const uint8 = new Uint8Array(pcmData.buffer);
+                let binary = '';
+                for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+                const base64Chunk = btoa(binary);
+
                 socket.emit('talk:audio', base64Chunk);
+
+                pcmChunkCountRef.current++;
+                if (pcmChunkCountRef.current % 50 === 0) {
+                    console.log(`[TalkAgent] Audio heartbeat: sent ${pcmChunkCountRef.current} chunks`);
+                }
             };
 
             source.connect(processor);
             processor.connect(audioContextRef.current.destination);
 
+            isListeningRef.current = true;
             setIsListening(true);
             setResponse('');
         } catch (err) {
-            console.error("Mic error:", err);
-            setResponse("Microphone access denied.");
+            console.error("[TalkAgent] Mic error:", err);
+            setResponse(`Microphone error: ${err.message}`);
         }
     };
 

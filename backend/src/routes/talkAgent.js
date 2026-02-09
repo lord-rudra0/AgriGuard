@@ -61,8 +61,10 @@ export const registerTalkSocket = (io) => {
                     try {
                         const message = JSON.parse(data.toString());
 
-                        if (message.serverContent) {
-                            socket.emit('talk:response', message.serverContent);
+                        // Relay conversation content
+                        if (message.serverContent || message.modelDraft || message.modelTurn) {
+                            const payload = message.serverContent || message.modelDraft || message.modelTurn || message;
+                            socket.emit('talk:response', payload);
                         }
 
                         if (message.setupComplete) {
@@ -71,6 +73,7 @@ export const registerTalkSocket = (io) => {
                         }
                     } catch (e) {
                         console.error('[TalkAgent] Error parsing Gemini message:', e);
+                        console.log('[TalkAgent] Raw snippet:', data.toString().slice(0, 100));
                     }
                 });
 
@@ -97,12 +100,18 @@ export const registerTalkSocket = (io) => {
         });
 
         // Relay PCM audio chunks from client to Gemini
+        let chunkCount = 0;
         socket.on('talk:audio', (pcmBase64) => {
             if (geminiWs && geminiWs.readyState === WebSocket.OPEN) {
+                chunkCount++;
+                if (chunkCount % 20 === 0) {
+                    console.log(`[TalkAgent] Relaying chunk ${chunkCount} (${Math.round(pcmBase64.length / 1024)}KB)`);
+                }
+
                 const chunk = {
-                    realtime_input: {
-                        media_chunks: [{
-                            mime_type: "audio/pcm;rate=16000",
+                    realtimeInput: {
+                        mediaChunks: [{
+                            mimeType: "audio/pcm;rate=16000",
                             data: pcmBase64
                         }]
                     }
