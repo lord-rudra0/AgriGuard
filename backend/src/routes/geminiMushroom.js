@@ -11,10 +11,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Initialize lazily
 let genAI = null;
 
-router.get('/test', (req, res) => {
-    res.json({ message: 'Gemini Mushroom route is working!' });
-});
-
 router.post('/analyze', upload.single('image'), async (req, res) => {
     try {
         const apiKey = process.env.GEMINI_API_KEY;

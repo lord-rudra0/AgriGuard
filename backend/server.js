@@ -428,7 +428,6 @@ const loadRoutes = async () => {
     if (devicesRoutes) app.use('/api/devices', devicesRoutes);
 
     console.log('✅ All routes configured');
-    console.log('🍄 Gemini Mushroom Routes loaded:', !!geminiMushroomRoutes);
   } catch (error) {
     console.error('❌ Error during route loading:', error);
   }
