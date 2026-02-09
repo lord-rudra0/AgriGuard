@@ -24,24 +24,27 @@ export const registerTalkSocket = (io) => {
         let geminiWs = null;
 
         socket.on('talk:connect', (data) => {
+            console.log('[TalkAgent] Received talk:connect data:', data);
             const requestedVoice = data?.voice || "Puck";
             console.log(`[TalkAgent] User ${socket.user?.id} requested Live API connection with voice: ${requestedVoice}`);
 
             const API_KEY = process.env.GEMINI_API_KEY;
             const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp';
 
-            const URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${API_KEY}`;
+            // Switch to v1alpha as it often has better support for new voices
+            const URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${API_KEY}`;
 
             try {
                 geminiWs = new WebSocket(URL);
 
                 geminiWs.on('open', () => {
-                    console.log(`[TalkAgent] Connected to Gemini Bidi API (v1beta) using voice: ${requestedVoice}`);
+                    const modelPath = MODEL.startsWith('models/') ? MODEL : `models/${MODEL}`;
+                    console.log(`[TalkAgent] Connected to Gemini Bidi API (v1alpha) | Voice: ${requestedVoice} | Model: ${modelPath}`);
                     socket.emit('talk:status', { status: 'connecting' });
 
                     const setup = {
                         setup: {
-                            model: `models/${MODEL}`,
+                            model: modelPath,
                             generation_config: {
                                 response_modalities: ["AUDIO"],
                                 speech_config: {
@@ -95,13 +98,18 @@ export const registerTalkSocket = (io) => {
                             }]
                         }
                     };
+                    console.log('[TalkAgent] Handshake Setup:', JSON.stringify(setup, null, 2));
                     geminiWs.send(JSON.stringify(setup));
-                    console.log('[TalkAgent] Sent setup message for:', MODEL);
                 });
 
                 geminiWs.on('message', (data) => {
                     try {
                         const message = JSON.parse(data.toString());
+
+                        // Verbose logging for handshake and errors
+                        if (message.setupComplete || message.error || !message.serverContent) {
+                            console.log('[TalkAgent] Gemini Response:', JSON.stringify(message, null, 2));
+                        }
 
                         // Relay conversation content
                         if (message.serverContent || message.modelDraft || message.modelTurn) {

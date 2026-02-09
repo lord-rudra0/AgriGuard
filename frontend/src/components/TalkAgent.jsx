@@ -1,7 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+-import React, { useState, useEffect, useRef } from 'react';
 import { Mic, X, Volume2, Loader2, Sparkles, MessageCircle, Settings, ChevronRight } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
+
+const availableVoices = [
+    { name: 'Puck', desc: 'Upbeat and friendly (Default voice)', gender: 'Male' },
+    { name: 'Charon', desc: 'Informative, calm, and professional', gender: 'Male' },
+    { name: 'Kore', desc: 'Firm, focused, and professional', gender: 'Female' },
+    { name: 'Fenrir', desc: 'Excitable, warm, and approachable', gender: 'Male' },
+    { name: 'Aoede', desc: 'Breezy, bright, and youthful', gender: 'Female' },
+    { name: 'Leda', desc: 'Youthful and clear', gender: 'Female' },
+    { name: 'Zephyr', desc: 'Bright and clear', gender: 'Female' },
+    { name: 'Orus', desc: 'Firm and steady', gender: 'Male' }
+];
 
 const TalkAgent = () => {
     const { socket, connected } = useSocket();
@@ -10,21 +21,28 @@ const TalkAgent = () => {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [status, setStatus] = useState('disconnected'); // 'connected' | 'error' | 'disconnected'
     const [response, setResponse] = useState('');
-    const [selectedVoice, setSelectedVoice] = useState('Puck'); // Default voice
+    const [selectedVoice, setSelectedVoice] = useState(() => {
+        const stored = localStorage.getItem('agriGuard_voice');
+        const isValid = availableVoices.some(v => v.name === stored);
+        return isValid ? stored : 'Puck';
+    });
     const [showSettings, setShowSettings] = useState(false);
 
-    const availableVoices = [
-        { name: 'Puck', desc: 'Upbeat and friendly (Default)', gender: 'Male' },
-        { name: 'Charon', desc: 'Informative and calm', gender: 'Female' },
-        { name: 'Ursa', desc: 'Engaged and mid-range', gender: 'Male' },
-        { name: 'Kore', desc: 'Firm and professional', gender: 'Female' },
-        { name: 'Orion', desc: 'Bright and deeper pitch', gender: 'Male' },
-        { name: 'Nova', desc: 'Calm and mid-range', gender: 'Female' },
-        { name: 'Eclipse', desc: 'Energetic and mid-range', gender: 'Male' },
-        { name: 'Vega', desc: 'Bright and higher pitch', gender: 'Female' },
-        { name: 'Lyra', desc: 'Bright and higher pitch (Snappy)', gender: 'Female' },
-        { name: 'Capella', desc: 'Serene and higher pitch', gender: 'Female' }
-    ];
+    // Auto-restart session if voice is changed while active
+    useEffect(() => {
+        if (status === 'connected' && isOpen) {
+            console.log(`[TalkAgent] Voice changed to ${selectedVoice} during active session. Restarting...`);
+            closeAgent();
+            // Wait a small bit for cleanup before restarting
+            setTimeout(() => {
+                setIsOpen(true);
+                setStatus('connecting');
+                console.log(`[TalkAgent] Auto-restarting with voice: ${selectedVoice}`);
+                socket.emit('talk:connect', { voice: selectedVoice });
+                startMic();
+            }, 300);
+        }
+    }, [selectedVoice]);
 
     // Audio Refs
     const audioContextRef = useRef(null);
@@ -97,6 +115,7 @@ const TalkAgent = () => {
         if (!isOpen) {
             setIsOpen(true);
             setStatus('connecting');
+            console.log(`[TalkAgent] Emitting connect with voice: ${selectedVoice}`);
             socket.emit('talk:connect', { voice: selectedVoice });
             startMic();
         } else {
@@ -279,6 +298,7 @@ const TalkAgent = () => {
                                         key={voice.name}
                                         onClick={() => {
                                             setSelectedVoice(voice.name);
+                                            localStorage.setItem('agriGuard_voice', voice.name);
                                             setShowSettings(false);
                                         }}
                                         className={`flex items-center justify-between p-3 rounded-xl transition-all ${selectedVoice === voice.name
