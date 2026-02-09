@@ -351,7 +351,7 @@ const importRoute = async (routePath, routeName) => {
 };
 
 // Import routes with error handling - using routes index for reliability
-let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, mushroomAnalysisRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes, iotRoutes, devicesRoutes;
+let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, mushroomAnalysisRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes, iotRoutes, devicesRoutes, talkAgentRoutes;
 
 // Import routes one by one with error handling - more robust approach
 const loadRoutes = async () => {
@@ -380,6 +380,7 @@ const loadRoutes = async () => {
       calendarRoutes = routesIndex.calendarRoutes;
       iotRoutes = routesIndex.iotRoutes;
       devicesRoutes = routesIndex.devicesRoutes;
+      talkAgentRoutes = routesIndex.talkAgentRoutes;
 
       console.log('✅ All routes loaded from index');
     } catch (indexError) {
@@ -426,6 +427,7 @@ const loadRoutes = async () => {
     if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
     if (iotRoutes) app.use('/api/iot', iotRoutes);
     if (devicesRoutes) app.use('/api/devices', devicesRoutes);
+    if (talkAgentRoutes) app.use('/api/talk', talkAgentRoutes);
 
     console.log('✅ All routes configured');
     console.log('🍄 Mushroom Analysis Routes loaded:', !!mushroomAnalysisRoutes);

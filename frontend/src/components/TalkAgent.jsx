@@ -9,52 +9,104 @@ const TalkAgent = () => {
     const [transcript, setTranscript] = useState('');
     const [response, setResponse] = useState('');
 
+    // Real Speech Logic
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
+
     // Close on route change
     const location = useLocation();
     useEffect(() => {
         setIsOpen(false);
     }, [location]);
 
-    // Mock interaction for demo
     const handleMicClick = () => {
         if (!isOpen) {
             setIsOpen(true);
-            startListening();
+            startListening(); // Assume permission granted for now, browser will query
         } else {
-            // If already open, toggle listening
             if (isListening) stopListening();
             else startListening();
         }
     };
 
-    const startListening = () => {
-        setIsListening(true);
-        setIsSpeaking(false);
-        setTranscript('');
-        setResponse('');
+    const startListening = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            audioChunksRef.current = [];
 
-        // Simulate listening delay
-        setTimeout(() => {
-            setTranscript("Is my tomato crop healthy?");
-            stopListening();
-        }, 2500);
+            mediaRecorderRef.current.ondataavailable = (event) => {
+                if (event.data.size > 0) audioChunksRef.current.push(event.data);
+            };
+
+            mediaRecorderRef.current.onstop = async () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                // Process audio
+                await processAudio(audioBlob);
+            };
+
+            mediaRecorderRef.current.start();
+            setIsListening(true);
+            setIsSpeaking(false);
+            setTranscript("Listening...");
+        } catch (err) {
+            console.error("Mic error:", err);
+            setTranscript("Microphone access denied.");
+        }
     };
 
     const stopListening = () => {
-        setIsListening(false);
-        // Simulate processing -> speaking
-        setTimeout(() => {
-            setIsSpeaking(true);
-            setResponse("Based on the latest scan, your tomato plants show early signs of potential blight. I recommend increasing airflow and monitoring humidity levels.");
-        }, 1000);
+        if (mediaRecorderRef.current && isListening) {
+            mediaRecorderRef.current.stop();
+            setIsListening(false);
+            setTranscript("Thinking...");
+        }
+    };
+
+    const processAudio = async (audioBlob) => {
+        try {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+
+            const res = await fetch('/api/talk/interact', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await res.json();
+            if (data.success && data.reply) {
+                setResponse(data.reply);
+                speakResponse(data.reply);
+            } else {
+                setResponse("Sorry, I didn't catch that.");
+            }
+        } catch (err) {
+            console.error("Backend error:", err);
+            setResponse("Error connecting to AgriGuard.");
+        }
+    };
+
+    const speakResponse = (text) => {
+        if (!window.speechSynthesis) return;
+        setIsSpeaking(true);
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.onend = () => setIsSpeaking(false);
+        // Attempt to select a natural voice if available
+        const voices = window.speechSynthesis.getVoices();
+        const preferred = voices.find(v => v.name.includes('Google') || v.name.includes('Natural'));
+        if (preferred) utterance.voice = preferred;
+
+        window.speechSynthesis.speak(utterance);
     };
 
     const closeAgent = () => {
         setIsOpen(false);
         setIsListening(false);
         setIsSpeaking(false);
-        setTranscript('');
-        setResponse('');
+        window.speechSynthesis.cancel();
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+        }
     };
 
     return (

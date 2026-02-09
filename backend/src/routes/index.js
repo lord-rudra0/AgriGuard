@@ -18,3 +18,4 @@ export { default as calendarRoutes } from './calendar.js';
 export { default as notificationsRoutes } from './notifications.js';
 export { default as iotRoutes } from './iot.js';
 export { default as devicesRoutes } from './devices.js';
+export { default as talkAgentRoutes } from './talkAgent.js';
