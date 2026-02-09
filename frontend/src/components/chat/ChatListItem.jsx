@@ -13,15 +13,15 @@ const ChatListItem = ({ chat, active, onClick, currentUser, online = false, clas
   return (
     <li
       onClick={onClick}
-      className={`group flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg transition-all duration-200 hover:bg-primary-50/80 dark:hover:bg-primary-900/10 ${active ? 'bg-primary-100/70 dark:bg-primary-900/20' : ''} ${className}`}
+      className={`group flex items-center gap-3 px-3 py-2 cursor-pointer rounded-xl transition-all duration-200 hover:bg-white/10 active:bg-white/20 ${active ? 'bg-white/10 border border-white/10 shadow-lg shadow-black/10' : 'border border-transparent'} ${className}`}
     >
-  <Avatar name={title} size={40} online={online} />
+      <Avatar name={title} size={40} online={online} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
-          <p className="font-medium text-gray-900 dark:text-white truncate">{title}</p>
-          <span className="text-[10px] text-gray-400 group-hover:text-gray-500">{time}</span>
+          <p className="font-medium text-gray-200 group-hover:text-white transition-colors truncate">{title}</p>
+          <span className="text-[10px] text-gray-400 group-hover:text-gray-300">{time}</span>
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{preview}</p>
+        <p className="text-xs text-gray-500 group-hover:text-gray-400 truncate transition-colors">{preview}</p>
       </div>
       {chat.unreadCount ? (
         <span className="ml-2 text-[10px] bg-primary-600 text-white rounded-full px-2 py-0.5">{chat.unreadCount}</span>

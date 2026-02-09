@@ -80,7 +80,7 @@ const Chat = () => {
       setLoadingMessages(false);
     });
     // mark seen
-    axios.post(`/api/chatSystem/messages/${selectedChat._id}/seen`).catch(() => {});
+    axios.post(`/api/chatSystem/messages/${selectedChat._id}/seen`).catch(() => { });
     // reset unread count locally for this chat
     setChats(prev => prev.map(c => c._id === selectedChat._id ? { ...c, unreadCount: 0 } : c));
     return () => {
@@ -114,7 +114,7 @@ const Chat = () => {
       if (message.chatId === selectedChat?._id) {
         setMessages(prev => [...prev, message]);
         // mark seen on new message
-        axios.post(`/api/chatSystem/messages/${selectedChat._id}/seen`).catch(() => {});
+        axios.post(`/api/chatSystem/messages/${selectedChat._id}/seen`).catch(() => { });
       }
     };
     const onSeen = ({ chatId, userId: seenUserId }) => {
@@ -141,7 +141,7 @@ const Chat = () => {
     if (messagesEndRef.current) {
       const container = messagesEndRef.current.parentElement;
       const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
-      
+
       // Only auto-scroll if user is near the bottom or if it's a new message they sent
       if (isNearBottom || (messages.length > 0 && messages[messages.length - 1]?.sender?._id === user?._id)) {
         messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -404,7 +404,7 @@ const Chat = () => {
     try {
       await axios.delete(`/api/chatSystem/messages/${messageId}`);
       setMessages(prev => prev.filter(m => (m._id || m.id) !== messageId));
-  if (activeMessageId === messageId) setActiveMessageId(null);
+      if (activeMessageId === messageId) setActiveMessageId(null);
     } catch (e) {
       alert(e.response?.data?.message || 'Failed to delete message');
     }
@@ -424,7 +424,7 @@ const Chat = () => {
 
   // Click-to-toggle actions for a message
   const [activeMessageId, setActiveMessageId] = useState(null);
-  
+
   // Resizable chat window
   const [chatHeight, setChatHeight] = useState(700); // Default height = 700px
   const [isResizing, setIsResizing] = useState(false);
@@ -437,7 +437,7 @@ const Chat = () => {
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isResizing) return;
-      
+
       const chatContainer = document.querySelector('.chat-messages-container');
       if (chatContainer) {
         const rect = chatContainer.getBoundingClientRect();
@@ -462,109 +462,121 @@ const Chat = () => {
   }, [isResizing]);
 
   return (
-    <div className="h-full min-h-0 flex overflow-x-hidden overflow-y-hidden transition-colors duration-300 bg-white dark:bg-gray-900 pt-0 pb-0">
+    <div className="relative h-full min-h-0 flex overflow-x-hidden overflow-y-hidden text-gray-100 selection:bg-indigo-500/30 bg-gray-950">
+      {/* Mesh Gradient Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-indigo-500/20 blur-[120px] rounded-full animate-pulse-slow" />
+        <div className="absolute top-[20%] -right-[5%] w-[40%] h-[40%] bg-purple-500/20 blur-[100px] rounded-full animate-float" />
+        <div className="absolute bottom-[10%] left-[20%] w-[30%] h-[30%] bg-emerald-500/20 blur-[80px] rounded-full animate-pulse-slow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-500/10 blur-[120px] rounded-full animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[40%] left-[10%] w-[20%] h-[20%] bg-cyan-500/10 blur-[60px] rounded-full animate-pulse-slow" style={{ animationDelay: '1s' }} />
+      </div>
+
       {/* Sidebar: Chat list */}
-      <aside className={`${selectedChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 overflow-x-hidden overflow-y-auto no-scrollbar h-[calc(100vh-4rem)] bg-white dark:bg-gray-900 border-r border-white/50 dark:border-gray-800/60 flex-col shadow-sm`}
+      <aside className={`relative z-10 ${selectedChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 overflow-x-hidden overflow-y-auto no-scrollbar h-[calc(100vh-4rem)] bg-white/5 backdrop-blur-xl border-r border-white/10 flex-col shadow-2xl`}
       >
-        <div className="p-4 flex items-center justify-between sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-white/50 dark:border-gray-800/60">
-          <span className="font-bold text-lg text-gray-900 dark:text-white">Chats</span>
+        <div className="p-4 flex items-center justify-between sticky top-0 z-10 bg-white/5 backdrop-blur-xl border-b border-white/10">
+          <span className="font-bold text-lg text-white tracking-wide">Chats</span>
           <button
-            className="ml-2 px-3 py-1.5 rounded-xl text-xs bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99] transition-all duration-200"
+            className="ml-2 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 text-indigo-300 border border-white/10 transition-all hover:scale-105 active:scale-95"
             onClick={() => setShowNewChat(true)}
             title="New chat"
           >
             New
           </button>
         </div>
-      {/* New Chat Modal */}
-      {showNewChat && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Start a New Chat</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Chat Type</label>
-              <select
-                className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                value={newChatType}
-                onChange={e => setNewChatType(e.target.value)}
-              >
-                <option value="one-to-one">One-to-One</option>
-                <option value="group">Group</option>
-              </select>
-            </div>
-            {newChatType === 'group' ? (
+        {/* New Chat Modal */}
+        {showNewChat && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+              <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Start a New Chat</h2>
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Group Name</label>
-                <input
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Chat Type</label>
+                <select
                   className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  value={newChatName}
-                  onChange={e => setNewChatName(e.target.value)}
-                  placeholder="Enter group name"
-                />
+                  value={newChatType}
+                  onChange={e => setNewChatType(e.target.value)}
+                >
+                  <option value="one-to-one">One-to-One</option>
+                  <option value="group">Group</option>
+                </select>
               </div>
-            ) : (
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">User Email or Username</label>
-                <input
-                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  value={newChatUserInput}
-                  onChange={e => setNewChatUserInput(e.target.value)}
-                  placeholder="Enter user email or username"
-                />
-              </div>
-            )}
-            <div className="flex gap-2 justify-end">
-              <button
-                className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
-                onClick={() => setShowNewChat(false)}
-                disabled={creating}
-              >Cancel</button>
-              <button
-                className={`px-3 py-1 rounded text-white ${creating ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-primary-600 to-indigo-600 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99]'} shadow-sm ring-1 ring-black/5 transition-all duration-200 disabled:opacity-60`}
-                disabled={creating || (newChatType === 'group' ? !newChatName : !newChatUserInput)}
-                onClick={async () => {
-                  setCreating(true);
-                  try {
-                    let members = [];
-                    if (newChatType === 'group') {
-                      // Only the creator for now; can add more later
-                      members = [];
-                    } else {
-                      // Find user by email or username
-                      let res;
-                      if (newChatUserInput.includes('@')) {
-                        res = await axios.get('/api/auth/users', { params: { email: newChatUserInput } });
+              {newChatType === 'group' ? (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Group Name</label>
+                  <input
+                    className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={newChatName}
+                    onChange={e => setNewChatName(e.target.value)}
+                    placeholder="Enter group name"
+                  />
+                </div>
+              ) : (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">User Email or Username</label>
+                  <input
+                    className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={newChatUserInput}
+                    onChange={e => setNewChatUserInput(e.target.value)}
+                    placeholder="Enter user email or username"
+                  />
+                </div>
+              )}
+              <div className="flex gap-2 justify-end">
+                <button
+                  className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
+                  onClick={() => setShowNewChat(false)}
+                  disabled={creating}
+                >Cancel</button>
+                <button
+                  className={`px-3 py-1 rounded text-white ${creating ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-primary-600 to-indigo-600 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99]'} shadow-sm ring-1 ring-black/5 transition-all duration-200 disabled:opacity-60`}
+                  disabled={creating || (newChatType === 'group' ? !newChatName : !newChatUserInput)}
+                  onClick={async () => {
+                    setCreating(true);
+                    try {
+                      let members = [];
+                      if (newChatType === 'group') {
+                        // Only the creator for now; can add more later
+                        members = [];
                       } else {
-                        res = await axios.get('/api/auth/users', { params: { username: newChatUserInput } });
+                        // Find user by email or username
+                        let res;
+                        if (newChatUserInput.includes('@')) {
+                          res = await axios.get('/api/auth/users', { params: { email: newChatUserInput } });
+                        } else {
+                          res = await axios.get('/api/auth/users', { params: { username: newChatUserInput } });
+                        }
+                        if (!res.data.user) throw new Error('User not found');
+                        members = [res.data.user._id];
                       }
-                      if (!res.data.user) throw new Error('User not found');
-                      members = [res.data.user._id];
+                      const chatRes = await axios.post('/api/chatSystem/chats', {
+                        type: newChatType,
+                        name: newChatType === 'group' ? newChatName : undefined,
+                        members,
+                      });
+                      setChats((prev) => [chatRes.data.chat, ...prev]);
+                      setSelectedChat(chatRes.data.chat);
+                      setShowNewChat(false);
+                      setNewChatName('');
+                      setNewChatUserInput('');
+                    } catch (e) {
+                      alert(e.response?.data?.message || e.message || 'Failed to create chat');
+                    } finally {
+                      setCreating(false);
                     }
-                    const chatRes = await axios.post('/api/chatSystem/chats', {
-                      type: newChatType,
-                      name: newChatType === 'group' ? newChatName : undefined,
-                      members,
-                    });
-                    setChats((prev) => [chatRes.data.chat, ...prev]);
-                    setSelectedChat(chatRes.data.chat);
-                    setShowNewChat(false);
-                    setNewChatName('');
-                    setNewChatUserInput('');
-                  } catch (e) {
-                    alert(e.response?.data?.message || e.message || 'Failed to create chat');
-                  } finally {
-                    setCreating(false);
-                  }
-                }}
-              >Create</button>
+                  }}
+                >Create</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
         {loadingChats ? (
-          <div className="p-4 text-gray-500">Loading…</div>
+          <div className="p-4 text-gray-400 flex items-center justify-center h-32">
+            <span className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin mr-2"></span>
+            Loading...
+          </div>
         ) : (
-          <ul className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-1 bg-white dark:bg-gray-900">
+          <ul className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-1">
             {chats.map((chat, idx) => {
               const otherIds = (chat.members || []).map(m => m._id).filter(id => id !== user?._id);
               const otherId = chat.type === 'one-to-one' ? otherIds[0] : null;
@@ -577,7 +589,7 @@ const Chat = () => {
                   currentUser={user}
                   online={online}
                   onClick={() => setSelectedChat(chat)}
-                  className={`transition-all duration-500 ease-out transform rounded-xl hover:-translate-y-0.5 hover:bg-primary-50/60 dark:hover:bg-primary-900/20 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+                  className={`transition-all duration-500 ease-out transform rounded-xl ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                   style={{ transitionDelay: `${Math.min(idx, 12) * 40}ms` }}
                 />
               );
@@ -586,16 +598,16 @@ const Chat = () => {
         )}
       </aside>
       {/* Main chat window */}
-      <main className={`${selectedChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col overflow-x-hidden overflow-y-auto no-scrollbar`}
+      <main className={`relative z-10 ${selectedChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col overflow-x-hidden overflow-y-auto no-scrollbar`}
       >
         <div className="flex-1 flex flex-col md:px-6 md:pb-6 md:pt-0 min-h-0">
           {selectedChat ? (
             <>
-              <div className={`flex items-center justify-between transition-all duration-500 ease-out transform sticky top-0 z-30 px-4 py-3 md:px-0 md:py-0 bg-white dark:bg-gray-900 border-b border-white/50 dark:border-gray-800/60 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
-                <div className="font-bold text-lg md:text-xl mb-0.5 text-gray-900 dark:text-white flex items-center gap-2">
+              <div className={`flex items-center justify-between transition-all duration-500 ease-out transform sticky top-0 z-30 px-4 py-3 md:px-0 md:py-0 bg-white/5 backdrop-blur-xl border-b border-white/10 md:bg-transparent md:border-b-0 md:pt-4 md:mb-2 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
+                <div className="font-bold text-lg md:text-2xl mb-0.5 text-white flex items-center gap-2 filter drop-shadow-md">
                   {/* Back button for mobile */}
                   <button
-                    className="md:hidden mr-1 inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700/60 active:scale-95"
+                    className="md:hidden mr-1 inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/10 text-white border border-white/10 active:scale-95 hover:bg-white/20"
                     onClick={() => setSelectedChat(null)}
                     aria-label="Back to chats"
                   >
@@ -630,7 +642,7 @@ const Chat = () => {
                 <div className="relative" ref={headerMenuRef}>
                   <button
                     onClick={() => setHeaderMenuOpen((v) => !v)}
-                    className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-gray-900 border border-white/60 dark:border-gray-700/60 text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95"
+                    className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 active:scale-95 backdrop-blur-md"
                     title="More"
                     aria-haspopup="menu"
                     aria-expanded={headerMenuOpen}
@@ -670,12 +682,12 @@ const Chat = () => {
                 </div>
               </div>
               {isTyping ? (
-                <div className="text-xs mb-2 bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">{isTyping} is typing…</div>
+                <div className="text-xs mb-2 bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent font-medium animate-pulse">{isTyping} is typing…</div>
               ) : (
                 <div className="h-2" />
               )}
-              <div 
-                className={`chat-messages-container flex-1 min-h-0 overflow-y-auto no-scrollbar overflow-x-hidden pb-24 md:pb-6 md:rounded-2xl md:shadow-sm md:p-4 p-3 mb-2 md:mb-4 bg-white dark:bg-gray-900 border border-white/50 dark:border-gray-800/60 ring-1 ring-black/5 dark:ring-white/10 hover:shadow-md transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+              <div
+                className={`chat-messages-container flex-1 min-h-0 overflow-y-auto no-scrollbar overflow-x-hidden pb-24 md:pb-6 md:rounded-[24px] md:shadow-2xl md:p-6 p-3 mb-2 md:mb-4 bg-white/5 backdrop-blur-xl border border-white/10 shadow-black/20 transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 ref={messagesContainerRef}
               >
                 {loadingMessages ? (
@@ -698,7 +710,7 @@ const Chat = () => {
                         const seenBy = Array.isArray(msg.seenBy) ? msg.seenBy : [];
                         const seenByIds = seenBy.map(s => (typeof s === 'object' && s?._id) ? s._id : s).filter(Boolean);
                         seenCount = seenByIds.filter(id => String(id) !== String(user?._id)).length;
-                      } catch (e) {}
+                      } catch (e) { }
                       return (
                         <li
                           key={`${msgId}-${idx}`}
@@ -736,7 +748,7 @@ const Chat = () => {
               </div>
 
               {/* Resize Handle (desktop only) */}
-              <div 
+              <div
                 className={`hidden md:block w-full h-2 bg-transparent hover:bg-blue-500/20 cursor-ns-resize transition-all duration-500 ease-out transform relative group mb-2 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
                 onMouseDown={handleMouseDown}
               >
@@ -749,7 +761,7 @@ const Chat = () => {
               </div>
 
               {/* Composer (sticky at bottom) */}
-              <div className={`transition-all duration-500 ease-out transform sticky bottom-0 z-40 md:static md:bottom-auto bg-white dark:bg-gray-900 md:bg-transparent px-3 md:px-0 pt-2 md:pt-0 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} style={{ transitionDelay: '120ms' }}>
+              <div className={`transition-all duration-500 ease-out transform sticky bottom-0 z-40 md:static md:bottom-auto px-3 md:px-0 pt-2 md:pt-0 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} style={{ transitionDelay: '120ms' }}>
                 <Composer
                   value={input}
                   onChange={handleInputChange}
