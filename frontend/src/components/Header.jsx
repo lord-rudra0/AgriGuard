@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import CameraNavbar from '../components/CameraNavbar';
+import TalkAgent from './TalkAgent';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -147,6 +148,11 @@ const Header = () => {
           {/* Right side controls */}
           <div className="flex items-center">
             <div className="flex items-center gap-1 bg-white dark:bg-gray-900 ring-1 ring-black/5 dark:ring-white/10 rounded-md p-1">
+              {/* Voice Agent */}
+              <div className="hidden sm:block">
+                <TalkAgent />
+              </div>
+
               {/* Notifications bell */}
               {user && (
                 <div className="relative">
