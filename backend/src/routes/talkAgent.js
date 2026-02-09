@@ -1,76 +1,145 @@
 import express from 'express';
-import multer from 'multer';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { WebSocket } from 'ws';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const router = express.Router();
-// Allow audio uploads (webm, wav, mp3, m4a)
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-});
 
-// Initialize Gemini
-let genAI = null;
-const initAI = () => {
-    if (!genAI && process.env.GEMINI_API_KEY) {
-        genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    }
-    return genAI;
-};
+/**
+ * Gemini Multimodal Live API Relay
+ * This handles the transition from socket.io (client) -> WebSocket (Gemini)
+ */
+export const registerTalkSocket = (io) => {
+    // Helper to attach listeners to a socket
+    const handleTalkSocket = (socket) => {
+        // Prevent multiple attachments
+        if (socket.talkListenersAttached) return;
+        socket.talkListenersAttached = true;
 
-router.post('/interact', upload.single('audio'), async (req, res) => {
-    try {
-        const ai = initAI();
-        if (!ai) {
-            return res.status(503).json({ error: 'AI service not configured' });
-        }
+        let geminiWs = null;
 
-        if (!req.file) {
-            return res.status(400).json({ error: 'No audio provided' });
-        }
+        socket.on('talk:connect', () => {
+            console.log(`[TalkAgent] User ${socket.user?.id} requested Live API connection`);
 
-        // Use 'gemini-1.5-flash' as it supports native audio input and is fast.
-        // If user specifically has access to a 'gemini-2.0-flash' or 'gemini-2.5' preview, 
-        // they can set GEMINI_MODEL env var.
-        const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
-        const model = ai.getGenerativeModel({ model: modelName });
+            const API_KEY = process.env.GEMINI_API_KEY;
+            const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp';
 
-        // Convert buffer to base64
-        const audioBase64 = req.file.buffer.toString('base64');
+            // Switch to v1beta as it is more stable for BidiGenerateContent
+            const URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${API_KEY}`;
 
-        // Create the multimodal prompt
-        const parts = [
-            {
-                inlineData: {
-                    mimeType: req.file.mimetype,
-                    data: audioBase64
-                }
-            },
-            {
-                text: "You are AgriGuard, an intelligent agricultural assistant. Listen to the user's query and provide a helpful, concise, and friendly response. Do not use markdown formatting like asterisks or hash signs, just plain text suitable for speech synthesis. Keep the response short (under 3 sentences) unless asked for details."
+            try {
+                geminiWs = new WebSocket(URL);
+
+                geminiWs.on('open', () => {
+                    console.log('[TalkAgent] Connected to Gemini Bidi API (v1beta)');
+                    socket.emit('talk:status', { status: 'connecting' }); // Handshake phase
+
+                    const setup = {
+                        setup: {
+                            model: `models/${MODEL}`,
+                            generation_config: {
+                                response_modalities: ["AUDIO"],
+                                speech_config: {
+                                    voice_config: {
+                                        prebuilt_voice_config: {
+                                            voice_name: "Puck"
+                                        }
+                                    }
+                                }
+                            },
+                            system_instruction: {
+                                parts: [{ text: "You are AgriGuard, an AI farm assistant. Be concise and friendly." }]
+                            }
+                        }
+                    };
+                    geminiWs.send(JSON.stringify(setup));
+                    console.log('[TalkAgent] Sent setup message for:', MODEL);
+                });
+
+                geminiWs.on('message', (data) => {
+                    try {
+                        const message = JSON.parse(data.toString());
+
+                        if (message.serverContent) {
+                            socket.emit('talk:response', message.serverContent);
+                        }
+
+                        if (message.setupComplete) {
+                            console.log('[TalkAgent] Gemini Bidi setup complete');
+                            socket.emit('talk:status', { status: 'connected' });
+                        }
+                    } catch (e) {
+                        console.error('[TalkAgent] Error parsing Gemini message:', e);
+                    }
+                });
+
+                geminiWs.on('error', (error) => {
+                    console.error('[TalkAgent] Gemini WS Error:', error);
+                    socket.emit('talk:status', { status: 'error', error: 'Gemini connection error' });
+                });
+
+                geminiWs.on('close', (code, reason) => {
+                    const reasonStr = reason ? reason.toString() : 'No reason provided';
+                    console.log(`[TalkAgent] Gemini connection closed: Code ${code}, Reason: ${reasonStr}`);
+                    socket.emit('talk:status', {
+                        status: 'disconnected',
+                        code,
+                        reason: reasonStr
+                    });
+                    geminiWs = null;
+                });
+
+            } catch (err) {
+                console.error('[TalkAgent] Failed to connect to Gemini:', err);
+                socket.emit('talk:status', { status: 'error', error: err.message });
             }
-        ];
-
-        const result = await model.generateContent(parts);
-        const response = await result.response;
-        const text = response.text();
-
-        console.log(`[TalkAgent] User sent ${req.file.mimetype} (${req.file.size} bytes). Response: "${text.substring(0, 50)}..."`);
-
-        res.json({
-            success: true,
-            reply: text,
-            // Native audio output is not yet available via REST API for this model.
-            // Frontend should use TTS.
         });
 
-    } catch (error) {
-        console.error('[TalkAgent] Error:', error);
-        res.status(500).json({ error: error.message || 'Failed to process audio' });
+        // Relay PCM audio chunks from client to Gemini
+        socket.on('talk:audio', (pcmBase64) => {
+            if (geminiWs && geminiWs.readyState === WebSocket.OPEN) {
+                const chunk = {
+                    realtime_input: {
+                        media_chunks: [{
+                            mime_type: "audio/pcm;rate=16000",
+                            data: pcmBase64
+                        }]
+                    }
+                };
+                geminiWs.send(JSON.stringify(chunk));
+            }
+        });
+
+        socket.on('talk:disconnect', () => {
+            if (geminiWs) {
+                geminiWs.close();
+                geminiWs = null;
+            }
+        });
+
+        socket.on('disconnect', () => {
+            if (geminiWs) {
+                geminiWs.close();
+                geminiWs = null;
+            }
+        });
+    };
+
+    // Attach to new connections
+    io.on('connection', (socket) => {
+        handleTalkSocket(socket);
+    });
+
+    // Attach to existing connections
+    for (const [id, socket] of io.sockets.sockets) {
+        handleTalkSocket(socket);
     }
+};
+
+// Keep existing router for any non-socket needs if necessary, but primary logic is now socket-based
+router.get('/status', (req, res) => {
+    res.json({ success: true, message: 'TalkAgent WebSocket Relay is active' });
 });
 
 export default router;

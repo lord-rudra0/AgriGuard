@@ -1,112 +1,171 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, X, Volume2, Loader2, Sparkles } from 'lucide-react';
+import { Mic, X, Volume2, Loader2, Sparkles, MessageCircle } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { useSocket } from '../context/SocketContext';
 
 const TalkAgent = () => {
+    const { socket, connected } = useSocket();
     const [isOpen, setIsOpen] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
-    const [transcript, setTranscript] = useState('');
+    const [status, setStatus] = useState('disconnected'); // 'connected' | 'error' | 'disconnected'
     const [response, setResponse] = useState('');
 
-    // Real Speech Logic
-    const mediaRecorderRef = useRef(null);
-    const audioChunksRef = useRef([]);
+    // Audio Refs
+    const audioContextRef = useRef(null);
+    const processorRef = useRef(null);
+    const streamRef = useRef(null);
+    const playbackContextRef = useRef(null);
+    const nextPlaybackTimeRef = useRef(0);
 
     // Close on route change
     const location = useLocation();
     useEffect(() => {
-        setIsOpen(false);
+        if (isOpen) closeAgent();
     }, [location]);
+
+    // Handle Socket Events
+    useEffect(() => {
+        if (!socket) return;
+
+        const onStatus = ({ status: s, error, code, reason }) => {
+            setStatus(s);
+            if (s === 'error') setResponse(error || 'Connection failed');
+            if (s === 'disconnected' && code && code !== 1000) {
+                setResponse(`Connection Error: ${reason || 'Unknown'} (Code: ${code})`);
+            }
+        };
+
+        const onResponse = (content) => {
+            if (content.modelDraft && content.modelDraft.parts) {
+                // Future: handle incremental text if needed
+            }
+
+            // Handle Audio Data
+            if (content.modelDraft?.parts?.[0]?.inlineData?.data) {
+                const base64Data = content.modelDraft.parts[0].inlineData.data;
+                playAudioChunk(base64Data);
+            }
+
+            // Handle turn complete
+            if (content.turnComplete) {
+                // Logic for end of assistant turn
+            }
+        };
+
+        socket.on('talk:status', onStatus);
+        socket.on('talk:response', onResponse);
+
+        return () => {
+            socket.off('talk:status', onStatus);
+            socket.off('talk:response', onResponse);
+        };
+    }, [socket]);
+
+    const initAudioContexts = () => {
+        if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        }
+        if (!playbackContextRef.current) {
+            playbackContextRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+        }
+    };
 
     const handleMicClick = () => {
         if (!isOpen) {
             setIsOpen(true);
-            startListening(); // Assume permission granted for now, browser will query
+            setStatus('connecting');
+            socket.emit('talk:connect');
+            startMic();
         } else {
-            if (isListening) stopListening();
-            else startListening();
+            closeAgent();
         }
     };
 
-    const startListening = async () => {
+    const startMic = async () => {
         try {
+            initAudioContexts();
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream);
-            audioChunksRef.current = [];
+            streamRef.current = stream;
 
-            mediaRecorderRef.current.ondataavailable = (event) => {
-                if (event.data.size > 0) audioChunksRef.current.push(event.data);
+            const source = audioContextRef.current.createMediaStreamSource(stream);
+            // ScriptProcessor handles PCM conversion (bufferSize 4096 is stable)
+            const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+            processorRef.current = processor;
+
+            processor.onaudioprocess = (e) => {
+                if (!isListening) return;
+
+                const inputData = e.inputBuffer.getChannelData(0);
+                // Convert Float32 to Int16 PCM
+                const pcmData = new Int16Array(inputData.length);
+                for (let i = 0; i < inputData.length; i++) {
+                    const s = Math.max(-1, Math.min(1, inputData[i]));
+                    pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                }
+
+                // Send as Base64 chunk
+                const base64Chunk = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+                socket.emit('talk:audio', base64Chunk);
             };
 
-            mediaRecorderRef.current.onstop = async () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                // Process audio
-                await processAudio(audioBlob);
-            };
+            source.connect(processor);
+            processor.connect(audioContextRef.current.destination);
 
-            mediaRecorderRef.current.start();
             setIsListening(true);
-            setIsSpeaking(false);
-            setTranscript("Listening...");
+            setResponse('');
         } catch (err) {
             console.error("Mic error:", err);
-            setTranscript("Microphone access denied.");
+            setResponse("Microphone access denied.");
         }
     };
 
-    const stopListening = () => {
-        if (mediaRecorderRef.current && isListening) {
-            mediaRecorderRef.current.stop();
-            setIsListening(false);
-            setTranscript("Thinking...");
-        }
-    };
+    const playAudioChunk = (base64) => {
+        if (!playbackContextRef.current) return;
 
-    const processAudio = async (audioBlob) => {
-        try {
-            const formData = new FormData();
-            formData.append('audio', audioBlob, 'recording.webm');
-
-            const res = await fetch('/api/talk/interact', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const data = await res.json();
-            if (data.success && data.reply) {
-                setResponse(data.reply);
-                speakResponse(data.reply);
-            } else {
-                setResponse("Sorry, I didn't catch that.");
-            }
-        } catch (err) {
-            console.error("Backend error:", err);
-            setResponse("Error connecting to AgriGuard.");
-        }
-    };
-
-    const speakResponse = (text) => {
-        if (!window.speechSynthesis) return;
         setIsSpeaking(true);
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.onend = () => setIsSpeaking(false);
-        // Attempt to select a natural voice if available
-        const voices = window.speechSynthesis.getVoices();
-        const preferred = voices.find(v => v.name.includes('Google') || v.name.includes('Natural'));
-        if (preferred) utterance.voice = preferred;
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 
-        window.speechSynthesis.speak(utterance);
+        const pcm16 = new Int16Array(bytes.buffer);
+        const float32 = new Float32Array(pcm16.length);
+        for (let i = 0; i < pcm16.length; i++) float32[i] = pcm16[i] / 32768.0;
+
+        const audioBuffer = playbackContextRef.current.createBuffer(1, float32.length, 24000);
+        audioBuffer.getChannelData(0).set(float32);
+
+        const source = playbackContextRef.current.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(playbackContextRef.current.destination);
+
+        // Schedule playback to avoid gaps
+        const startTime = Math.max(playbackContextRef.current.currentTime, nextPlaybackTimeRef.current);
+        source.start(startTime);
+        nextPlaybackTimeRef.current = startTime + audioBuffer.duration;
+
+        source.onended = () => {
+            if (playbackContextRef.current.currentTime >= nextPlaybackTimeRef.current - 0.1) {
+                setIsSpeaking(false);
+            }
+        };
     };
 
     const closeAgent = () => {
         setIsOpen(false);
         setIsListening(false);
         setIsSpeaking(false);
-        window.speechSynthesis.cancel();
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.stop();
+        socket.emit('talk:disconnect');
+
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
         }
+        if (processorRef.current) {
+            processorRef.current.disconnect();
+            processorRef.current = null;
+        }
+        nextPlaybackTimeRef.current = 0;
     };
 
     return (
@@ -120,134 +179,71 @@ const TalkAgent = () => {
                     }`}
                 title="Talk to AgriGuard"
             >
-                {/* Active/Idle Ripple Effect */}
                 {!isOpen && (
                     <>
-                        {/* 1. Large Outer Glow (Area) */}
                         <span className="absolute -inset-4 rounded-full animate-[ping_2.5s_linear_infinite] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-30 blur-md"></span>
-
-                        {/* 2. Middle Vibrant Pulse (Color) */}
                         <span className="absolute -inset-2 rounded-full animate-[ping_2s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 opacity-50 blur-sm" style={{ animationDelay: '0.4s' }}></span>
-
-                        {/* 3. Intense Core Ring */}
                         <span className="absolute inset-0 rounded-md animate-[pulse_1.5s_ease-in-out_infinite] bg-gradient-to-tr from-indigo-500 to-fuchsia-500 opacity-40 blur-[2px]"></span>
                     </>
                 )}
-
-                <Mic className={`relative z-10 w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
+                <Mic className={`relative z-10 w-5 h-5 ${isListening && status === 'connected' ? 'animate-pulse' : ''}`} />
             </button>
 
             {/* Immersive Overlay */}
             {isOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    {/* Backdrop Blur */}
-                    <div
-                        className="absolute inset-0 bg-white/80 dark:bg-gray-900/90 backdrop-blur-md transition-opacity duration-300"
-                        onClick={closeAgent}
-                    />
-
-                    {/* Main Agent Card */}
+                    <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/90 backdrop-blur-md transition-opacity duration-300" onClick={closeAgent} />
                     <div className="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700 overflow-hidden flex flex-col items-center p-8 md:p-12 animate-in fade-in zoom-in-95 duration-200">
+                        <button onClick={closeAgent} className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X className="w-6 h-6" /></button>
 
-                        {/* Close Button */}
-                        <button
-                            onClick={closeAgent}
-                            className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-
-                        {/* Visualizer / Orb */}
                         <div className="relative mb-12 flex items-center justify-center h-48 w-48">
-                            {(() => {
-                                const colorClass = isListening
-                                    ? 'bg-indigo-500'
-                                    : isSpeaking
-                                        ? 'bg-emerald-500'
-                                        : 'bg-gray-400';
-
-                                return (
-                                    <>
-                                        {/* Ripple Layers (Continuous Wave) */}
-                                        {(isListening || isSpeaking) && (
-                                            <>
-                                                <div className={`absolute inset-0 rounded-full opacity-0 animate-[ping_3s_linear_infinite] ${colorClass}`} style={{ animationDelay: '0s' }} />
-                                                <div className={`absolute inset-0 rounded-full opacity-0 animate-[ping_3s_linear_infinite] ${colorClass}`} style={{ animationDelay: '1s' }} />
-                                                <div className={`absolute inset-0 rounded-full opacity-0 animate-[ping_3s_linear_infinite] ${colorClass}`} style={{ animationDelay: '2s' }} />
-
-                                                {/* Glow Layer */}
-                                                <div className={`absolute inset-0 rounded-full blur-xl opacity-50 ${colorClass}`} />
-                                            </>
-                                        )}
-
-                                        {/* Core Orb */}
-                                        <div className={`relative z-10 w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform ${isListening ? 'scale-110' : ''} bg-white dark:bg-gray-900 border-4 border-transparent`}>
-                                            <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-colors duration-500 ${colorClass}`}>
-                                                {isListening ? (
-                                                    <Mic className="w-10 h-10 text-white animate-bounce" />
-                                                ) : isSpeaking ? (
-                                                    <div className="flex gap-1 items-end h-8">
-                                                        <span className="w-1.5 h-3 bg-white rounded-full animate-[bounce_1s_infinite]"></span>
-                                                        <span className="w-1.5 h-6 bg-white rounded-full animate-[bounce_1.2s_infinite]"></span>
-                                                        <span className="w-1.5 h-4 bg-white rounded-full animate-[bounce_0.8s_infinite]"></span>
-                                                    </div>
-                                                ) : (
-                                                    <Mic className="w-10 h-10 text-white" />
-                                                )}
-                                            </div>
+                            {(isListening || isSpeaking) && (
+                                <>
+                                    <div className={`absolute inset-0 rounded-full opacity-0 animate-[ping_3s_linear_infinite] ${isSpeaking ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ animationDelay: '0s' }} />
+                                    <div className={`absolute inset-0 rounded-full opacity-0 animate-[ping_3s_linear_infinite] ${isSpeaking ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ animationDelay: '1s' }} />
+                                    <div className={`absolute inset-0 rounded-full blur-xl opacity-50 ${isSpeaking ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                                </>
+                            )}
+                            <div className={`relative z-10 w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform ${isListening ? 'scale-110' : ''} bg-white dark:bg-gray-900 border-4 border-transparent`}>
+                                <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-colors duration-500 ${status === 'connected' ? (isSpeaking ? 'bg-emerald-500' : 'bg-indigo-500') : 'bg-gray-400'}`}>
+                                    {isListening && status === 'connected' ? (
+                                        <div className="flex gap-1 items-end h-8">
+                                            <span className="w-1.5 h-3 bg-white rounded-full animate-[bounce_1s_infinite]"></span>
+                                            <span className="w-1.5 h-6 bg-white rounded-full animate-[bounce_1.2s_infinite]"></span>
+                                            <span className="w-1.5 h-4 bg-white rounded-full animate-[bounce_0.8s_infinite]"></span>
                                         </div>
-                                    </>
-                                );
-                            })()}
+                                    ) : (
+                                        <Mic className="w-10 h-10 text-white" />
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Status Text & Transcript */}
                         <div className="text-center space-y-4 w-full min-h-[120px]">
-                            {isListening ? (
+                            {status === 'connecting' ? (
+                                <h3 className="text-xl font-bold text-gray-400 animate-pulse">Establishing Link...</h3>
+                            ) : status === 'connected' ? (
                                 <>
                                     <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent animate-pulse">
-                                        Listening...
+                                        Agent Online
                                     </h3>
                                     <p className="text-gray-500 dark:text-gray-400 text-lg">
-                                        {transcript || "Speak now"}
-                                    </p>
-                                </>
-                            ) : isSpeaking ? (
-                                <>
-                                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center justify-center gap-2">
-                                        <Sparkles className="w-5 h-5 text-emerald-500" />
-                                        Assistant
-                                    </h3>
-                                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed animate-in fade-in slide-in-from-bottom-2">
-                                        "{response}"
+                                        {isSpeaking ? "Assistant is speaking..." : "Listening to your field query..."}
                                     </p>
                                 </>
                             ) : (
-                                <p className="text-gray-400 dark:text-gray-500">Tap the mic to start</p>
+                                <p className="text-red-500 font-medium">{response || "Connection required"}</p>
                             )}
                         </div>
 
-                        {/* Controls */}
-                        <div className="mt-8 flex gap-4">
-                            {isSpeaking && (
-                                <button
-                                    onClick={stopListening} // Stop speaking logic placeholder
-                                    className="px-6 py-2 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                                >
-                                    Stop
-                                </button>
-                            )}
+                        <div className="mt-8">
                             <button
-                                onClick={() => isListening ? stopListening() : startListening()}
-                                className={`px-8 py-3 rounded-full font-medium text-white shadow-lg transition-transform active:scale-95 ${isListening
-                                    ? 'bg-red-500 hover:bg-red-600'
-                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110'
-                                    }`}
+                                onClick={closeAgent}
+                                className="px-8 py-3 rounded-full font-medium text-white shadow-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 active:scale-95 transition-all"
                             >
-                                {isListening ? 'Stop Listening' : 'Talk Again'}
+                                Stop Session
                             </button>
                         </div>
-
                     </div>
                 </div>
             )}

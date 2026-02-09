@@ -439,6 +439,15 @@ const loadRoutes = async () => {
 // Load routes immediately
 await loadRoutes();
 
+// Register TalkAgent socket handler
+try {
+  const { registerTalkSocket } = await import('./src/routes/talkAgent.js');
+  registerTalkSocket(io);
+  console.log('🎙️ TalkAgent Socket registered');
+} catch (error) {
+  console.error('❌ Failed to register TalkAgent Socket:', error);
+}
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

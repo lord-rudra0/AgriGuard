@@ -9,10 +9,8 @@
     "dev": "DEV_NO_DB=true DEV_OPEN_SOCKET=true NODE_ENV=development nodemon server.js"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.17.1",
+    "@google/generative-ai": "^0.24.1",
     "@vercel/blob": "^1.1.1",
-    "onnxruntime-node": "^1.16.1",
-    "sharp": "^0.32.5",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -23,9 +21,12 @@
     "mongoose": "^8.6.1",
     "multer": "^2.0.2",
     "nodemailer": "^6.9.14",
+    "onnxruntime-node": "^1.16.1",
     "qrcode": "^1.5.3",
+    "sharp": "^0.32.5",
     "socket.io": "^4.7.5",
-    "web-push": "^3.5.0"
+    "web-push": "^3.5.0",
+    "ws": "^8.19.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
