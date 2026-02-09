@@ -2,8 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import CameraNavbar from '../components/CameraNavbar';
 import { useScan } from '../context/ScanContext';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { History } from 'lucide-react';
 
 export default function Scan() {
+  const navigate = useNavigate();
   const { scannedFile, clearScan } = useScan();
   const [preview, setPreview] = useState(null);
   const [file, setFile] = useState(null);
@@ -118,6 +121,13 @@ export default function Scan() {
             <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Scan</h1>
             <p className="text-sm text-gray-600 dark:text-gray-300">Capture or upload a photo and get a quick classification.</p>
           </div>
+          <button
+            onClick={() => navigate('/history')}
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+          >
+            <History className="w-4 h-4" />
+            <span className="font-medium">History</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

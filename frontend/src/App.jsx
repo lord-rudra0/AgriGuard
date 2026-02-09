@@ -22,11 +22,12 @@ import Alerts from './pages/Alerts';
 import UserProfile from './pages/UserProfile';
 import Calendar from './pages/Calendar';
 import Devices from './pages/Devices';
+import History from './pages/History';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -34,14 +35,14 @@ const ProtectedRoute = ({ children }) => {
       </div>
     );
   }
-  
+
   return user ? children : <Navigate to="/login" />;
 };
 
 // Public Route Component (redirect if authenticated)
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -49,7 +50,7 @@ const PublicRoute = ({ children }) => {
       </div>
     );
   }
-  
+
   return user ? <Navigate to="/dashboard" /> : children;
 };
 
@@ -112,151 +113,159 @@ function App() {
           <ScanProvider>
             <SocketProvider>
               <AppLayout>
-              <Routes>
-                {/* Public routes */}
-                <Route
-                  path="/"
-                  element={
-                    <PublicRoute>
-                      <Landing />
-                    </PublicRoute>
-                  }
-                />
-                <Route
-                  path="/login"
-                  element={
-                    <PublicRoute>
-                      <Login />
-                    </PublicRoute>
-                  }
-                />
-                <Route
-                  path="/register"
-                  element={
-                    <PublicRoute>
-                      <Register />
-                    </PublicRoute>
-                  }
-                />
+                <Routes>
+                  {/* Public routes */}
+                  <Route
+                    path="/"
+                    element={
+                      <PublicRoute>
+                        <Landing />
+                      </PublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/login"
+                    element={
+                      <PublicRoute>
+                        <Login />
+                      </PublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/register"
+                    element={
+                      <PublicRoute>
+                        <Register />
+                      </PublicRoute>
+                    }
+                  />
 
-                {/* Protected routes */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* Protected routes */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* Placeholder routes for future pages */}
-                <Route
-                  path="/chat"
-                  element={
-                    <ProtectedRoute>
-                      <Chat />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                <Route
-                  path="/analytics"
-                  element={
-                    <ProtectedRoute>
-                      <Analytics />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/scan"
-                  element={
-                    <ProtectedRoute>
-                      <Scan />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/recipes"
-                  element={
-                    <ProtectedRoute>
-                      <Recipes />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                <Route
-                  path="/alerts"
-                  element={
-                    <ProtectedRoute>
-                      <Alerts />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/thresholds"
-                  element={
-                    <ProtectedRoute>
-                      <Thresholds />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/calendar"
-                  element={
-                    <ProtectedRoute>
-                      <Calendar />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                <Route
-                  path="/settings"
-                  element={
-                    <ProtectedRoute>
-                      <Settings />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                <Route
-                  path="/devices"
-                  element={
-                    <ProtectedRoute>
-                      <Devices />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                {/* Alias: Profile maps to Settings */}
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <UserProfile />
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* Placeholder routes for future pages */}
+                  <Route
+                    path="/chat"
+                    element={
+                      <ProtectedRoute>
+                        <Chat />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* Root handled above as Landing (public) */}
+                  <Route
+                    path="/analytics"
+                    element={
+                      <ProtectedRoute>
+                        <Analytics />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/scan"
+                    element={
+                      <ProtectedRoute>
+                        <Scan />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/history"
+                    element={
+                      <ProtectedRoute>
+                        <History />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/recipes"
+                    element={
+                      <ProtectedRoute>
+                        <Recipes />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* 404 fallback */}
-                <Route
-                  path="*"
-                  element={
-                    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-                      <div className="text-center">
-                        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                          404
-                        </h1>
-                        <p className="text-gray-600 dark:text-gray-300 mb-8">
-                          Page not found
-                        </p>
-                        <a href="/" className="btn-primary">Go Home</a>
+                  <Route
+                    path="/alerts"
+                    element={
+                      <ProtectedRoute>
+                        <Alerts />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/thresholds"
+                    element={
+                      <ProtectedRoute>
+                        <Thresholds />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/calendar"
+                    element={
+                      <ProtectedRoute>
+                        <Calendar />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/settings"
+                    element={
+                      <ProtectedRoute>
+                        <Settings />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/devices"
+                    element={
+                      <ProtectedRoute>
+                        <Devices />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Alias: Profile maps to Settings */}
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <UserProfile />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Root handled above as Landing (public) */}
+
+                  {/* 404 fallback */}
+                  <Route
+                    path="*"
+                    element={
+                      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+                        <div className="text-center">
+                          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                            404
+                          </h1>
+                          <p className="text-gray-600 dark:text-gray-300 mb-8">
+                            Page not found
+                          </p>
+                          <a href="/" className="btn-primary">Go Home</a>
+                        </div>
                       </div>
-                    </div>
-                  }
-                />
-              </Routes>
+                    }
+                  />
+                </Routes>
               </AppLayout>
             </SocketProvider>
           </ScanProvider>
