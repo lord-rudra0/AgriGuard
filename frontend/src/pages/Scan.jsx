@@ -93,9 +93,6 @@ export default function Scan() {
     clearScan();
   };
 
-  // Load ONNX runtime and model once on mount
-  // Remove client-side model loading: backend will handle inference
-
   function formatBytes(bytes) {
     if (!bytes) return '';
     const units = ['B', 'KB', 'MB', 'GB'];
@@ -159,160 +156,153 @@ export default function Scan() {
 
           <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             {preview ? (
-              <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex flex-col md:flex-row gap-4 h-full">
                 <div className="md:w-1/2">
                   <img src={preview} alt="preview" className="w-full h-80 object-cover rounded-md border" />
                 </div>
-                <div className="md:w-1/2 flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Analysis</h3>
-                    <div className="mt-3 text-sm text-gray-700 dark:text-gray-300">
-                      {predicting && (
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 animate-spin text-primary-600" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                          </svg>
-                          <span>Running prediction...</span>
-                        </div>
-                      )}
 
-                      {!predicting && analysis && analysis.error && (
-                        <div className="text-red-600">Error: {analysis.error}</div>
-                      )}
-
-                      {!predicting && analysis && !analysis.error && (
-                        <div className="space-y-3 mt-2">
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm text-gray-600">Prediction</div>
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${analysis.isEdible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                              {analysis.classLabel?.toUpperCase() || (analysis.isEdible ? 'EDIBLE' : 'POISONOUS')}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="text-xs text-gray-500">Confidence</div>
-                            <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-3 mt-1 overflow-hidden">
-                              <div className="h-3 bg-primary-600" style={{ width: `${Math.round((analysis.confidence || 0) * 100)}%` }} />
-                            </div>
-                            <div className="text-sm mt-1 text-gray-700 dark:text-gray-300">{((analysis.confidence || 0) * 100).toFixed(1)}%</div>
-                          </div>
-
-                          <div className="pt-2 text-sm text-gray-700 dark:text-gray-300">
-                            <strong>Edible?</strong> {analysis.isEdible ? <span className="text-green-600">Yes</span> : <span className="text-red-600">No</span>}
-                          </div>
-                        </div>
-                      )}
-
-                      {!analysis && !predicting && (
-                        <div className="text-gray-500">No analysis yet. Upload an image to run the model.</div>
-                      )}
+                <div className="md:w-1/2 flex flex-col min-h-[400px]">
+                  {/* Loading State */}
+                  {(predicting || detailedLoading) && (
+                    <div className="h-full flex flex-col items-center justify-center p-8 text-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                      <div className="relative w-16 h-16 mb-4">
+                        <div className="absolute inset-0 rounded-full border-4 border-gray-100 dark:border-gray-700"></div>
+                        <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {detailedLoading ? 'Processing Deep Analysis...' : 'Analyzing Image...'}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-2">Running neural network models...</p>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="mt-4">
-                    <button onClick={clear} className="px-4 py-2 rounded border hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-gray-300">Remove</button>
-                  </div>
+                  {/* DETAILED Analysis Result (Priority View) */}
+                  {!predicting && !detailedLoading && detailedAnalysis && (
+                    <div className="h-full p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-800 dark:to-gray-900 shadow-sm relative overflow-hidden flex flex-col">
+                      {/* Decorative */}
+                      <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
 
-                  {/* Detailed Analysis Section */}
-                  <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <button
-                      onClick={handleDetailedAnalysis}
-                      disabled={detailedLoading || !file}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-                    >
-                      {detailedLoading ? (
-                        <>
-                          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                          </svg>
-                          <span>Processing Analysis...</span>
-                        </>
-                      ) : (
-                        <span>🧬 Run Deep Analysis</span>
-                      )}
-                    </button>
-
-                    {detailedAnalysis && (
-                      <div className="mt-6 p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-sm relative overflow-hidden">
-
-                        {/* Decorative background element */}
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-
-                        {detailedAnalysis.error ? (
-                          <div className="text-red-600 text-sm font-medium flex items-center gap-2">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                            Error: {detailedAnalysis.error}
+                      <div className="flex justify-between items-start mb-6">
+                        <div>
+                          <div className="text-xs font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase mb-1">Deep Analysis Result</div>
+                          <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white leading-tight mb-2">
+                            {detailedAnalysis.type || 'Unknown Object'}
+                          </h3>
+                          {/* Confidence Bar */}
+                          <div className="flex items-center gap-3">
+                            <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${detailedAnalysis.confidence}%` }}></div>
+                            </div>
+                            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{detailedAnalysis.confidence}% Match</span>
                           </div>
-                        ) : (
-                          <div className="relative z-10">
-                            <div className="flex items-start justify-between mb-4">
-                              <div>
-                                <div className="text-xs font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase mb-1">Detected Object</div>
-                                <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white leading-tight">
-                                  {detailedAnalysis.type || 'Unknown'}
-                                </h3>
-                              </div>
-                              <div className="flex flex-col items-end">
-                                <div className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">CONFIDENCE</div>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${detailedAnalysis.confidence}%` }}></div>
-                                  </div>
-                                  <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{detailedAnalysis.confidence}%</span>
-                                </div>
-                              </div>
-                            </div>
+                        </div>
+                        <div className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-800">
+                          ADVANCED MODEL
+                        </div>
+                      </div>
 
-                            <div className="grid grid-cols-2 gap-3 mt-4">
-                              {/* Edibility Card */}
-                              <div className={`p-3 rounded-lg border ${detailedAnalysis.edible ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'}`}>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">EDIBILITY</div>
-                                <div className={`flex items-center gap-2 font-bold ${detailedAnalysis.edible ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
-                                  {detailedAnalysis.edible ? (
-                                    <>
-                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                      <span>Edible</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                      <span>Toxic / Inedible</span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Health Card */}
-                              <div className={`p-3 rounded-lg border ${!detailedAnalysis.disease ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' : 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'}`}>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">CONDITION</div>
-                                <div className={`flex items-center gap-2 font-bold ${!detailedAnalysis.disease ? 'text-blue-700 dark:text-blue-400' : 'text-orange-700 dark:text-orange-400'}`}>
-                                  {!detailedAnalysis.disease ? (
-                                    <>
-                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                                      <span>Healthy</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                                      <span>Diseased</span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {detailedAnalysis.disease && detailedAnalysis.diseaseType && (
-                              <div className="mt-3 text-sm text-center bg-gray-100 dark:bg-gray-800 py-1 px-3 rounded text-gray-600 dark:text-gray-300">
-                                <strong>Diagnosis:</strong> {detailedAnalysis.diseaseType}
-                              </div>
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className={`p-4 rounded-xl border ${detailedAnalysis.edible ? 'bg-white dark:bg-gray-800 border-emerald-100 dark:border-gray-700' : 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'}`}>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold mb-2">Edibility</div>
+                          <div className={`text-lg font-bold flex items-center gap-2 ${detailedAnalysis.edible ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {detailedAnalysis.edible ? (
+                              <><span>✅</span> <span>Edible</span></>
+                            ) : (
+                              <><span>⛔</span> <span>Inedible</span></>
                             )}
                           </div>
-                        )}
+                        </div>
+
+                        <div className="p-4 rounded-xl border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold mb-2">Condition</div>
+                          <div className="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                            {detailedAnalysis.disease ? (
+                              <span className="text-amber-500">⚠️ {detailedAnalysis.diseaseType || 'Diseased'}</span>
+                            ) : (
+                              <span className="text-blue-500">💙 Healthy</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </div>
+
+                      <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex gap-3">
+                        <button onClick={clear} className="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          Scan Another
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* BASIC Analysis Result (Fallback View) */}
+                  {!predicting && !detailedLoading && !detailedAnalysis && analysis && (
+                    <div className="h-full p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm flex flex-col">
+
+                      {analysis.error ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center text-red-500">
+                          <div className="text-4xl mb-2">⚠️</div>
+                          <p className="font-medium">{analysis.error}</p>
+                          <button onClick={clear} className="mt-4 px-4 py-2 bg-gray-100 rounded text-gray-900 text-sm">Try Again</button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="mb-6">
+                            <div className="text-xs font-bold tracking-wider text-blue-600 dark:text-blue-400 uppercase mb-1">Quick Scan Result</div>
+                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                              {analysis.classLabel || 'Unidentified'}
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                              {((analysis.confidence || 0) * 100).toFixed(1)}% Confidence
+                            </p>
+                          </div>
+
+                          <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 mb-6">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${analysis.isEdible ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                                {analysis.isEdible ? '✓' : '!'}
+                              </div>
+                              <div>
+                                <div className="text-sm font-bold text-gray-900 dark:text-white">
+                                  {analysis.isEdible ? 'Likely Edible' : 'Example Caution'}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  Based on basic visual features.
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-auto">
+                            <button
+                              onClick={handleDetailedAnalysis}
+                              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                            >
+                              <span>✨ Run Deep Analysis</span>
+                              <span className="bg-white/20 px-2 py-0.5 rounded text-xs">Recommended</span>
+                            </button>
+
+                            <button onClick={clear} className="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                              Discard & Rescan
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {!predicting && !detailedLoading && !analysis && !detailedAnalysis && (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-800/50">
+                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4 text-3xl opacity-50">
+                        🍄
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                        Ready to Scan
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+                        Upload an image to identify species using our dual-layer AI system.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -326,5 +316,3 @@ export default function Scan() {
     </div>
   );
 }
-
-// Server-side prediction is used; client-side ONNX code removed
