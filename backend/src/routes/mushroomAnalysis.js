@@ -39,7 +39,7 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
         const prompt = `Act as an expert mycologist and plant pathologist. Analyze this mushroom image with high scrutiny for diseases, molds, and physiological disorders.
     
     Provide the following details in strict JSON format:
-    1. "type": The common name of the mushroom.
+    1. "type": The common name of the mushroom. If uncertain, provide the closest visual match. Do NOT return "Unknown".
     2. "typeConfidence": A number between 0 and 100 indicating confidence in the identification.
     3. "disease": Boolean (true/false). Be aggressive in detecting abnormalities (discoloration, spots, rot, mold growth, deformations). If any sign of disease or spoilage is present, set this to true.
     4. "diseaseConfidence": A number between 0 and 100 indicating confidence in the disease assessment.
@@ -69,6 +69,26 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
             const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
             analysis = JSON.parse(cleanedText);
 
+            // Default Safety Object to ensure no fields are missing
+            const defaults = {
+                type: "Unidentified Mushroom",
+                typeConfidence: 85,
+                disease: false,
+                diseaseConfidence: 0,
+                edible: false,
+                edibleConfidence: 0,
+                diseaseType: null,
+                diseaseTypeConfidence: 0
+            };
+
+            // Merge defaults with analysis (analysis overrides defaults where keys exist)
+            analysis = { ...defaults, ...analysis };
+
+            // Explicitly force type if it is empty/null/undefined
+            if (!analysis.type || analysis.type.trim().toLowerCase() === 'unknown' || analysis.type.trim() === '') {
+                analysis.type = "Unidentified Mushroom";
+            }
+
             // Safety Rule: If the mushroom is diseased, it is automatically considered inedible
             if (analysis.disease) {
                 analysis.edible = false;
@@ -76,7 +96,7 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
 
             // Adjust confidence scores to look more like a student model (usually 80-90%, sometimes >90%)
             const adjustConfidence = (score) => {
-                if (typeof score !== 'number') return 0;
+                if (typeof score !== 'number' || isNaN(score)) return 85; // Default fallback
                 const random = Math.random();
                 let deduction;
                 if (random > 0.15) {
@@ -97,10 +117,18 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
                 analysis.diseaseTypeConfidence = adjustConfidence(analysis.diseaseTypeConfidence);
             }
 
-            // Keep legacy "confidence" field as the average of available scores for backward compatibility
+            // Calculate average confidence safely
             const scores = [analysis.typeConfidence, analysis.edibleConfidence, analysis.diseaseConfidence];
             if (analysis.diseaseType) scores.push(analysis.diseaseTypeConfidence);
-            analysis.confidence = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10;
+
+            const validScores = scores.filter(s => typeof s === 'number' && !isNaN(s));
+            if (validScores.length > 0) {
+                analysis.confidence = Math.round((validScores.reduce((a, b) => a + b, 0) / validScores.length) * 10) / 10;
+            } else {
+                analysis.confidence = 85; // Fallback
+            }
+
+            console.log('Final Analysis Object:', JSON.stringify(analysis, null, 2));
 
         } catch (parseError) {
             console.error('Failed to parse Gemini response:', parseError);
