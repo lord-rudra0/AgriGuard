@@ -225,21 +225,34 @@ const TalkAgent = ({ variant = 'header' }) => {
         <>
             {/* Nav Column variant (for bottom navbar) */}
             {variant === 'nav' ? (
-                <li className="flex">
+                <li className="flex justify-center relative -top-6">
                     <button
                         onClick={handleMicClick}
-                        className={`flex-1 flex flex-col items-center justify-center h-14 text-xs transition-all duration-300 ${isOpen
-                            ? 'text-primary-600 dark:text-indigo-400'
-                            : 'text-gray-600 dark:text-gray-300'
-                            } hover:bg-gray-50 dark:hover:bg-gray-700/60`}
+                        className={`group relative h-16 w-16 flex flex-col items-center justify-center rounded-full transition-all duration-500 shadow-xl ${isOpen
+                            ? 'bg-gradient-to-tr from-indigo-600 to-fuchsia-600 scale-110 shadow-indigo-500/50'
+                            : 'bg-white dark:bg-gray-700 hover:scale-105 shadow-black/10'
+                            }`}
+                        aria-label="Talk to Agent"
                     >
-                        <div className="relative">
+                        {!isOpen && (
+                            <>
+                                <span className="absolute -inset-4 rounded-full animate-[ping_2.5s_linear_infinite] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-30 blur-md"></span>
+                                <span className="absolute -inset-2 rounded-full animate-[ping_2s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 opacity-40 blur-sm" style={{ animationDelay: '0.4s' }}></span>
+                                <span className="absolute inset-0 rounded-full animate-[pulse_1.5s_ease-in-out_infinite] bg-gradient-to-tr from-indigo-500 to-fuchsia-500 opacity-30 blur-[2px]"></span>
+                            </>
+                        )}
+
+                        <div className="relative z-10">
                             {isOpen && (
-                                <span className="absolute -inset-2 rounded-full animate-ping bg-primary-400 dark:bg-indigo-500 opacity-20"></span>
+                                <span className="absolute -inset-4 rounded-full animate-ping bg-white/30"></span>
                             )}
-                            <Mic className={`w-5 h-5 mb-0.5 relative z-10 transition-transform ${isOpen ? 'scale-110 text-primary-600 dark:text-indigo-400' : ''} ${isListening && status === 'connected' ? 'animate-pulse' : ''}`} />
+                            <Mic className={`w-7 h-7 transition-all duration-300 ${isOpen ? 'text-white scale-110' : 'text-primary-600 dark:text-indigo-400'} ${isListening && status === 'connected' ? 'animate-pulse' : ''}`} />
                         </div>
-                        <span className="font-medium">Agent</span>
+
+                        {/* Status ring */}
+                        {isOpen && (
+                            <div className="absolute inset-0 rounded-full border-2 border-white/20 animate-[spin_4s_linear_infinite]"></div>
+                        )}
                     </button>
                 </li>
             ) : (
