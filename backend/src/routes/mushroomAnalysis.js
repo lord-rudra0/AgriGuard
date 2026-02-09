@@ -36,14 +36,16 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
 
         const model = genAI.getGenerativeModel({ model: modelName });
 
-        const prompt = `Analyze this mushroom image and provide the following details in strict JSON format:
+        const prompt = `Act as an expert mycologist and plant pathologist. Analyze this mushroom image with high scrutiny for diseases, molds, and physiological disorders.
+    
+    Provide the following details in strict JSON format:
     1. "type": The common name of the mushroom.
     2. "typeConfidence": A number between 0 and 100 indicating confidence in the identification.
-    3. "disease": Boolean (true/false) indicating if it appears diseased.
+    3. "disease": Boolean (true/false). Be aggressive in detecting abnormalities (discoloration, spots, rot, mold growth, deformations). If any sign of disease or spoilage is present, set this to true.
     4. "diseaseConfidence": A number between 0 and 100 indicating confidence in the disease assessment.
     5. "edible": Boolean (true/false) indicating if it is generally considered edible.
     6. "edibleConfidence": A number between 0 and 100 indicating confidence in the edibility assessment.
-    7. "diseaseType": The name of the disease if diseased, otherwise null.
+    7. "diseaseType": The specific name of the disease or condition if present (e.g., "Bacterial Blotch", "Green Mold", "Dry Bubble", "Cobweb Disease"). If healthy, return null.
     8. "diseaseTypeConfidence": A number between 0 and 100 indicating confidence in the disease type identification (if applicable, else 0).
     
     Return ONLY the JSON object. Do not wrap it in markdown code blocks.`;
