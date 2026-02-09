@@ -11,6 +11,11 @@ const Devices = () => {
   const [deviceName, setDeviceName] = useState('');
   const [lastToken, setLastToken] = useState(null);
   const [showClaim, setShowClaim] = useState(true);
+  const [adminSecret, setAdminSecret] = useState('');
+  const [factoryName, setFactoryName] = useState('AgriGuard Device');
+  const [factoryDeviceId, setFactoryDeviceId] = useState('');
+  const [factoryResult, setFactoryResult] = useState(null);
+  const [creatingFactory, setCreatingFactory] = useState(false);
 
   const fetchDevices = async () => {
     try {
@@ -61,6 +66,29 @@ const Devices = () => {
       toast.success('Device deleted');
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to delete device');
+    }
+  };
+
+  const handleCreateFactory = async (e) => {
+    e.preventDefault();
+    if (!adminSecret.trim()) {
+      toast.error('Admin secret is required');
+      return;
+    }
+    try {
+      setCreatingFactory(true);
+      const res = await axios.post('/api/devices/factory', {
+        name: factoryName.trim() || 'AgriGuard Device',
+        deviceId: factoryDeviceId.trim() || undefined
+      }, {
+        headers: { 'x-admin-secret': adminSecret.trim() }
+      });
+      setFactoryResult(res.data);
+      toast.success('Factory device created');
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to create factory device');
+    } finally {
+      setCreatingFactory(false);
     }
   };
 
@@ -129,6 +157,69 @@ const Devices = () => {
                   {claiming ? 'Claiming...' : 'Claim Device'}
                 </button>
                 </form>
+              )}
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm ring-1 ring-black/5 dark:ring-white/10">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Factory Tools
+              </h2>
+              <form onSubmit={handleCreateFactory} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Admin Secret
+                  </label>
+                  <input
+                    value={adminSecret}
+                    onChange={(e) => setAdminSecret(e.target.value)}
+                    placeholder="DEVICE_FACTORY_SECRET"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Device Name
+                  </label>
+                  <input
+                    value={factoryName}
+                    onChange={(e) => setFactoryName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Device ID (optional)
+                  </label>
+                  <input
+                    value={factoryDeviceId}
+                    onChange={(e) => setFactoryDeviceId(e.target.value)}
+                    placeholder="dev_xxx"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={creatingFactory}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md text-white bg-gradient-to-r from-primary-600 to-indigo-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 transition-all duration-200 disabled:opacity-50"
+                >
+                  {creatingFactory ? 'Creating...' : 'Create Factory Device'}
+                </button>
+              </form>
+
+              {factoryResult?.qrPngDataUrl && (
+                <div className="mt-6 space-y-3">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 break-all">
+                    Factory Token: {factoryResult.factoryToken}
+                  </div>
+                  <img
+                    src={factoryResult.qrPngDataUrl}
+                    alt="Factory QR"
+                    className="w-40 h-40 bg-white p-2 rounded-md"
+                  />
+                  <div className="text-xs text-gray-500 dark:text-gray-400 break-all">
+                    Payload: {factoryResult.qrPayload}
+                  </div>
+                </div>
               )}
             </div>
 

@@ -146,9 +146,10 @@ const limiter = rateLimit({
     return req.headers['x-forwarded-for']?.split(',')[0] || req.ip || req.connection.remoteAddress;
   }
 });
-// Skip rate limit for IoT ingest (devices post frequently)
+// Skip rate limit for IoT ingest and auth in development (testing)
 app.use('/api', (req, res, next) => {
   if (req.path.startsWith('/iot')) return next();
+  if (process.env.NODE_ENV === 'development' && req.path.startsWith('/auth')) return next();
   return limiter(req, res, next);
 });
 

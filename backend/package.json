@@ -23,6 +23,7 @@
     "mongoose": "^8.6.1",
     "multer": "^2.0.2",
     "nodemailer": "^6.9.14",
+    "qrcode": "^1.5.3",
     "socket.io": "^4.7.5",
     "web-push": "^3.5.0"
   },
@@ -30,4 +31,3 @@
     "nodemon": "^3.1.4"
   }
 }
-

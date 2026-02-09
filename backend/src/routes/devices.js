@@ -1,5 +1,6 @@
 import express from 'express';
 import crypto from 'crypto';
+import qrcode from 'qrcode';
 import Device from '../models/Device.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -106,6 +107,17 @@ router.post('/factory', async (req, res) => {
       active: true
     });
 
+    const qrPayload = JSON.stringify({
+      deviceId: created.deviceId,
+      factoryToken
+    });
+    const qrPngDataUrl = await qrcode.toDataURL(qrPayload, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: 256
+    });
+    const qrSvg = await qrcode.toString(qrPayload, { type: 'svg' });
+
     res.status(201).json({
       device: {
         id: created._id,
@@ -114,7 +126,10 @@ router.post('/factory', async (req, res) => {
         active: created.active,
         createdAt: created.createdAt
       },
-      factoryToken
+      factoryToken,
+      qrPayload,
+      qrPngDataUrl,
+      qrSvg
     });
   } catch (error) {
     if (error?.code === 11000) {
