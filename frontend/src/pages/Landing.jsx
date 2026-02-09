@@ -112,17 +112,12 @@ export default function Landing() {
               </Link>
             </div>
 
-            <div className="flex items-center gap-4 md:gap-6 pt-2">
-              <div className="flex -space-x-2.5">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white dark:border-gray-950 bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-500 overflow-hidden">
-                    <img src={`https://i.pravatar.cc/100?u=myco${i}`} alt="User" />
-                  </div>
-                ))}
+            <div className="flex items-center gap-4 pt-2">
+              <div className="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">
+                <p className="text-[10px] md:text-xs text-indigo-700 dark:text-indigo-300 font-bold uppercase tracking-wider">
+                  Open Mycology Project
+                </p>
               </div>
-              <p className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 font-medium">
-                Used by <span className="text-gray-900 dark:text-white font-bold">1,200+</span> mycologists
-              </p>
             </div>
           </div>
 
@@ -139,12 +134,12 @@ export default function Landing() {
 
               {/* Floating Badge */}
               <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6 p-3 md:p-4 rounded-xl md:rounded-2xl bg-white/10 dark:bg-gray-900/30 backdrop-blur-xl border border-white/20 flex items-center gap-3 md:gap-4 animate-float">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-purple-500/20 flex items-center justify-center">
-                  <Framer className="w-5 h-5 md:w-6 md:h-6 text-purple-400" />
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-indigo-500/20 flex items-center justify-center">
+                  <Activity className="w-5 h-5 md:w-6 md:h-6 text-indigo-400" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-white text-xs md:text-sm font-bold truncate">Live Lab Analysis</p>
-                  <p className="text-white/60 text-[10px] md:text-xs truncate">Vigor: Peak | Contam: 0%</p>
+                  <p className="text-white text-xs md:text-sm font-bold truncate">Analytical Engine</p>
+                  <p className="text-white/60 text-[10px] md:text-xs truncate">Vision System Online</p>
                 </div>
                 <div className="ml-auto w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-400 animate-pulse" />
               </div>
@@ -213,17 +208,13 @@ export default function Landing() {
                 </div>
               </div>
             </div>
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-6 md:p-8 space-y-4 md:space-y-6">
-              <div className="flex items-center gap-4 p-3 md:p-4 rounded-xl md:rounded-2xl bg-white/5 border border-white/10">
-                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-emerald-400" />
-                <span className="text-white text-sm md:text-base font-medium">Model Precision Level</span>
-                <span className="ml-auto text-emerald-400 text-xs md:text-sm font-bold">99.9%</span>
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-6 md:p-8 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-indigo-400" />
+                <span className="text-white text-sm md:text-base font-medium">Analysis Verification</span>
               </div>
-              <div className="h-1.5 md:h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full w-[99.9%] bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
-              </div>
-              <p className="text-gray-400 text-[10px] md:text-xs italic">
-                Verified against 50,000+ mycological samples and laboratory datasets.
+              <p className="text-gray-400 text-xs md:text-sm leading-relaxed">
+                Aggregating data from verified mycological samples to provide consistent, objective classification and risk assessment.
               </p>
             </div>
           </div>
@@ -234,10 +225,10 @@ export default function Landing() {
       <section className="container mx-auto px-4 py-24 text-center max-w-5xl">
         <div className="space-y-8">
           <h2 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white tracking-tight">
-            Ready for <span className="italic font-light">Industry-Level</span> Growth?
+            Ready to <span className="italic font-light">Monitor</span> Your Growth?
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Join the elite circle of mycologists leveraging AgriGuard's full power.
+            Leverage professional AI tools to manage your cultivation facility.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
@@ -254,7 +245,7 @@ export default function Landing() {
       <section className="pb-20">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-40 grayscale">
-            {['ISO 27001', 'GDPR Compliant', 'Bank-Grade SSL', 'AgriGuard AI Tier 1'].map(b => (
+            {['Self-Hosted Ready', 'Open-Source Core', 'IoT Hardware Support'].map(b => (
               <span key={b} className="text-xs font-bold tracking-widest text-gray-500 uppercase">
                 {b}
               </span>
