@@ -64,6 +64,11 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
             const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
             analysis = JSON.parse(cleanedText);
 
+            // Safety Rule: If the mushroom is diseased, it is automatically considered inedible
+            if (analysis.disease) {
+                analysis.edible = false;
+            }
+
             // Adjust confidence to look more like a student model (usually 80-90%, sometimes >90%)
             if (typeof analysis.confidence === 'number') {
                 const random = Math.random();
