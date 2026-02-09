@@ -1,4 +1,4 @@
--import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mic, X, Volume2, Loader2, Sparkles, MessageCircle, Settings, ChevronRight } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
