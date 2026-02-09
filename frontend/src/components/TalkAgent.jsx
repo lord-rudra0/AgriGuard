@@ -68,13 +68,21 @@ const TalkAgent = () => {
                     }`}
                 title="Talk to AgriGuard"
             >
-                <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
+                {/* Active/Idle Ripple Effect */}
                 {!isOpen && (
-                    <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                    </span>
+                    <>
+                        {/* 1. Large Outer Glow (Area) */}
+                        <span className="absolute -inset-4 rounded-full animate-[ping_2.5s_linear_infinite] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-30 blur-md"></span>
+
+                        {/* 2. Middle Vibrant Pulse (Color) */}
+                        <span className="absolute -inset-2 rounded-full animate-[ping_2s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 opacity-50 blur-sm" style={{ animationDelay: '0.4s' }}></span>
+
+                        {/* 3. Intense Core Ring */}
+                        <span className="absolute inset-0 rounded-md animate-[pulse_1.5s_ease-in-out_infinite] bg-gradient-to-tr from-indigo-500 to-fuchsia-500 opacity-40 blur-[2px]"></span>
+                    </>
                 )}
+
+                <Mic className={`relative z-10 w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
             </button>
 
             {/* Immersive Overlay */}
