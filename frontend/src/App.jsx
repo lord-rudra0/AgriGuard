@@ -64,28 +64,28 @@ const AppLayout = ({ children }) => {
 
   const PublicNav = () => (
     <header className="sticky top-0 z-50 w-full bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
-      <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 group" aria-label="AgriGuard Home">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:scale-110 transition-transform">
-            <Shield className="w-6 h-6" />
+      <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-1.5 md:gap-2 group" aria-label="AgriGuard Home">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-gradient-to-tr from-primary-600 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:scale-110 transition-transform">
+            <Shield className="w-5 h-5 md:w-6 md:h-6" />
           </div>
-          <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <span className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
             AgriGuard
           </span>
         </Link>
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-2 md:gap-4">
           <button
             onClick={toggleTheme}
-            className="p-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
+            className="p-2 md:p-2.5 rounded-lg md:rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
             aria-label="Toggle theme"
           >
-            {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            {theme === 'light' ? <Moon className="w-4 h-4 md:w-5 md:h-5" /> : <Sun className="w-4 h-4 md:w-5 md:h-5" />}
           </button>
-          <div className="flex items-center gap-2 pl-2 border-l border-gray-200 dark:border-gray-800">
-            <Link to="/login" className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-indigo-400 transition-colors">
+          <div className="flex items-center gap-1.5 md:gap-2 pl-1.5 md:pl-2 border-l border-gray-200 dark:border-gray-800">
+            <Link to="/login" className="px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-indigo-400 transition-colors">
               Log in
             </Link>
-            <Link to="/register" className="px-6 py-2.5 rounded-xl bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 shadow-md shadow-primary-600/20 hover:shadow-lg transition-all active:scale-95">
+            <Link to="/register" className="px-4 md:px-6 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-primary-600 text-white text-[10px] md:text-sm font-semibold hover:bg-primary-700 shadow-md shadow-primary-600/20 hover:shadow-lg transition-all active:scale-95 whitespace-nowrap">
               Get Started
             </Link>
           </div>
