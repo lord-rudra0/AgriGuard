@@ -130,6 +130,30 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
 
             console.log('Final Analysis Object:', JSON.stringify(analysis, null, 2));
 
+            // Save to History (Fire and Forget to keep response fast)
+            try {
+                // Dynamically import to avoid circular dependency issues if any
+                const { default: ScanHistory } = await import('../models/ScanHistory.js');
+                const base64Image = req.file.buffer.toString('base64');
+                const mimeType = req.file.mimetype;
+
+                // Check if user is authenticated (if req.user exists)
+                const userId = req.user ? req.user.id : null;
+
+                const historyDoc = new ScanHistory({
+                    userId,
+                    imageBase64: base64Image,
+                    imageMimeType: mimeType,
+                    analysis: analysis
+                });
+
+                await historyDoc.save();
+                console.log('✅ Scan saved to history:', historyDoc._id);
+            } catch (historyError) {
+                console.error('❌ Failed to save scan history:', historyError);
+                // Don't fail the request, just log it
+            }
+
         } catch (parseError) {
             console.error('Failed to parse Gemini response:', parseError);
             return res.status(500).json({ error: 'Failed to parse AI response', raw: text });
@@ -140,6 +164,25 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
     } catch (error) {
         console.error('Gemini analysis error:', error);
         res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+});
+
+// GET History Endpoint
+router.get('/history', async (req, res) => {
+    try {
+        const { default: ScanHistory } = await import('../models/ScanHistory.js');
+        // If authenticated, filter by user; otherwise return public/recent (limit 20)
+        const filter = req.user ? { userId: req.user.id } : {};
+
+        const history = await ScanHistory.find(filter)
+            .sort({ createdAt: -1 })
+            .limit(20)
+            .lean();
+
+        res.json({ success: true, history });
+    } catch (error) {
+        console.error('Failed to fetch history:', error);
+        res.status(500).json({ error: 'Failed to fetch history' });
     }
 });
 
