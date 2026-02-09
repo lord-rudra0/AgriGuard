@@ -19,21 +19,21 @@ export const registerTalkSocket = (io) => {
 
         let geminiWs = null;
 
-        socket.on('talk:connect', () => {
-            console.log(`[TalkAgent] User ${socket.user?.id} requested Live API connection`);
+        socket.on('talk:connect', (data) => {
+            const requestedVoice = data?.voice || "Puck";
+            console.log(`[TalkAgent] User ${socket.user?.id} requested Live API connection with voice: ${requestedVoice}`);
 
             const API_KEY = process.env.GEMINI_API_KEY;
             const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp';
 
-            // Switch to v1beta as it is more stable for BidiGenerateContent
             const URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${API_KEY}`;
 
             try {
                 geminiWs = new WebSocket(URL);
 
                 geminiWs.on('open', () => {
-                    console.log('[TalkAgent] Connected to Gemini Bidi API (v1beta)');
-                    socket.emit('talk:status', { status: 'connecting' }); // Handshake phase
+                    console.log(`[TalkAgent] Connected to Gemini Bidi API (v1beta) using voice: ${requestedVoice}`);
+                    socket.emit('talk:status', { status: 'connecting' });
 
                     const setup = {
                         setup: {
@@ -43,7 +43,7 @@ export const registerTalkSocket = (io) => {
                                 speech_config: {
                                     voice_config: {
                                         prebuilt_voice_config: {
-                                            voice_name: "Puck"
+                                            voice_name: requestedVoice
                                         }
                                     }
                                 }

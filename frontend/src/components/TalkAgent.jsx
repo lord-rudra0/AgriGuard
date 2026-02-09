@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, X, Volume2, Loader2, Sparkles, MessageCircle } from 'lucide-react';
+import { Mic, X, Volume2, Loader2, Sparkles, MessageCircle, Settings, ChevronRight } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 
@@ -10,6 +10,21 @@ const TalkAgent = () => {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [status, setStatus] = useState('disconnected'); // 'connected' | 'error' | 'disconnected'
     const [response, setResponse] = useState('');
+    const [selectedVoice, setSelectedVoice] = useState('Puck'); // Default voice
+    const [showSettings, setShowSettings] = useState(false);
+
+    const availableVoices = [
+        { name: 'Puck', desc: 'Upbeat and friendly (Default)', gender: 'Male' },
+        { name: 'Charon', desc: 'Informative and calm', gender: 'Female' },
+        { name: 'Ursa', desc: 'Engaged and mid-range', gender: 'Male' },
+        { name: 'Kore', desc: 'Firm and professional', gender: 'Female' },
+        { name: 'Orion', desc: 'Bright and deeper pitch', gender: 'Male' },
+        { name: 'Nova', desc: 'Calm and mid-range', gender: 'Female' },
+        { name: 'Eclipse', desc: 'Energetic and mid-range', gender: 'Male' },
+        { name: 'Vega', desc: 'Bright and higher pitch', gender: 'Female' },
+        { name: 'Lyra', desc: 'Bright and higher pitch (Snappy)', gender: 'Female' },
+        { name: 'Capella', desc: 'Serene and higher pitch', gender: 'Female' }
+    ];
 
     // Audio Refs
     const audioContextRef = useRef(null);
@@ -82,7 +97,7 @@ const TalkAgent = () => {
         if (!isOpen) {
             setIsOpen(true);
             setStatus('connecting');
-            socket.emit('talk:connect');
+            socket.emit('talk:connect', { voice: selectedVoice });
             startMic();
         } else {
             closeAgent();
@@ -246,16 +261,59 @@ const TalkAgent = () => {
                                     <p className="text-gray-500 dark:text-gray-400 text-lg">
                                         {isSpeaking ? "Assistant is speaking..." : "Listening to your field query..."}
                                     </p>
+                                    <div className="flex items-center gap-2 justify-center text-xs font-medium text-gray-400 uppercase tracking-widest bg-gray-100 dark:bg-gray-800/50 py-1 px-3 rounded-full">
+                                        <Volume2 className="w-3 h-3" />
+                                        <span>Voice: {selectedVoice}</span>
+                                    </div>
                                 </>
                             ) : (
                                 <p className="text-red-500 font-medium">{response || "Connection required"}</p>
                             )}
                         </div>
 
-                        <div className="mt-8">
+                        {/* Voice Selection Settings */}
+                        <div className={`w-full mt-6 transition-all duration-300 ${showSettings ? 'max-h-64 opacity-100 overflow-y-auto' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+                            <div className="grid grid-cols-1 gap-2 p-2">
+                                {availableVoices.map((voice) => (
+                                    <button
+                                        key={voice.name}
+                                        onClick={() => {
+                                            setSelectedVoice(voice.name);
+                                            setShowSettings(false);
+                                        }}
+                                        className={`flex items-center justify-between p-3 rounded-xl transition-all ${selectedVoice === voice.name
+                                            ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
+                                            : 'bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                            }`}
+                                    >
+                                        <div className="text-left">
+                                            <div className="font-bold flex items-center gap-2">
+                                                {voice.name}
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${selectedVoice === voice.name ? 'bg-white/20 text-white' : 'bg-gray-200 dark:bg-gray-600'}`}>
+                                                    {voice.gender}
+                                                </span>
+                                            </div>
+                                            <div className={`text-xs ${selectedVoice === voice.name ? 'text-indigo-100' : 'text-gray-400'}`}>
+                                                {voice.desc}
+                                            </div>
+                                        </div>
+                                        {selectedVoice === voice.name && <Sparkles className="w-4 h-4" />}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex items-center gap-4">
+                            <button
+                                onClick={() => setShowSettings(!showSettings)}
+                                className={`p-3 rounded-full transition-all ${showSettings ? 'bg-indigo-500 text-white shadow-lg' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:text-indigo-500'}`}
+                                title="Voice Settings"
+                            >
+                                <Settings className={`w-6 h-6 ${showSettings ? 'rotate-90' : ''} transition-transform duration-300`} />
+                            </button>
                             <button
                                 onClick={closeAgent}
-                                className="px-8 py-3 rounded-full font-medium text-white shadow-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 active:scale-95 transition-all"
+                                className="px-8 py-3 rounded-full font-medium text-white shadow-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 active:scale-95 transition-all flex-1"
                             >
                                 Stop Session
                             </button>
