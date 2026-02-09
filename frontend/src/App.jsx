@@ -63,30 +63,40 @@ const AppLayout = ({ children }) => {
   const isChat = location.pathname.startsWith('/chat');
 
   const PublicNav = () => (
-    <header className="container mx-auto px-4 py-6 flex items-center justify-between">
-      <Link to="/" className="flex items-center gap-2" aria-label="AgriGuard Home">
-        <div className="w-9 h-9 rounded-xl bg-primary-600 text-white flex items-center justify-center">
-          <Shield className="w-5 h-5" />
-        </div>
-        <span className="text-xl font-semibold text-gray-900 dark:text-white">AgriGuard</span>
-      </Link>
-      <nav className="flex items-center gap-3">
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          aria-label="Toggle theme"
-        >
-          {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-        </button>
-        <a href="/login" className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800">Log in</a>
-        <a href="/register" className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 shadow-sm">Sign up</a>
-      </nav>
+    <header className="sticky top-0 z-50 w-full bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+      <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 group" aria-label="AgriGuard Home">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:scale-110 transition-transform">
+            <Shield className="w-6 h-6" />
+          </div>
+          <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            AgriGuard
+          </span>
+        </Link>
+        <nav className="flex items-center gap-4">
+          <button
+            onClick={toggleTheme}
+            className="p-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+          </button>
+          <div className="flex items-center gap-2 pl-2 border-l border-gray-200 dark:border-gray-800">
+            <Link to="/login" className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-indigo-400 transition-colors">
+              Log in
+            </Link>
+            <Link to="/register" className="px-6 py-2.5 rounded-xl bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 shadow-md shadow-primary-600/20 hover:shadow-lg transition-all active:scale-95">
+              Get Started
+            </Link>
+          </div>
+        </nav>
+      </div>
     </header>
   );
 
   const PublicFooter = () => (
     <footer className="container mx-auto px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-      © {new Date().getFullYear()} AgroNex. All rights reserved.
+      © {new Date().getFullYear()} AgriGuard. All rights reserved.
     </footer>
   );
 
