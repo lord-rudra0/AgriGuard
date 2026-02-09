@@ -14,7 +14,7 @@ const availableVoices = [
     { name: 'Zephyr', desc: 'Bright and clear', gender: 'Female' }
 ];
 
-const TalkAgent = () => {
+const TalkAgent = ({ variant = 'header' }) => {
     const { socket, connected } = useSocket();
     const [isOpen, setIsOpen] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -223,26 +223,47 @@ const TalkAgent = () => {
 
     return (
         <>
-            {/* Header Button (Always Visible) */}
-            <button
-                onClick={handleMicClick}
-                className={`relative h-9 w-9 inline-flex items-center justify-center rounded-md transition-colors ${isOpen
-                    ? 'text-white bg-indigo-500 hover:bg-indigo-600'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-indigo-50/70 dark:hover:bg-gray-800/60'
-                    }`}
-                title="Talk to AgriGuard"
-            >
-                {!isOpen && (
-                    <>
-                        <span className="absolute -inset-4 rounded-full animate-[ping_2.5s_linear_infinite] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-30 blur-md"></span>
-                        <span className="absolute -inset-2 rounded-full animate-[ping_2s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 opacity-50 blur-sm" style={{ animationDelay: '0.4s' }}></span>
-                        <span className="absolute inset-0 rounded-md animate-[pulse_1.5s_ease-in-out_infinite] bg-gradient-to-tr from-indigo-500 to-fuchsia-500 opacity-40 blur-[2px]"></span>
-                    </>
-                )}
-                <Mic className={`relative z-10 w-5 h-5 ${isListening && status === 'connected' ? 'animate-pulse' : ''}`} />
-            </button>
+            {/* Nav Column variant (for bottom navbar) */}
+            {variant === 'nav' ? (
+                <li className="flex">
+                    <button
+                        onClick={handleMicClick}
+                        className={`flex-1 flex flex-col items-center justify-center h-14 text-xs transition-all duration-300 ${isOpen
+                            ? 'text-primary-600 dark:text-indigo-400'
+                            : 'text-gray-600 dark:text-gray-300'
+                            } hover:bg-gray-50 dark:hover:bg-gray-700/60`}
+                    >
+                        <div className="relative">
+                            {isOpen && (
+                                <span className="absolute -inset-2 rounded-full animate-ping bg-primary-400 dark:bg-indigo-500 opacity-20"></span>
+                            )}
+                            <Mic className={`w-5 h-5 mb-0.5 relative z-10 transition-transform ${isOpen ? 'scale-110 text-primary-600 dark:text-indigo-400' : ''} ${isListening && status === 'connected' ? 'animate-pulse' : ''}`} />
+                        </div>
+                        <span className="font-medium">Agent</span>
+                    </button>
+                </li>
+            ) : (
+                /* Header Button variant */
+                <button
+                    onClick={handleMicClick}
+                    className={`relative h-9 w-9 inline-flex items-center justify-center rounded-md transition-colors ${isOpen
+                        ? 'text-white bg-indigo-500 hover:bg-indigo-600'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-indigo-50/70 dark:hover:bg-gray-800/60'
+                        }`}
+                    title="Talk to AgriGuard"
+                >
+                    {!isOpen && (
+                        <>
+                            <span className="absolute -inset-4 rounded-full animate-[ping_2.5s_linear_infinite] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-30 blur-md"></span>
+                            <span className="absolute -inset-2 rounded-full animate-[ping_2s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 opacity-50 blur-sm" style={{ animationDelay: '0.4s' }}></span>
+                            <span className="absolute inset-0 rounded-md animate-[pulse_1.5s_ease-in-out_infinite] bg-gradient-to-tr from-indigo-500 to-fuchsia-500 opacity-40 blur-[2px]"></span>
+                        </>
+                    )}
+                    <Mic className={`relative z-10 w-5 h-5 ${isListening && status === 'connected' ? 'animate-pulse' : ''}`} />
+                </button>
+            )}
 
-            {/* Immersive Overlay */}
+            {/* Immersive Overlay (Shared) */}
             {isOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/90 backdrop-blur-md transition-opacity duration-300" onClick={closeAgent} />

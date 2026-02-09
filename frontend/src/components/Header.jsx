@@ -330,15 +330,20 @@ const Header = () => {
       {/* Bottom navbar - always visible on small screens */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-2">
-          <ul className="grid grid-cols-4">
-            {primaryNav.map(item => {
+          <ul className="grid grid-cols-5">
+            {[
+              ...primaryNav.slice(0, 2),
+              { isTalkAgent: true },
+              ...primaryNav.slice(2)
+            ].map((item, idx) => {
+              if (item.isTalkAgent) return <TalkAgent key="talk-agent" variant="nav" />;
               const Icon = item.icon;
               const active = isActive(item.href);
               return (
                 <li key={item.name} className="flex">
                   <Link
                     to={item.href}
-                    className={`flex-1 flex flex-col items-center justify-center h-14 text-xs ${active ? 'text-primary-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300'} hover:bg-gray-50 dark:hover:bg-gray-700/60`}
+                    className={`flex-1 flex flex-col items-center justify-center h-14 text-xs ${active ? 'text-primary-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300'} hover:bg-gray-50 dark:hover:bg-gray-700/60 transition-colors`}
                   >
                     <Icon className={`w-5 h-5 mb-0.5 ${active ? 'text-primary-600 dark:text-indigo-400' : ''}`} />
                     <span>{item.name}</span>
