@@ -623,8 +623,8 @@ const Chat = () => {
                       const isOnline = otherId ? !!presence.get(String(otherId)) : false;
                       return (
                         <>
-                          <span className="bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">{title}</span>
-                          <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border ${isOnline ? 'text-emerald-600 border-emerald-200 dark:text-emerald-400 dark:border-emerald-700/40' : 'text-gray-500 border-gray-200 dark:text-gray-400 dark:border-gray-700/40'}`}>
+                          <span className="text-gray-900 dark:bg-gradient-to-r dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 dark:bg-clip-text dark:text-transparent font-bold">{title}</span>
+                          <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border ${isOnline ? 'text-emerald-600 border-emerald-200 dark:text-emerald-400 dark:border-emerald-500/30' : 'text-gray-500 border-gray-200 dark:text-gray-400 dark:border-white/10'}`}>
                             <span className="relative w-3 h-3 mr-1.5 inline-flex items-center justify-center">
                               {isOnline && (
                                 <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400/60 animate-ping"></span>
@@ -636,7 +636,7 @@ const Chat = () => {
                         </>
                       );
                     }
-                    return <span className="bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">{title}</span>;
+                    return <span className="text-gray-900 dark:bg-gradient-to-r dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 dark:bg-clip-text dark:text-transparent font-bold">{title}</span>;
                   })()}
                 </div>
                 <div className="relative" ref={headerMenuRef}>

@@ -99,7 +99,7 @@ const Header = () => {
                   to={item.href}
                   className={`flex items-center gap-2 h-10 px-3 rounded-md text-sm transition-colors ${isActive(item.href)
                     ? 'text-white bg-gradient-to-r from-primary-600 to-indigo-600 shadow-sm'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60'
+                    : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60'
                     }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -229,7 +229,7 @@ const Header = () => {
                     <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-primary-600 to-indigo-600 shadow-sm ring-1 ring-black/5">
                       <User className="w-4 h-4 text-white" />
                     </div>
-                    <span className="hidden sm:block text-sm font-medium">
+                    <span className="hidden sm:block text-sm font-medium text-gray-900 dark:text-gray-200">
                       {user.name}
                     </span>
                   </button>
