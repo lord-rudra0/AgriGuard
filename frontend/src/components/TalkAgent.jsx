@@ -62,15 +62,18 @@ const TalkAgent = () => {
             {/* Header Button (Always Visible) */}
             <button
                 onClick={handleMicClick}
-                className={`relative p-2 rounded-full transition-all duration-300 ${isOpen
-                        ? 'bg-red-500 text-white shadow-lg ring-4 ring-red-500/30'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800'
+                className={`relative h-9 w-9 inline-flex items-center justify-center rounded-md transition-colors ${isOpen
+                    ? 'text-white bg-indigo-500 hover:bg-indigo-600'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-indigo-50/70 dark:hover:bg-gray-800/60'
                     }`}
                 title="Talk to AgriGuard"
             >
                 <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
                 {!isOpen && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full border-2 border-white dark:border-gray-900"></span>
+                    <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                    </span>
                 )}
             </button>
 
@@ -95,28 +98,47 @@ const TalkAgent = () => {
                         </button>
 
                         {/* Visualizer / Orb */}
-                        <div className="relative mb-8">
-                            {/* Dynamic Glow */}
-                            <div className={`absolute inset-0 blur-3xl rounded-full transition-all duration-1000 ${isListening ? 'bg-indigo-500/40 scale-150' :
-                                    isSpeaking ? 'bg-emerald-500/40 scale-125 animate-pulse' :
-                                        'bg-gray-400/20 scale-100'
-                                }`} />
-
-                            {/* Core Orb */}
-                            <div className={`relative w-32 h-32 rounded-full flex items-center justify-center shadow-inner transition-all duration-500 ${isListening
-                                    ? 'bg-gradient-to-br from-indigo-600 to-purple-600 shadow-indigo-500/50 scale-110'
+                        <div className="relative mb-12 flex items-center justify-center h-48 w-48">
+                            {(() => {
+                                const colorClass = isListening
+                                    ? 'bg-indigo-500'
                                     : isSpeaking
-                                        ? 'bg-gradient-to-br from-emerald-500 to-teal-500 shadow-emerald-500/50'
-                                        : 'bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800'
-                                }`}>
-                                {isListening ? (
-                                    <Mic className="w-12 h-12 text-white animate-bounce" />
-                                ) : isSpeaking ? (
-                                    <Volume2 className="w-12 h-12 text-white animate-pulse" />
-                                ) : (
-                                    <Mic className="w-12 h-12 text-gray-400 dark:text-gray-500" />
-                                )}
-                            </div>
+                                        ? 'bg-emerald-500'
+                                        : 'bg-gray-400';
+
+                                return (
+                                    <>
+                                        {/* Ripple Layers (Continuous Wave) */}
+                                        {(isListening || isSpeaking) && (
+                                            <>
+                                                <div className={`absolute inset-0 rounded-full opacity-0 animate-[ping_3s_linear_infinite] ${colorClass}`} style={{ animationDelay: '0s' }} />
+                                                <div className={`absolute inset-0 rounded-full opacity-0 animate-[ping_3s_linear_infinite] ${colorClass}`} style={{ animationDelay: '1s' }} />
+                                                <div className={`absolute inset-0 rounded-full opacity-0 animate-[ping_3s_linear_infinite] ${colorClass}`} style={{ animationDelay: '2s' }} />
+
+                                                {/* Glow Layer */}
+                                                <div className={`absolute inset-0 rounded-full blur-xl opacity-50 ${colorClass}`} />
+                                            </>
+                                        )}
+
+                                        {/* Core Orb */}
+                                        <div className={`relative z-10 w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform ${isListening ? 'scale-110' : ''} bg-white dark:bg-gray-900 border-4 border-transparent`}>
+                                            <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-colors duration-500 ${colorClass}`}>
+                                                {isListening ? (
+                                                    <Mic className="w-10 h-10 text-white animate-bounce" />
+                                                ) : isSpeaking ? (
+                                                    <div className="flex gap-1 items-end h-8">
+                                                        <span className="w-1.5 h-3 bg-white rounded-full animate-[bounce_1s_infinite]"></span>
+                                                        <span className="w-1.5 h-6 bg-white rounded-full animate-[bounce_1.2s_infinite]"></span>
+                                                        <span className="w-1.5 h-4 bg-white rounded-full animate-[bounce_0.8s_infinite]"></span>
+                                                    </div>
+                                                ) : (
+                                                    <Mic className="w-10 h-10 text-white" />
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
                         </div>
 
                         {/* Status Text & Transcript */}
@@ -158,8 +180,8 @@ const TalkAgent = () => {
                             <button
                                 onClick={() => isListening ? stopListening() : startListening()}
                                 className={`px-8 py-3 rounded-full font-medium text-white shadow-lg transition-transform active:scale-95 ${isListening
-                                        ? 'bg-red-500 hover:bg-red-600'
-                                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110'
+                                    ? 'bg-red-500 hover:bg-red-600'
+                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110'
                                     }`}
                             >
                                 {isListening ? 'Stop Listening' : 'Talk Again'}
