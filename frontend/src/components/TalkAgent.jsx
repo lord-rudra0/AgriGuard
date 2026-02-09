@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, X, Volume2, Loader2, Sparkles, MessageCircle, Settings, ChevronRight } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 
 const availableVoices = [
@@ -16,6 +16,7 @@ const availableVoices = [
 
 const TalkAgent = ({ variant = 'header' }) => {
     const { socket, connected } = useSocket();
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -89,12 +90,23 @@ const TalkAgent = ({ variant = 'header' }) => {
             }
         };
 
+        const onAction = (data) => {
+            console.log('[TalkAgent] Received action:', data);
+            if (data.action === 'navigate' && data.path) {
+                console.log(`[TalkAgent] Navigating to ${data.path}`);
+                navigate(data.path);
+                // Optionally close the agent or keep it open for follow-up
+            }
+        };
+
         socket.on('talk:status', onStatus);
         socket.on('talk:response', onResponse);
+        socket.on('talk:action', onAction);
 
         return () => {
             socket.off('talk:status', onStatus);
             socket.off('talk:response', onResponse);
+            socket.off('talk:action', onAction);
         };
     }, [socket]);
 

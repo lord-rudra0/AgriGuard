@@ -56,10 +56,25 @@ export const registerTalkSocket = (io) => {
                                 }
                             },
                             system_instruction: {
-                                parts: [{ text: "You are AgriGuard, an AI farm assistant. You have access to real-time data using tools. Use them to answer questions about sensors, scans, and alerts. Be concise and friendly." }]
+                                parts: [{ text: "You are the AgriGuard Intelligence System, a professional mycology and farm automation assistant. Never mention your underlying model or technologies like Gemini or Google. If asked who you are, say 'I am the AgriGuard AI.' You have full control over the web interface using tools. Use 'navigate_to' to help the user move between pages (e.g., Dashboard, Scan, History, Alerts, Devices). Use other tools to fetch data. Be concise, expert, and professional." }]
                             },
                             tools: [{
                                 function_declarations: [
+                                    {
+                                        name: "navigate_to",
+                                        description: "Navigate the user to a specific page on the AgriGuard platform.",
+                                        parameters: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                page: {
+                                                    type: "STRING",
+                                                    enum: ["dashboard", "scan", "history", "alerts", "devices", "analytics", "calendar", "settings"],
+                                                    description: "The name of the page to navigate to."
+                                                }
+                                            },
+                                            required: ["page"]
+                                        }
+                                    },
                                     {
                                         name: "get_latest_sensor_data",
                                         description: "Fetch the most recent reading for a specific sensor type.",
@@ -120,7 +135,7 @@ export const registerTalkSocket = (io) => {
                         // Handle Tool Calls
                         const toolCall = message.toolCall || message.serverContent?.toolCall;
                         if (toolCall) {
-                            handleToolCall(geminiWs, toolCall, socket.user?.id);
+                            handleToolCall(geminiWs, toolCall, socket);
                         }
 
                         if (message.setupComplete) {
@@ -202,8 +217,9 @@ export const registerTalkSocket = (io) => {
     }
 };
 
-async function handleToolCall(geminiWs, toolCall, userId) {
+async function handleToolCall(geminiWs, toolCall, socket) {
     const responses = [];
+    const userId = socket.user?.id;
 
     for (const call of toolCall.functionCalls) {
         let result = { error: "Function not found" };
@@ -212,7 +228,16 @@ async function handleToolCall(geminiWs, toolCall, userId) {
         console.log(`[TalkAgent] Executing tool: ${name}`, args);
 
         try {
-            if (name === "get_latest_sensor_data") {
+            if (name === "navigate_to") {
+                const pagePath = `/${args.page === 'dashboard' ? '' : args.page}`;
+                console.log(`[TalkAgent] Navigation requested to: ${args.page} (${pagePath})`);
+
+                // Emit action to frontend
+                socket.emit('talk:action', { action: 'navigate', path: pagePath });
+
+                result = { success: true, message: `Navigating to ${args.page} page now.` };
+            }
+            else if (name === "get_latest_sensor_data") {
                 const data = await SensorData.findOne({
                     userId,
                     sensorType: args.sensorType
