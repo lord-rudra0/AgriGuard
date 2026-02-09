@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+import SensorData from '../models/SensorData.js';
+import ScanHistory from '../models/ScanHistory.js';
+import Alert from '../models/Alert.js';
+
 const router = express.Router();
 
 /**
@@ -49,8 +53,46 @@ export const registerTalkSocket = (io) => {
                                 }
                             },
                             system_instruction: {
-                                parts: [{ text: "You are AgriGuard, an AI farm assistant. Be concise and friendly." }]
-                            }
+                                parts: [{ text: "You are AgriGuard, an AI farm assistant. You have access to real-time data using tools. Use them to answer questions about sensors, scans, and alerts. Be concise and friendly." }]
+                            },
+                            tools: [{
+                                function_declarations: [
+                                    {
+                                        name: "get_latest_sensor_data",
+                                        description: "Fetch the most recent reading for a specific sensor type.",
+                                        parameters: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                sensorType: {
+                                                    type: "STRING",
+                                                    enum: ["temperature", "humidity", "co2", "light", "soilMoisture"],
+                                                    description: "The type of sensor to query."
+                                                }
+                                            },
+                                            required: ["sensorType"]
+                                        }
+                                    },
+                                    {
+                                        name: "get_recent_scans",
+                                        description: "Get the last 5 mushroom/crop analysis results from history.",
+                                        parameters: { type: "OBJECT", properties: {} }
+                                    },
+                                    {
+                                        name: "get_active_alerts",
+                                        description: "List unresolved alerts, filtered by severity.",
+                                        parameters: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                minSeverity: {
+                                                    type: "STRING",
+                                                    enum: ["low", "medium", "high", "critical"],
+                                                    description: "Minimum severity level to include."
+                                                }
+                                            }
+                                        }
+                                    }
+                                ]
+                            }]
                         }
                     };
                     geminiWs.send(JSON.stringify(setup));
@@ -65,6 +107,12 @@ export const registerTalkSocket = (io) => {
                         if (message.serverContent || message.modelDraft || message.modelTurn) {
                             const payload = message.serverContent || message.modelDraft || message.modelTurn || message;
                             socket.emit('talk:response', payload);
+                        }
+
+                        // Handle Tool Calls
+                        const toolCall = message.toolCall || message.serverContent?.toolCall;
+                        if (toolCall) {
+                            handleToolCall(geminiWs, toolCall, socket.user?.id);
                         }
 
                         if (message.setupComplete) {
@@ -146,7 +194,63 @@ export const registerTalkSocket = (io) => {
     }
 };
 
-// Keep existing router for any non-socket needs if necessary, but primary logic is now socket-based
+async function handleToolCall(geminiWs, toolCall, userId) {
+    const responses = [];
+
+    for (const call of toolCall.functionCalls) {
+        let result = { error: "Function not found" };
+        const { name, args, id } = call;
+
+        console.log(`[TalkAgent] Executing tool: ${name}`, args);
+
+        try {
+            if (name === "get_latest_sensor_data") {
+                const data = await SensorData.findOne({
+                    userId,
+                    sensorType: args.sensorType
+                }).sort({ createdAt: -1 });
+                result = data ? { value: data.value, unit: data.unit, timestamp: data.createdAt } : { message: "No data found for this sensor type." };
+            }
+            else if (name === "get_recent_scans") {
+                const scans = await ScanHistory.find({ userId })
+                    .sort({ createdAt: -1 })
+                    .limit(5)
+                    .select('analysis createdAt');
+                result = { scans: scans.map(s => ({ result: s.analysis, date: s.createdAt })) };
+            }
+            else if (name === "get_active_alerts") {
+                const query = { userId, isResolved: false };
+                if (args.minSeverity) {
+                    const severities = ['low', 'medium', 'high', 'critical'];
+                    const minIdx = severities.indexOf(args.minSeverity);
+                    query.severity = { $in: severities.slice(minIdx) };
+                }
+                const alerts = await Alert.find(query).sort({ createdAt: -1 }).limit(10);
+                result = { alerts: alerts.map(a => ({ title: a.title, severity: a.severity, message: a.message })) };
+            }
+        } catch (err) {
+            console.error(`[TalkAgent] Tool error (${name}):`, err);
+            result = { error: err.message };
+        }
+
+        responses.push({
+            name,
+            id,
+            response: result
+        });
+    }
+
+    if (geminiWs && geminiWs.readyState === WebSocket.OPEN) {
+        geminiWs.send(JSON.stringify({
+            toolResponse: {
+                functionResponses: responses
+            }
+        }));
+        console.log(`[TalkAgent] Sent tool responses for ${responses.length} calls`);
+    }
+}
+
+// Keep existing router for any non-socket needs if necessary
 router.get('/status', (req, res) => {
     res.json({ success: true, message: 'TalkAgent WebSocket Relay is active' });
 });
