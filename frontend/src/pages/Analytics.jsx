@@ -18,7 +18,7 @@ import {
 	AreaChart,
 	Area,
 } from 'recharts';
-import { BarChart3, Calendar, RefreshCw, TrendingUp, Activity, Filter, Download } from 'lucide-react';
+import { BarChart3, Calendar, RefreshCw, TrendingUp, Activity, Filter, Download, Trash2 } from 'lucide-react';
 
 const TIMEFRAMES = [
 	{ key: '1h', label: '1H' },
@@ -64,6 +64,7 @@ export default function Analytics() {
 	const [error, setError] = useState('');
 	const [rows, setRows] = useState([]);
 	const [inserting, setInserting] = useState(false);
+	const [purging, setPurging] = useState(false);
 	const [activeTypes, setActiveTypes] = useState(null);
 
 	useEffect(() => {
@@ -248,8 +249,7 @@ export default function Analytics() {
 							setInserting(true);
 							setError('');
 							try {
-								// Mock data insertion logic...
-								const make = (type, unit, base, noise, n = 50) =>
+								const make = (type, unit, base, noise, n = 30) =>
 									Array.from({ length: n }, (_, i) => ({
 										type,
 										value: Math.round((base + (Math.random() - 0.5) * noise) * 10) / 10,
@@ -258,26 +258,64 @@ export default function Analytics() {
 										metadata: { batteryLevel: 0.8, signalStrength: 0.9 },
 									}));
 								const readings = [
-									...make('temperature', '°C', 25, 4),
-									...make('humidity', '%', 60, 20),
-									...make('co2', 'ppm', 450, 200),
-									...make('light', 'lux', 500, 300),
-									...make('soilMoisture', '%', 55, 15),
+									...make('temperature', '°C', 23, 8),
+									...make('humidity', '%', 60, 30),
+									...make('co2', 'ppm', 450, 250),
+									...make('light', 'lux', 500, 400),
+									...make('soilMoisture', '%', 50, 20),
 								];
 								await axios.post('/api/sensors/data', { deviceId: 'dev-sim-1', readings });
-								await new Promise((r) => setTimeout(r, 300));
+								// Wait slightly longer for aggregation
+								await new Promise((r) => setTimeout(r, 800));
 								const res = await axios.get('/api/sensors/analytics', { params: { timeframe } });
 								setRows(res.data?.analytics || []);
+								if (res.data?.analytics?.length === 0) {
+									setError('Data saved, but analytics hasn\'t aggregated yet. Please refresh in a moment.');
+								}
 							} catch (e) {
-								setError('Failed to insert mock data');
+								if (e.response?.status === 429) {
+									setError('Too many requests. Please wait a minute before generating more data.');
+								} else {
+									setError('Failed to generate simulation data. Check connection.');
+								}
 							} finally {
 								setInserting(false);
 							}
 						}}
-						className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-400 transition-colors"
+						className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all duration-300 ${inserting
+							? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-wait'
+							: 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-500/20'
+							}`}
 					>
 						<RefreshCw className={`w-3.5 h-3.5 ${inserting ? 'animate-spin' : ''}`} />
-						{inserting ? 'Generating...' : 'Demo Data'}
+						{inserting ? 'Synchronizing Pipeline...' : '✨ Generate Simulation Data'}
+					</button>
+
+					<button
+						onClick={async () => {
+							if (!window.confirm('Wipe all simulation data? This will clear dev-sim-1 readings.')) return;
+							setPurging(true);
+							setError('');
+							try {
+								const res = await axios.delete('/api/sensors/data', { params: { deviceId: 'dev-sim-1' } });
+								// Refresh analytics after purge
+								const analyticsRes = await axios.get('/api/sensors/analytics', { params: { timeframe } });
+								setRows(analyticsRes.data?.analytics || []);
+								alert(res.data?.message || 'Purged simulation data.');
+							} catch (e) {
+								setError('Failed to purge simulation data.');
+							} finally {
+								setPurging(false);
+							}
+						}}
+						className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all duration-300 ${purging
+							? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-wait'
+							: 'text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20'
+							}`}
+						title="Clear dev-sim-1 data"
+					>
+						<Trash2 className={`w-3.5 h-3.5 ${purging ? 'animate-pulse' : ''}`} />
+						{purging ? 'Purging...' : 'Purge Simulation'}
 					</button>
 				</div>
 

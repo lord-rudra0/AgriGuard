@@ -66,14 +66,20 @@ router.post('/data', authenticateToken, async (req, res) => {
     }
 
     const sensorDataArray = readings.map(reading => ({
-      userId: req.user._id,
-      deviceId,
-      sensorType: reading.type,
+      timestamp: new Date(),
+      metadata: {
+        userId: req.user._id,
+        deviceId: deviceId,
+        sensorType: reading.type,
+        location: reading.location || 'Greenhouse 1',
+      },
       value: reading.value,
       unit: reading.unit,
-      location: reading.location,
       status: determineStatus(reading.type, reading.value),
-      metadata: reading.metadata || {}
+      extra: {
+        batteryLevel: reading.metadata?.batteryLevel,
+        signalStrength: reading.metadata?.signalStrength
+      }
     }));
 
     const savedData = await SensorData.insertMany(sensorDataArray);
@@ -144,16 +150,16 @@ router.get('/analytics', authenticateToken, async (req, res) => {
     const analytics = await SensorData.aggregate([
       {
         $match: {
-          userId: req.user._id,
-          createdAt: { $gte: startDate }
+          'metadata.userId': req.user._id,
+          timestamp: { $gte: startDate }
         }
       },
       {
         $group: {
           _id: {
-            sensorType: '$sensorType',
-            hour: { $hour: '$createdAt' },
-            date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }
+            sensorType: '$metadata.sensorType',
+            hour: { $hour: '$timestamp' },
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } }
           },
           avgValue: { $avg: '$value' },
           minValue: { $min: '$value' },
@@ -169,6 +175,33 @@ router.get('/analytics', authenticateToken, async (req, res) => {
     res.json({ analytics, timeframe, startDate });
   } catch (error) {
     console.error('Get analytics error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// @route   DELETE /api/sensors/data
+// @desc    Purge sensor data for a specific device
+// @access  Private
+router.delete('/data', authenticateToken, async (req, res) => {
+  try {
+    const { deviceId } = req.query;
+
+    if (!deviceId) {
+      return res.status(400).json({ message: 'Device ID is required to purge data' });
+    }
+
+    const result = await SensorData.deleteMany({
+      'metadata.userId': req.user._id,
+      'metadata.deviceId': deviceId
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully purged ${result.deletedCount} records for device ${deviceId}`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Purge sensor data error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -211,7 +244,10 @@ const checkAndCreateAlerts = async (userId, sensorDataArray, debounceMs) => {
   };
 
   for (const data of sensorDataArray) {
-    const threshold = thresholds[data.sensorType];
+    const sType = data.metadata?.sensorType || data.sensorType;
+    const dId = data.metadata?.deviceId || data.deviceId;
+
+    const threshold = thresholds[sType];
     if (!threshold) continue;
 
     const { min, max } = threshold;
@@ -221,8 +257,8 @@ const checkAndCreateAlerts = async (userId, sensorDataArray, debounceMs) => {
       // Debounce: skip if a recent alert for same sensor/device exists
       const recent = await Alert.findOne({
         userId,
-        type: data.sensorType,
-        deviceId: data.deviceId,
+        type: sType,
+        deviceId: dId,
         createdAt: { $gte: new Date(Date.now() - effectiveDebounceMs) }
       }).sort({ createdAt: -1 });
       if (recent) continue;
@@ -231,13 +267,13 @@ const checkAndCreateAlerts = async (userId, sensorDataArray, debounceMs) => {
 
       const alert = new Alert({
         userId,
-        type: data.sensorType,
+        type: sType,
         severity,
-        title: `${data.sensorType} Alert`,
-        message: `${data.sensorType} is ${value < min ? 'too low' : 'too high'}: ${value} ${data.unit}`,
+        title: `${sType} Alert`,
+        message: `${sType} is ${value < min ? 'too low' : 'too high'}: ${value} ${data.unit}`,
         value,
         threshold,
-        deviceId: data.deviceId
+        deviceId: dId
       });
 
       const savedAlert = await alert.save();

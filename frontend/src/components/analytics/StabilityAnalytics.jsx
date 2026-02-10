@@ -2,7 +2,18 @@ import React from 'react';
 import { ShieldCheck, AlertTriangle, Zap, Activity, Clock, Target } from 'lucide-react';
 
 const StabilityAnalytics = ({ data, activeTypes }) => {
-    if (!data || Object.keys(data).length === 0) return null;
+    if (!data || Object.keys(data).length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-dashed border-gray-200 dark:border-gray-800 rounded-3xl">
+                <Activity className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-4 animate-pulse" />
+                <h3 className="text-sm font-black uppercase tracking-widest text-gray-400 font-outfit">No Stability Data Detected</h3>
+                <p className="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-tighter text-center max-w-[250px] leading-relaxed font-outfit">
+                    Consistency metrics require historical sensor readings. <br />
+                    Click <span className="text-emerald-500 underline">Demo Data</span> to populate simulation data.
+                </p>
+            </div>
+        );
+    }
 
     const displayTypes = activeTypes || Object.keys(data);
 
