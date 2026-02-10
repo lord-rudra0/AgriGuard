@@ -73,7 +73,7 @@ const CameraNavbar = ({ onCapture }) => {
         setScannedFile(file);
         // Navigate user to scan page for review and ML placeholders
         navigate('/scan');
-      } catch (e) {}
+      } catch (e) { }
       // show placeholder ML info
       setPlaceholderShown(true);
       // stop camera immediately after capture
@@ -107,7 +107,7 @@ const CameraNavbar = ({ onCapture }) => {
           )}
         </div>
 
-  <div className="text-sm text-gray-600 dark:text-gray-300">Mushroom Scanner</div>
+        <div className="text-sm text-gray-600 dark:text-gray-300">Mushroom Scanner</div>
       </div>
 
       {error && <div className="mt-2 text-xs text-rose-600">{error}</div>}

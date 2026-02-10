@@ -114,29 +114,59 @@ export default function Scan() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <div className="max-w-5xl mx-auto">
+
+    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 p-6 overflow-hidden transition-colors duration-300">
+      {/* Mesh Gradient Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-indigo-500/20 blur-[120px] rounded-full animate-pulse-slow" />
+        <div className="absolute top-[20%] -right-[5%] w-[40%] h-[40%] bg-purple-500/20 blur-[100px] rounded-full animate-float" />
+        <div className="absolute bottom-[10%] left-[20%] w-[30%] h-[30%] bg-emerald-500/20 blur-[80px] rounded-full animate-pulse-slow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-500/10 blur-[120px] rounded-full animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[40%] left-[10%] w-[20%] h-[20%] bg-cyan-500/10 blur-[60px] rounded-full animate-pulse-slow" style={{ animationDelay: '1s' }} />
+      </div>
+      <div className="relative z-10 max-w-5xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Scan</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Capture or upload a photo and get a quick classification.</p>
+            <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent filter drop-shadow-sm mb-1">Scan</h1>
+            <p className="text-lg text-gray-600 dark:text-gray-300 font-light">Capture or upload a photo and get a quick classification.</p>
           </div>
           <button
             onClick={() => navigate('/history')}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white/60 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-white/10 backdrop-blur-md transition-all shadow-sm hover:scale-105 active:scale-95"
           >
             <History className="w-4 h-4" />
             <span className="font-medium">History</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div className="mb-3">
+        <div className={`grid grid-cols-1 ${preview ? 'lg:grid-cols-3' : 'lg:grid-cols-1 max-w-2xl mx-auto'} gap-8 transition-all duration-500 ease-in-out`}>
+          {/* LEFT COLUMN: Media & Input */}
+          <div className={`bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-[32px] shadow-2xl shadow-gray-200/50 dark:shadow-black/20 p-6 transition-all duration-300 ${preview ? 'lg:col-span-1' : ''}`}>
+            {/* Preview Image (Moved to Left Column) */}
+            {preview && (
+              <div className="relative mb-6 group">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
+                  <span className="text-white text-xs font-semibold tracking-wider">PREVIEW</span>
+                </div>
+                <img src={preview} alt="preview" className="w-full aspect-[4/3] object-cover rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm" />
+                <button
+                  onClick={clear}
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors backdrop-blur-md"
+                  title="Clear Image"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+            )}
+
+            <div className={`mb-4 ${preview ? 'opacity-80 hover:opacity-100 transition-opacity' : ''}`}>
+              <h3 className={`text-lg font-bold text-gray-900 dark:text-white mb-3 ${preview ? 'hidden' : 'text-center'}`}>
+                {preview ? 'Change Image' : 'Start Diagnosis'}
+              </h3>
               <CameraNavbar onCapture={(f) => handleFile(f)} />
             </div>
 
-            <div className="border-dashed border-2 border-gray-200 dark:border-gray-700 rounded p-4 text-center">
+            <div className="border-dashed border-2 border-gray-300 dark:border-white/10 rounded-2xl p-6 text-center bg-gray-50/50 dark:bg-black/20 hover:bg-gray-100/50 dark:hover:bg-black/30 transition-colors">
               <input
                 ref={inputRef}
                 type="file"
@@ -146,14 +176,14 @@ export default function Scan() {
               />
               <button
                 onClick={() => inputRef.current && inputRef.current.click()}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary-600 text-white hover:opacity-95"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-bold tracking-wide hover:brightness-110 hover:shadow-lg hover:shadow-indigo-500/20 hover:scale-[1.02] transition-all duration-200 active:scale-95"
               >
                 Upload image
               </button>
 
               <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">PNG/JPG — keep images small for faster results</div>
-              <div className="mt-3 flex gap-2 justify-center">
-                <button onClick={clear} className="px-3 py-1 rounded border text-sm">Clear</button>
+              <div className="mt-4 flex gap-2 justify-center">
+                <button onClick={clear} className="px-4 py-1.5 rounded-lg border border-gray-300 dark:border-white/10 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">Clear</button>
               </div>
             </div>
 
@@ -169,14 +199,11 @@ export default function Scan() {
             </div>
           </div>
 
-          <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            {preview ? (
-              <div className="flex flex-col md:flex-row gap-4 h-full">
-                <div className="md:w-1/2">
-                  <img src={preview} alt="preview" className="w-full h-80 object-cover rounded-md border" />
-                </div>
-
-                <div className="md:w-1/2 flex flex-col min-h-[400px]">
+          {/* RIGHT COLUMN: Analysis Results (Only visible if preview exists) */}
+          {preview && (
+            <div className="lg:col-span-2 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-[32px] shadow-2xl shadow-gray-200/50 dark:shadow-black/20 p-6 min-h-[500px] animate-fade-in-up">
+              <div className="flex flex-col h-full">
+                <div className="flex-1 flex flex-col min-h-[400px]">
                   {/* Loading State */}
                   {(predicting || detailedLoading) && (
                     <div className="h-full flex flex-col items-center justify-center p-8 text-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
@@ -334,13 +361,11 @@ export default function Scan() {
                     </div>
                   )}
                 </div>
+
+
               </div>
-            ) : (
-              <div className="h-80 flex items-center justify-center border rounded-md bg-white dark:bg-gray-800 text-gray-500">
-                No image yet. Capture or upload to analyze.
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
