@@ -205,6 +205,43 @@ app.post('/api/predict/mushroom', upload.single('image'), async (req, res) => {
   try {
     if (!req.file || !req.file.buffer) return res.status(400).json({ error: 'No image uploaded' });
     const result = await predictImage(req.file.buffer);
+
+    // Save Basic Scan to History
+    try {
+      const { default: ScanHistory } = await import('./models/ScanHistory.js');
+      const base64Image = req.file.buffer.toString('base64');
+      const mimeType = req.file.mimetype;
+      const userId = req.user ? req.user.id : null; // Auth middleware might not be on this route yet, so optional
+
+      // transform result to match schema structure
+      const analysis = {
+        type: result.classLabel === 'edible' ? 'Edible Mushroom' : 'Potentially Poisonous',
+        typeConfidence: Math.round(result.confidence * 100),
+        disease: false, // ONNX model doesn't detect disease
+        diseaseConfidence: 0,
+        edible: result.isEdible,
+        edibleConfidence: Math.round(result.confidence * 100),
+        diseaseType: null,
+        diseaseTypeConfidence: 0,
+        confidence: Math.round(result.confidence * 100),
+        method: 'basic'
+      };
+
+      const historyDoc = new ScanHistory({
+        userId,
+        imageBase64: base64Image,
+        imageMimeType: mimeType,
+        analysis
+      });
+
+      await historyDoc.save();
+      // Attach ID to result so frontend can link to it if needed
+      result.historyId = historyDoc._id;
+
+    } catch (histErr) {
+      console.error('Failed to save basic scan history', histErr);
+    }
+
     res.json({ success: true, result });
   } catch (e) {
     console.error('Prediction error', e);
@@ -305,7 +342,7 @@ const importRoute = async (routePath, routeName) => {
 };
 
 // Import routes with error handling - using routes index for reliability
-let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes;
+let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, mushroomAnalysisRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes;
 let notificationsRoutes;
 
 // Import routes one by one with error handling - more robust approach
@@ -332,7 +369,9 @@ const loadRoutes = async () => {
       phasesRoutes = routesIndex.phasesRoutes;
       thresholdsRoutes = routesIndex.thresholdsRoutes;
       calendarRoutes = routesIndex.calendarRoutes;
+      calendarRoutes = routesIndex.calendarRoutes;
       notificationsRoutes = routesIndex.notificationsRoutes;
+      mushroomAnalysisRoutes = routesIndex.mushroomAnalysisRoutes;
 
       console.log('✅ All routes loaded from index');
     } catch (indexError) {
@@ -347,6 +386,7 @@ const loadRoutes = async () => {
       settingsRoutes = await importRoute('./routes/settings.js', 'Settings');
       alertsRoutes = await importRoute('./routes/alerts.js', 'Alerts');
       geminiRoutes = await importRoute('./routes/gemini.js', 'Gemini');
+      mushroomAnalysisRoutes = await importRoute('./routes/mushroomAnalysis.js', 'MushroomAnalysis');
       analyticsViewsRoutes = await importRoute('./routes/analyticsViews.js', 'AnalyticsViews');
       reportsRoutes = await importRoute('./routes/reports.js', 'Reports');
       recipesRoutes = await importRoute('./routes/recipes.js', 'Recipes');
@@ -370,6 +410,10 @@ const loadRoutes = async () => {
     if (thresholdsRoutes) app.use('/api/thresholds', thresholdsRoutes);
     if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
     if (notificationsRoutes) app.use('/api/notifications', notificationsRoutes);
+
+    if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
+    if (notificationsRoutes) app.use('/api/notifications', notificationsRoutes);
+    if (mushroomAnalysisRoutes) app.use('/api/analyze/mushroom', mushroomAnalysisRoutes);
 
     // Note: /api/config/push is mounted synchronously in the top-level server to
     // avoid cold-start 404s; do not define it here to prevent duplicate handlers.

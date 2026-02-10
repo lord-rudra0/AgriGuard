@@ -186,4 +186,37 @@ router.get('/history', async (req, res) => {
     }
 });
 
+// DELETE History Item Endpoint
+router.delete('/history/:id', async (req, res) => {
+    try {
+        const { default: ScanHistory } = await import('../models/ScanHistory.js');
+        const { id } = req.params;
+
+        // Verify ID format
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ error: 'Invalid ID format' });
+        }
+
+        const query = { _id: id };
+        // If authenticated, ensure user owns the record
+        if (req.user) {
+            query.userId = req.user.id;
+        }
+
+        const result = await ScanHistory.findOneAndDelete(query);
+
+        if (!result) {
+            return res.status(404).json({ error: 'History item not found or unauthorized' });
+        }
+
+        res.json({ success: true, message: 'Item deleted successfully' });
+    } catch (error) {
+        console.error('Failed to delete history item:', error);
+        res.status(500).json({ error: 'Failed to delete history item' });
+    }
+
+});
+
 export default router;
+
+

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Calendar, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+
+import { ArrowLeft, Search, Calendar, AlertTriangle, CheckCircle, Info, Trash2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 const History = () => {
@@ -12,26 +13,45 @@ const History = () => {
     const navigate = useNavigate();
     const { theme } = useTheme();
 
-    useEffect(() => {
-        const fetchHistory = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analyze/mushroom/history`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (response.data.success) {
-                    setHistory(response.data.history);
-                }
-            } catch (err) {
-                console.error('Failed to fetch history:', err);
-                setError('Failed to load scan history');
-            } finally {
-                setLoading(false);
+    const fetchHistory = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analyze/mushroom/history`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.data.success) {
+                setHistory(response.data.history);
             }
-        };
+        } catch (err) {
+            console.error('Failed to fetch history:', err);
+            setError('Failed to load scan history');
+        } finally {
+            setLoading(false);
+        }
+    }, []); // No dependencies needed as it only uses stable functions and localStorage
 
+    useEffect(() => {
         fetchHistory();
-    }, []);
+    }, [fetchHistory]); // fetchHistory is now a dependency because it's wrapped in useCallback
+
+    const deleteScan = async (id, e) => {
+        e.stopPropagation(); // Prevent card click
+        if (!window.confirm('Are you sure you want to delete this scan?')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analyze/mushroom/history/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (response.data.success) {
+                setHistory(prev => prev.filter(item => item._id !== id));
+            }
+        } catch (err) {
+            console.error('Failed to delete scan:', err);
+            alert('Failed to delete scan');
+        }
+    };
 
     const getConfidenceColor = (score) => {
         if (score >= 90) return 'text-emerald-500';
@@ -96,12 +116,19 @@ const History = () => {
                                 />
                                 <div className="absolute top-3 right-3">
                                     <span className={`px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm ${scan.analysis.edible
-                                            ? 'bg-green-500/20 text-green-700 dark:text-green-300 border border-green-500/30'
-                                            : 'bg-red-500/20 text-red-700 dark:text-red-300 border border-red-500/30'
+                                        ? 'bg-green-500/20 text-green-700 dark:text-green-300 border border-green-500/30'
+                                        : 'bg-red-500/20 text-red-700 dark:text-red-300 border border-red-500/30'
                                         }`}>
                                         {scan.analysis.edible ? 'Edible' : 'Inedible'}
                                     </span>
                                 </div>
+                                <button
+                                    onClick={(e) => deleteScan(scan._id, e)}
+                                    className="absolute top-3 left-3 p-2 rounded-full bg-black/40 hover:bg-red-500 text-white backdrop-blur-md transition-colors opacity-0 group-hover:opacity-100"
+                                    title="Delete Scan"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
                             </div>
 
                             <div className="p-5">
@@ -157,8 +184,9 @@ const History = () => {
                         </div>
                     ))}
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 };
 
