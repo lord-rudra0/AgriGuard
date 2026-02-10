@@ -52,7 +52,9 @@ const History = () => {
             const lowerTerm = searchTerm.toLowerCase();
             result = result.filter(item =>
                 item.analysis?.type?.toLowerCase().includes(lowerTerm) ||
-                item.analysis?.diseaseType?.toLowerCase().includes(lowerTerm)
+                item.analysis?.diseaseType?.toLowerCase().includes(lowerTerm) ||
+                // Search by confidence (e.g. "98")
+                (item.analysis?.confidence && String(Math.round(item.analysis.confidence)).includes(lowerTerm))
             );
         }
 
@@ -135,98 +137,100 @@ const History = () => {
             {/* Filters Section */}
             <div className="mb-8 space-y-4">
                 {/* Search Bar */}
-                <div className="relative">
-                    <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Search mushrooms or diseases..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-                    />
-                    {searchTerm && (
-                        <button
-                            onClick={() => setSearchTerm('')}
-                            className="absolute right-4 top-3.5 p-0.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-                        >
-                            <X className="w-4 h-4 text-gray-400" />
-                        </button>
-                    )}
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                    {/* Edibility Filter Pills */}
-                    <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200 px-2">Type:</span>
-                        {['all', 'edible', 'inedible'].map((filter) => (
+                <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    {/* Search Bar - Flexible Width */}
+                    <div className="relative flex-1 w-full lg:w-auto min-w-[200px]">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-8 py-2 bg-gray-50 dark:bg-gray-900 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary-500/50 outline-none transition-all"
+                        />
+                        {searchTerm && (
                             <button
-                                key={filter}
-                                onClick={() => setEdibilityFilter(filter)}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${edibilityFilter === filter
-                                    ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
-                                    }`}
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full"
                             >
-                                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                                <X className="w-3 h-3 text-gray-400" />
                             </button>
-                        ))}
+                        )}
                     </div>
 
-                    {/* Health Filter Pills */}
-                    <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200 px-2">Health:</span>
-                        {['all', 'healthy', 'diseased'].map((filter) => (
-                            <button
-                                key={filter}
-                                onClick={() => setHealthFilter(filter)}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${healthFilter === filter
-                                    ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
-                                    }`}
-                            >
-                                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                    {/* Filters - Horizontal Scrollable Row */}
+                    <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:pb-0 w-full lg:w-auto scrollbar-hide mask-fade">
 
-                <div className="flex flex-wrap gap-3">
-                    {/* Confidence Filter Pills */}
-                    <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200 px-2">Confidence:</span>
-                        {['all', 'high', 'medium', 'low'].map((filter) => (
-                            <button
-                                key={filter}
-                                onClick={() => setConfidenceFilter(filter)}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${confidenceFilter === filter
-                                    ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
-                                    }`}
-                            >
-                                {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
-                            </button>
-                        ))}
-                    </div>
+                        <div className="w-px h-8 bg-gray-200 dark:bg-gray-700 hidden lg:block mx-1"></div>
 
-                    {/* Date Filter Pills */}
-                    <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200 px-2">Date:</span>
-                        {[
-                            { id: 'all', label: 'All Time' },
-                            { id: '7days', label: 'Last 7 Days' },
-                            { id: '30days', label: 'Last 30 Days' }
-                        ].map((filter) => (
-                            <button
-                                key={filter.id}
-                                onClick={() => setDateFilter(filter.id)}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${dateFilter === filter.id
-                                    ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
-                                    }`}
-                            >
-                                {filter.label}
-                            </button>
-                        ))}
+                        {/* Type Filter */}
+                        <div className="flex items-center bg-gray-50 dark:bg-gray-900 rounded-lg p-1 shrink-0">
+                            {['all', 'edible', 'inedible'].map((filter) => (
+                                <button
+                                    key={filter}
+                                    onClick={() => setEdibilityFilter(filter)}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${edibilityFilter === filter
+                                        ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                        }`}
+                                >
+                                    {filter === 'all' ? 'All Types' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Health Filter */}
+                        <div className="flex items-center bg-gray-50 dark:bg-gray-900 rounded-lg p-1 shrink-0">
+                            {['all', 'healthy', 'diseased'].map((filter) => (
+                                <button
+                                    key={filter}
+                                    onClick={() => setHealthFilter(filter)}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${healthFilter === filter
+                                        ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                        }`}
+                                >
+                                    {filter === 'all' ? 'All Health' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Confidence Filter */}
+                        <div className="flex items-center bg-gray-50 dark:bg-gray-900 rounded-lg p-1 shrink-0">
+                            {['all', 'high', 'medium', 'low'].map((filter) => (
+                                <button
+                                    key={filter}
+                                    onClick={() => setConfidenceFilter(filter)}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${confidenceFilter === filter
+                                        ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                        }`}
+                                >
+                                    {filter === 'all' ? 'Any Conf.' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Date Filter */}
+                        <div className="flex items-center bg-gray-50 dark:bg-gray-900 rounded-lg p-1 shrink-0">
+                            {[
+                                { id: 'all', label: 'Any Time' },
+                                { id: '7days', label: '7 Days' },
+                                { id: '30days', label: '30 Days' }
+                            ].map((filter) => (
+                                <button
+                                    key={filter.id}
+                                    onClick={() => setDateFilter(filter.id)}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${dateFilter === filter.id
+                                        ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                        }`}
+                                >
+                                    {filter.label}
+                                </button>
+                            ))}
+                        </div>
+
                     </div>
                 </div>
             </div>
