@@ -61,6 +61,7 @@ const AppLayout = ({ children }) => {
   const location = useLocation();
 
   const isChat = location.pathname.startsWith('/chat');
+  const isAuthPage = ['/login', '/register'].includes(location.pathname);
 
   const PublicNav = () => (
     <header className="sticky top-0 z-50 w-full bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
@@ -101,11 +102,11 @@ const AppLayout = ({ children }) => {
   );
 
   return (
-    <div className={`min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300 ${isChat ? 'h-screen overflow-hidden' : ''}`}>
+    <div className={`flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300 ${(isChat || isAuthPage) ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
       {user ? <Header /> : <PublicNav />}
       {/* Spacer to prevent content from being hidden under the sticky header */}
       {user && <div className="h-16 md:h-16" aria-hidden="true" />}
-      <main className={`flex-1 ${isChat ? 'overflow-hidden' : ''}`}>
+      <main className={`flex-1 flex flex-col ${(isChat || isAuthPage) ? 'h-full overflow-hidden' : ''}`}>
         {children}
       </main>
       {/* Floating ChatBot only for authenticated users and not on Chat page */}
