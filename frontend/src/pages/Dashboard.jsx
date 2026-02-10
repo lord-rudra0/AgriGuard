@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import useAlertsSocket from '../hooks/useAlertsSocket';
 import SensorCard from '../components/SensorCard';
@@ -193,7 +194,7 @@ const Dashboard = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-up">
         {/* Header */}
         <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-8 md:gap-14">
             <div>
               <h1 className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent filter drop-shadow-lg">
                 Farm Dashboard
@@ -202,9 +203,21 @@ const Dashboard = () => {
                 Real-time monitoring of your <span className="text-indigo-600 dark:text-indigo-400 font-medium">mycelium</span> environment
               </p>
             </div>
-            <div className="flex items-center space-x-4">
-              {/* Connection status */}
-              <div className="flex items-center space-x-2">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+              <Link
+                to="/analytics"
+                className="group relative flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-indigo-500/5 hover:bg-indigo-500/10 dark:bg-indigo-400/5 dark:hover:bg-indigo-400/10 backdrop-blur-2xl border border-indigo-500/20 dark:border-indigo-400/20 transition-all duration-500 shadow-2xl shadow-indigo-500/5 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                <div className="relative flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-500">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <div className="flex flex-col items-start pr-2">
+                  <span className="text-[11px] font-bold text-gray-900 dark:text-white">📊 Insights</span>
+                </div>
+              </Link>
+
+              <div className="flex items-center space-x-4">
                 <span className="relative inline-flex items-center">
                   <span className={`h-2.5 w-2.5 rounded-full ${isIotActive ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                   {isIotActive && (
