@@ -206,14 +206,13 @@ const Dashboard = () => {
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
               <Link
                 to="/analytics"
-                className="group relative flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-indigo-500/5 hover:bg-indigo-500/10 dark:bg-indigo-400/5 dark:hover:bg-indigo-400/10 backdrop-blur-2xl border border-indigo-500/20 dark:border-indigo-400/20 transition-all duration-500 shadow-2xl shadow-indigo-500/5 overflow-hidden"
+                className="group relative flex items-center gap-3 px-4 py-2 rounded-xl bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/15 border border-gray-300 dark:border-white/10 transition-all duration-300 shadow-sm"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <div className="relative flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-500">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                   <TrendingUp className="w-4 h-4" />
                 </div>
-                <div className="flex flex-col items-start pr-2">
-                  <span className="text-[11px] font-bold text-gray-900 dark:text-white">📊 Insights</span>
+                <div className="flex flex-col items-start pr-1">
+                  <span className="text-[11px] font-bold text-gray-900 dark:text-white">Insights</span>
                 </div>
               </Link>
 
