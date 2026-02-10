@@ -80,19 +80,19 @@ export default function Landing() {
           <div className={`space-y-6 md:space-y-8 transition-all duration-1000 ease-out ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'}`}>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-[10px] md:text-sm font-medium">
               <Zap className="w-3.5 h-3.5 fill-indigo-500/20" />
-              <span>Professional Mycology Intelligence</span>
+              <span>Smart Mushroom Monitoring</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900 dark:text-white leading-[1.2] md:leading-[1.1]">
-              The Gold Standard <br className="hidden md:block" />
+              Stop Mushroom Loss <br className="hidden md:block" />
               <span className="bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                in Fungi Analysis.
+                Before It Starts.
               </span>
             </h1>
 
             <p className="text-base md:text-xl text-gray-600 dark:text-gray-400 max-w-xl leading-relaxed">
               AgriGuard provides a comprehensive suite of AI tools designed for professional mushroom cultivators.
-              Real-time monitoring, expert voice AI, and precise species identification.
+              Real-time monitoring, expert voice AI, and precise species identification and instant disease detection.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 md:gap-4">
