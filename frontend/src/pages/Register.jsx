@@ -59,7 +59,7 @@ const Register = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+    <div className="relative h-full w-full bg-gray-50 dark:bg-gray-950 overflow-hidden flex items-center justify-center transition-colors duration-300">
       {/* Background Decorative Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-500/10 dark:bg-indigo-500/5 blur-[120px] rounded-full" />
@@ -67,221 +67,212 @@ const Register = () => {
         <div className="absolute bottom-[10%] left-[20%] w-[20%] h-[20%] bg-pink-500/10 dark:bg-pink-500/5 blur-[100px] rounded-full" />
       </div>
 
-      <div className="relative max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 transform rotate-3">
-              <Shield className="w-8 h-8 text-white" />
-            </div>
+      <div className="relative max-w-4xl w-full flex gap-8 items-center px-6 lg:px-12">
+        {/* Left Side: Header & Info (Hidden on mobile for compactness if needed, or side-by-side) */}
+        <div className="hidden lg:block w-1/3 space-y-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-indigo-500/30 transform -rotate-3">
+            <Shield className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
-            Join AgriGuard
-          </h2>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">
-            Create your account to start monitoring
+          <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 leading-tight">
+            Join <br /> AgriGuard
+          </h1>
+          <p className="text-lg text-gray-500 dark:text-gray-400">
+            Start your journey with advanced AI monitoring and ensure total harvest safety.
           </p>
+          <div className="pt-4">
+            <span className="px-2 bg-white/50 dark:bg-gray-800/50 rounded-lg text-sm text-gray-500">
+              Already have an account? <Link to="/login" className="text-indigo-600 font-bold hover:underline">Sign In</Link>
+            </span>
+          </div>
         </div>
 
-        {/* Form */}
-        <div className="backdrop-blur-xl bg-white/70 dark:bg-gray-900/60 p-8 rounded-3xl shadow-2xl border border-white/20 dark:border-gray-800">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Right Side: Compact Form */}
+        <div className="w-full lg:w-2/3 backdrop-blur-xl bg-white/70 dark:bg-gray-900/60 p-6 md:p-8 rounded-3xl shadow-2xl border border-white/20 dark:border-gray-800 max-h-full overflow-y-auto scrollbar-hide flex flex-col justify-center">
 
-            {/* Name */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Full Name
-              </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+          <div className="lg:hidden text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h2>
+            <p className="text-sm text-gray-500">Sign up to get started</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Name */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-wide">
+                  Full Name
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-4 w-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                  </div>
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    placeholder="John Doe"
+                  />
                 </div>
+              </div>
+
+              {/* Username */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-wide">
+                  Username
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-4 w-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                  </div>
+                  <input
+                    name="username"
+                    type="text"
+                    required
+                    minLength={3}
+                    maxLength={30}
+                    value={formData.username}
+                    onChange={handleChange}
+                    className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    placeholder="johndoe123"
+                  />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-wide">
+                  Email
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-4 w-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                  </div>
+                  <input
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    placeholder="john@example.com"
+                  />
+                </div>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-wide">
+                  Phone
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="h-4 w-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                  </div>
+                  <input
+                    name="phone"
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    placeholder="+1 234 567 890"
+                  />
+                </div>
+              </div>
+
+              {/* Farm Name */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-wide">
+                  Farm Name
+                </label>
                 <input
-                  id="name"
-                  name="name"
+                  name="farmName"
                   type="text"
                   required
-                  value={formData.name}
+                  value={formData.farmName}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 sm:text-sm"
-                  placeholder="Enter your full name"
+                  className="block w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  placeholder="Green Valley Farms"
                 />
               </div>
-            </div>
 
-            {/* Username */}
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Username
-              </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+              {/* Location */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-wide">
+                  Location
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MapPin className="h-4 w-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                  </div>
+                  <input
+                    name="location"
+                    type="text"
+                    required
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    placeholder="City, State"
+                  />
                 </div>
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  minLength={3}
-                  maxLength={30}
-                  pattern="^[a-zA-Z0-9_]+$"
-                  value={formData.username}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 sm:text-sm"
-                  placeholder="Choose a unique username"
-                />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Username must be 3-30 characters, letters, numbers, and underscores only.</p>
-            </div>
 
-            {/* Phone */}
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Phone Number
-              </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+              {/* Password */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-wide">
+                  Password
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-4 w-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                  </div>
+                  <input
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                  </button>
                 </div>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  required
-                  pattern="^\+?[0-9]{7,15}$"
-                  title="Enter a valid phone number with 7 to 15 digits, optionally starting with +"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 sm:text-sm"
-                  placeholder="Enter your phone number"
-                />
               </div>
-            </div>
 
-            {/* Email (optional) */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Address (optional)
-              </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-wide">
+                  Confirm
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-4 w-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                  </div>
+                  <input
+                    name="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                  </button>
                 </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 sm:text-sm"
-                  placeholder="Enter your email (optional)"
-                />
-              </div>
-            </div>
-
-            {/* Farm Name */}
-            <div>
-              <label htmlFor="farmName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Farm Name
-              </label>
-              <input
-                id="farmName"
-                name="farmName"
-                type="text"
-                required
-                value={formData.farmName}
-                onChange={handleChange}
-                className="block w-full px-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 sm:text-sm"
-                placeholder="Enter your farm name"
-              />
-            </div>
-
-            {/* Location */}
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Location
-              </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MapPin className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                </div>
-                <input
-                  id="location"
-                  name="location"
-                  type="text"
-                  required
-                  value={formData.location}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 sm:text-sm"
-                  placeholder="Enter your location"
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Password
-              </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 sm:text-sm"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Confirm Password
-              </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                </div>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 sm:text-sm"
-                  placeholder="Confirm your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" />
-                  )}
-                </button>
               </div>
             </div>
 
@@ -296,17 +287,11 @@ const Register = () => {
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded bg-gray-50 dark:bg-gray-800"
                 />
               </div>
-              <div className="ml-3 text-sm">
-                <label htmlFor="agree" className="text-gray-700 dark:text-gray-300">
-                  I agree to the{' '}
-                  <Link to="/terms" className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 font-medium">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy" className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 font-medium">
-                    Privacy Policy
-                  </Link>
-                </label>
+              <div className="ml-2 text-xs text-gray-600 dark:text-gray-400">
+                I agree to the{' '}
+                <Link to="/terms" className="text-indigo-600 hover:text-indigo-500 font-medium">Terms</Link>
+                {' '}and{' '}
+                <Link to="/privacy" className="text-indigo-600 hover:text-indigo-500 font-medium">Privacy</Link>
               </div>
             </div>
 
@@ -314,45 +299,20 @@ const Register = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg text-sm font-bold text-white transition-all duration-200 transform hover:scale-[1.02] ${loading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-indigo-500/25'
+              className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-bold text-white transition-all duration-200 transform hover:scale-[1.02] ${loading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-indigo-500/25'
                 }`}
             >
-              {loading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Creating account...</span>
-                </div>
-              ) : (
-                'Create Account'
-              )}
+              {loading ? 'Creating...' : 'Create Account'}
             </button>
-          </form>
 
-          {/* Divider */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-600" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">
-                  Already have an account?
-                </span>
-              </div>
+            <div className="lg:hidden text-center text-xs mt-4">
+              <span className="text-gray-500">Already member? </span>
+              <Link to="/login" className="text-indigo-600 font-bold">Sign In</Link>
             </div>
-          </div>
 
-          {/* Sign in link */}
-          <div className="mt-6 text-center">
-            <Link
-              to="/login"
-              className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 font-bold transition-colors duration-200"
-            >
-              Sign in to your account
-            </Link>
-          </div>
+          </form>
         </div>
       </div>
     </div>

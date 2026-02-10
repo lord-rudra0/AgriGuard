@@ -41,7 +41,7 @@ const Login = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+    <div className="relative h-full w-full bg-gray-50 dark:bg-gray-950 overflow-hidden flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       {/* Background Decorative Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-500/10 dark:bg-indigo-500/5 blur-[120px] rounded-full" />
@@ -149,8 +149,8 @@ const Login = () => {
               type="submit"
               disabled={loading}
               className={`w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg text-sm font-bold text-white transition-all duration-200 transform hover:scale-[1.02] ${loading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-indigo-500/25'
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-indigo-500/25'
                 }`}
             >
               {loading ? (
