@@ -13,8 +13,7 @@ import Landing from './pages/Landing';
 import Chat from './pages/Chat';
 import Analytics from './pages/Analytics';
 import Scan from './pages/Scan';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Auth from './pages/Auth';
 import Settings from './pages/Settings';
 import Recipes from './pages/Recipes';
 import Thresholds from './pages/Thresholds';
@@ -138,7 +137,7 @@ function App() {
                     path="/login"
                     element={
                       <PublicRoute>
-                        <Login />
+                        <Auth initialMode="login" />
                       </PublicRoute>
                     }
                   />
@@ -146,7 +145,7 @@ function App() {
                     path="/register"
                     element={
                       <PublicRoute>
-                        <Register />
+                        <Auth initialMode="register" />
                       </PublicRoute>
                     }
                   />
