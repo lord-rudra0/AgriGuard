@@ -3,15 +3,21 @@ import axios from 'axios';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
-import { ArrowLeft, Search, Calendar, AlertTriangle, CheckCircle, Info, Trash2 } from 'lucide-react';
+import { ArrowLeft, Search, Calendar, AlertTriangle, CheckCircle, Info, Trash2, Filter, X } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 const History = () => {
     const [history, setHistory] = useState([]);
+    const [filteredHistory, setFilteredHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const { theme } = useTheme();
+
+    // Filters
+    const [searchTerm, setSearchTerm] = useState('');
+    const [edibilityFilter, setEdibilityFilter] = useState('all'); // all, edible, inedible
+    const [healthFilter, setHealthFilter] = useState('all'); // all, healthy, diseased
 
     const fetchHistory = useCallback(async () => {
         try {
@@ -21,6 +27,7 @@ const History = () => {
             });
             if (response.data.success) {
                 setHistory(response.data.history);
+                setFilteredHistory(response.data.history);
             }
         } catch (err) {
             console.error('Failed to fetch history:', err);
@@ -32,7 +39,35 @@ const History = () => {
 
     useEffect(() => {
         fetchHistory();
-    }, [fetchHistory]); // fetchHistory is now a dependency because it's wrapped in useCallback
+    }, [fetchHistory]);
+
+    // Apply Filters
+    useEffect(() => {
+        let result = history;
+
+        // 1. Search Filter
+        if (searchTerm) {
+            const lowerTerm = searchTerm.toLowerCase();
+            result = result.filter(item =>
+                item.analysis?.type?.toLowerCase().includes(lowerTerm) ||
+                item.analysis?.diseaseType?.toLowerCase().includes(lowerTerm)
+            );
+        }
+
+        // 2. Edibility Filter
+        if (edibilityFilter !== 'all') {
+            const isEdible = edibilityFilter === 'edible';
+            result = result.filter(item => item.analysis.edible === isEdible);
+        }
+
+        // 3. Health Filter
+        if (healthFilter !== 'all') {
+            const isDiseased = healthFilter === 'diseased';
+            result = result.filter(item => item.analysis.disease === isDiseased);
+        }
+
+        setFilteredHistory(result);
+    }, [history, searchTerm, edibilityFilter, healthFilter]);
 
     const deleteScan = async (id, e) => {
         e.stopPropagation(); // Prevent card click
@@ -76,6 +111,65 @@ const History = () => {
                 </div>
             </div>
 
+            {/* Filters Section */}
+            <div className="mb-8 space-y-4">
+                {/* Search Bar */}
+                <div className="relative">
+                    <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Search mushrooms or diseases..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                    />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-4 top-3.5 p-0.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                        >
+                            <X className="w-4 h-4 text-gray-400" />
+                        </button>
+                    )}
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                    {/* Edibility Filter Pills */}
+                    <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-2">Type:</span>
+                        {['all', 'edible', 'inedible'].map((filter) => (
+                            <button
+                                key={filter}
+                                onClick={() => setEdibilityFilter(filter)}
+                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${edibilityFilter === filter
+                                        ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                        : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                                    }`}
+                            >
+                                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Health Filter Pills */}
+                    <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-2">Health:</span>
+                        {['all', 'healthy', 'diseased'].map((filter) => (
+                            <button
+                                key={filter}
+                                onClick={() => setHealthFilter(filter)}
+                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${healthFilter === filter
+                                        ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                        : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                                    }`}
+                            >
+                                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -92,21 +186,23 @@ const History = () => {
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">Error loading history</h3>
                     <p className="text-gray-500 dark:text-gray-400">{error}</p>
                 </div>
-            ) : history.length === 0 ? (
+            ) : filteredHistory.length === 0 ? (
                 <div className="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
                     <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No scans yet</h3>
-                    <p className="text-gray-500 dark:text-gray-400 mb-6">Start scanning mushrooms to build your history</p>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No scans found</h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-6">
+                        {searchTerm ? "Try adjusting your search or filters" : "Start scanning mushrooms to build your history"}
+                    </p>
                     <button
-                        onClick={() => navigate('/scan')}
+                        onClick={searchTerm ? () => { setSearchTerm(''); setEdibilityFilter('all'); setHealthFilter('all'); } : () => navigate('/scan')}
                         className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-medium transition-colors"
                     >
-                        Start Scanning
+                        {searchTerm ? "Clear Filters" : "Start Scanning"}
                     </button>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {history.map((scan) => (
+                    {filteredHistory.map((scan) => (
                         <div key={scan._id} className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 dark:border-gray-700">
                             <div className="relative h-56 bg-gray-100 dark:bg-gray-900 group">
                                 <img
