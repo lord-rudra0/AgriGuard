@@ -18,6 +18,8 @@ const History = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [edibilityFilter, setEdibilityFilter] = useState('all'); // all, edible, inedible
     const [healthFilter, setHealthFilter] = useState('all'); // all, healthy, diseased
+    const [confidenceFilter, setConfidenceFilter] = useState('all'); // all, high, medium, low
+    const [dateFilter, setDateFilter] = useState('all'); // all, 7days, 30days
 
     const fetchHistory = useCallback(async () => {
         try {
@@ -66,8 +68,27 @@ const History = () => {
             result = result.filter(item => item.analysis.disease === isDiseased);
         }
 
+        // 4. Confidence Filter
+        if (confidenceFilter !== 'all') {
+            result = result.filter(item => {
+                const score = item.analysis.confidence;
+                if (confidenceFilter === 'high') return score >= 90;
+                if (confidenceFilter === 'medium') return score >= 70 && score < 90;
+                if (confidenceFilter === 'low') return score < 70;
+                return true;
+            });
+        }
+
+        // 5. Date Filter
+        if (dateFilter !== 'all') {
+            const now = new Date();
+            const days = dateFilter === '7days' ? 7 : 30;
+            const cutoff = new Date(now.setDate(now.getDate() - days));
+            result = result.filter(item => new Date(item.createdAt) >= cutoff);
+        }
+
         setFilteredHistory(result);
-    }, [history, searchTerm, edibilityFilter, healthFilter]);
+    }, [history, searchTerm, edibilityFilter, healthFilter, confidenceFilter, dateFilter]);
 
     const deleteScan = async (id, e) => {
         e.stopPropagation(); // Prevent card click
@@ -136,14 +157,14 @@ const History = () => {
                 <div className="flex flex-wrap gap-3">
                     {/* Edibility Filter Pills */}
                     <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-2">Type:</span>
+                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200 px-2">Type:</span>
                         {['all', 'edible', 'inedible'].map((filter) => (
                             <button
                                 key={filter}
                                 onClick={() => setEdibilityFilter(filter)}
                                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${edibilityFilter === filter
-                                        ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                                        : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                                    ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                    : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
                                     }`}
                             >
                                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -153,14 +174,14 @@ const History = () => {
 
                     {/* Health Filter Pills */}
                     <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-2">Health:</span>
+                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200 px-2">Health:</span>
                         {['all', 'healthy', 'diseased'].map((filter) => (
                             <button
                                 key={filter}
                                 onClick={() => setHealthFilter(filter)}
                                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${healthFilter === filter
-                                        ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                                        : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                                    ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                    : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
                                     }`}
                             >
                                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -194,7 +215,7 @@ const History = () => {
                         {searchTerm ? "Try adjusting your search or filters" : "Start scanning mushrooms to build your history"}
                     </p>
                     <button
-                        onClick={searchTerm ? () => { setSearchTerm(''); setEdibilityFilter('all'); setHealthFilter('all'); } : () => navigate('/scan')}
+                        onClick={searchTerm ? () => { setSearchTerm(''); setEdibilityFilter('all'); setHealthFilter('all'); setConfidenceFilter('all'); setDateFilter('all'); } : () => navigate('/scan')}
                         className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-medium transition-colors"
                     >
                         {searchTerm ? "Clear Filters" : "Start Scanning"}
