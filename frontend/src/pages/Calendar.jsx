@@ -88,7 +88,10 @@ export default function Calendar() {
   const loadEvents = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/calendar/events');
+      // Fetch events starting from 7 days ago to include recent past events
+      const start = new Date();
+      start.setDate(start.getDate() - 7);
+      const res = await axios.get(`/api/calendar/events?start=${start.toISOString()}`);
       setEvents(res.data.events || []);
     } catch (e) {
       console.error('Failed to load events', e);
@@ -314,69 +317,70 @@ export default function Calendar() {
                     <p className="text-xs mt-1 opacity-70">Add a new event to get started</p>
                   </div>
                 ) : (
-                  <ul className="space-y-3">
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pb-4">
                     {upcoming.map((ev) => (
-                      <li key={ev._id} className="group relative bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 border border-gray-100 dark:border-gray-700/50 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 rounded-xl p-4 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <h3 className="font-bold text-gray-900 dark:text-white text-sm truncate pr-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                                {ev.title}
-                              </h3>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
-                              <span className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700/50 px-2 py-0.5 rounded-lg">
-                                <Clock className="w-3 h-3" />
-                                <span className="font-medium">
-                                  {format(parseISO(ev.startAt), 'MMM d, h:mm a')}
-                                </span>
-                              </span>
-                              {ev.endAt && (
-                                <span className="opacity-60">to {format(parseISO(ev.endAt), 'h:mm a')}</span>
-                              )}
-                              {ev.roomId && (
-                                <span className="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wide border border-indigo-100 dark:border-indigo-800/30">
-                                  {ev.roomId}
-                                </span>
-                              )}
-                            </div>
-
-                            {ev.description && (
-                              <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-1 leading-relaxed opacity-90 mb-2">
-                                {ev.description}
-                              </p>
-                            )}
-
-                            {(ev.reminders?.length || 0) > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {ev.reminders.map((r, i) => (
-                                  <span key={i} className="inline-flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded-md border border-orange-100 dark:border-orange-900/30">
-                                    <Clock className="w-2.5 h-2.5" /> {r.minutesBefore}m
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-1 sm:self-start opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+                      <li key={ev._id} className="group relative bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 border border-gray-100 dark:border-gray-700/50 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 rounded-xl p-3 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 flex flex-col h-full min-h-[140px]">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-bold text-gray-900 dark:text-white text-sm truncate pr-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex-1" title={ev.title}>
+                            {ev.title}
+                          </h3>
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             <button
-                              className="p-1.5 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
+                              className="p-1 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg transition-colors"
                               onClick={() => editEvent(ev)}
-                              title="Edit Event"
+                              title="Edit"
                             >
-                              <span className="sr-only">Edit</span>
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                             </button>
                             <button
-                              className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"
                               onClick={() => deleteEvent(ev._id)}
-                              title="Delete Event"
+                              title="Delete"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
+
+                        <div className="flex flex-col gap-1.5 flex-1">
+                          <div className="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700/30 px-2 py-1 rounded-lg w-fit">
+                            <Clock className="w-3 h-3 text-emerald-500" />
+                            <span className="font-bold">
+                              {format(parseISO(ev.startAt), 'MMM d, h:mm a')}
+                            </span>
+                          </div>
+
+                          {ev.endAt && (
+                            <div className="text-[10px] text-gray-400 pl-1">
+                              to {format(parseISO(ev.endAt), 'h:mm a')}
+                            </div>
+                          )}
+
+                          {ev.roomId && (
+                            <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800/30">
+                              {ev.roomId}
+                            </span>
+                          )}
+
+                          {ev.description && (
+                            <p className="text-[11px] text-gray-600 dark:text-gray-300 line-clamp-2 mt-1 leading-relaxed opacity-80">
+                              {ev.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {(ev.reminders?.length || 0) > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/30">
+                            {ev.reminders.slice(0, 2).map((r, i) => (
+                              <span key={i} className="inline-flex items-center gap-0.5 text-[9px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 px-1.5 py-0.5 rounded border border-orange-100 dark:border-orange-900/20">
+                                <Clock className="w-2 h-2" /> {r.minutesBefore}m
+                              </span>
+                            ))}
+                            {ev.reminders.length > 2 && (
+                              <span className="text-[9px] text-gray-400 font-medium px-1">+{ev.reminders.length - 2}</span>
+                            )}
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -386,6 +390,6 @@ export default function Calendar() {
           </div>
         </div>
       </div>
-    </div >
+    </div>
   );
 }
