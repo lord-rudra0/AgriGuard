@@ -18,6 +18,16 @@ export default function Scan() {
   const [detailedLoading, setDetailedLoading] = useState(false);
 
   const inputRef = useRef(null);
+  const resultsRef = useRef(null);
+
+  // Auto-scroll to results on mobile
+  useEffect(() => {
+    if ((analysis || detailedAnalysis) && window.innerWidth < 1024) {
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [analysis, detailedAnalysis]);
 
   useEffect(() => {
     // If a file was set via shared context, use it
@@ -115,7 +125,7 @@ export default function Scan() {
 
   return (
 
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 p-6 overflow-hidden transition-colors duration-300">
+    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 p-6 pb-24 md:pb-6 overflow-hidden transition-colors duration-300">
       {/* Mesh Gradient Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-indigo-500/20 blur-[120px] rounded-full animate-pulse-slow" />
@@ -127,7 +137,7 @@ export default function Scan() {
       <div className="relative z-10 max-w-5xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent filter drop-shadow-sm mb-1">Scan</h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent filter drop-shadow-sm mb-1">Scan</h1>
             <p className="text-lg text-gray-600 dark:text-gray-300 font-light">Capture or upload a photo and get a quick classification.</p>
           </div>
           <button
@@ -139,9 +149,9 @@ export default function Scan() {
           </button>
         </div>
 
-        <div className={`grid grid-cols-1 ${preview ? 'lg:grid-cols-3' : 'lg:grid-cols-1 max-w-2xl mx-auto'} gap-8 transition-all duration-500 ease-in-out`}>
+        <div className={`grid grid-cols-1 ${preview ? 'lg:grid-cols-3' : 'lg:grid-cols-1 max-w-2xl mx-auto'} gap-6 lg:gap-8 transition-all duration-500 ease-in-out`}>
           {/* LEFT COLUMN: Media & Input */}
-          <div className={`bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-[32px] shadow-2xl shadow-gray-200/50 dark:shadow-black/20 p-6 transition-all duration-300 ${preview ? 'lg:col-span-1' : ''}`}>
+          <div className={`bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-[24px] md:rounded-[32px] shadow-xl md:shadow-2xl shadow-gray-200/50 dark:shadow-black/20 p-5 md:p-6 transition-all duration-300 ${preview ? 'lg:col-span-1' : ''}`}>
             {/* Preview Image (Moved to Left Column) */}
             {preview && (
               <div className="relative mb-6 group">
@@ -201,7 +211,7 @@ export default function Scan() {
 
           {/* RIGHT COLUMN: Analysis Results (Only visible if preview exists) */}
           {preview && (
-            <div className="lg:col-span-2 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-[32px] shadow-2xl shadow-gray-200/50 dark:shadow-black/20 p-6 min-h-[500px] animate-fade-in-up">
+            <div ref={resultsRef} className="lg:col-span-2 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-[24px] md:rounded-[32px] shadow-xl md:shadow-2xl shadow-gray-200/50 dark:shadow-black/20 p-5 md:p-6 min-h-[400px] md:min-h-[500px] animate-fade-in-up">
               <div className="flex flex-col h-full">
                 <div className="flex-1 flex flex-col min-h-[400px]">
                   {/* Loading State */}
@@ -271,7 +281,7 @@ export default function Scan() {
                             {detailedAnalysis.disease ? (
                               <span className="text-amber-500">⚠️ {detailedAnalysis.diseaseType || 'Diseased'}</span>
                             ) : (
-                              <span className="text-blue-500">💙 Healthy</span>
+                              <span className="text-blue-500">Healthy</span>
                             )}
                           </div>
                           {detailedAnalysis.disease && detailedAnalysis.diseaseTypeConfidence && (
