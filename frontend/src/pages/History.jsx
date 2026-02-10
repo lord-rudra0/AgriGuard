@@ -189,6 +189,46 @@ const History = () => {
                         ))}
                     </div>
                 </div>
+
+                <div className="flex flex-wrap gap-3">
+                    {/* Confidence Filter Pills */}
+                    <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200 px-2">Confidence:</span>
+                        {['all', 'high', 'medium', 'low'].map((filter) => (
+                            <button
+                                key={filter}
+                                onClick={() => setConfidenceFilter(filter)}
+                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${confidenceFilter === filter
+                                    ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                    : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                                    }`}
+                            >
+                                {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Date Filter Pills */}
+                    <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200 px-2">Date:</span>
+                        {[
+                            { id: 'all', label: 'All Time' },
+                            { id: '7days', label: 'Last 7 Days' },
+                            { id: '30days', label: 'Last 30 Days' }
+                        ].map((filter) => (
+                            <button
+                                key={filter.id}
+                                onClick={() => setDateFilter(filter.id)}
+                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${dateFilter === filter.id
+                                    ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                    : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                                    }`}
+                            >
+                                {filter.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {loading ? (
