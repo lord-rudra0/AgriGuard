@@ -596,6 +596,33 @@ setTimeout(() => {
   startPruneJob();
 }, 10000);
 
+// Sensor History Aggregator: runs every hour to downsample live data
+const HISTORY_AGG_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+let historyAggTimer = null;
+async function startHistoryAggregationScheduler() {
+  if (historyAggTimer) return;
+  if (!process.env.MONGO_URI) return;
+
+  try {
+    const { runHistoryAggregation } = await import('./jobs/aggregateHistory.js');
+
+    // Run immediately on start
+    runHistoryAggregation();
+
+    historyAggTimer = setInterval(async () => {
+      runHistoryAggregation();
+    }, HISTORY_AGG_INTERVAL_MS);
+
+    console.log('✅ Sensor history aggregation scheduler started (every 1 hour)');
+  } catch (error) {
+    console.error('❌ Failed to start history aggregation scheduler:', error.message);
+  }
+}
+
+setTimeout(() => {
+  startHistoryAggregationScheduler();
+}, 15000);
+
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...');
