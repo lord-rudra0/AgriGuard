@@ -63,30 +63,34 @@ const AppLayout = ({ children }) => {
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
 
   const PublicNav = () => (
-    <header className="sticky top-0 z-50 w-full bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
-      <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-1.5 md:gap-2 group" aria-label="AgriGuard Home">
-          <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-gradient-to-tr from-primary-600 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:scale-110 transition-transform">
-            <Shield className="w-5 h-5 md:w-6 md:h-6" />
+    <header className="fixed top-0 inset-x-0 z-50 transition-all duration-300">
+      <div className="absolute inset-0 bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl border-b border-white/20 dark:border-gray-800 shadow-sm" />
+      <div className="relative container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-3 group" aria-label="AgriGuard Home">
+          <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+            <Shield className="w-5 h-5 md:w-6 md:h-6 text-white" />
           </div>
-          <span className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-            AgriGuard
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xl md:text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent uppercase tracking-tight leading-none">
+              AgriGuard
+            </span>
+            <span className="hidden md:block text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mt-0.5">Mycology Platform</span>
+          </div>
         </Link>
         <nav className="flex items-center gap-2 md:gap-4">
           <button
             onClick={toggleTheme}
-            className="p-2 md:p-2.5 rounded-lg md:rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
+            className="p-2.5 rounded-xl text-gray-500 hover:text-emerald-500 hover:bg-white dark:hover:bg-gray-800 transition-all active:scale-95 border border-transparent hover:border-gray-100 dark:hover:border-gray-700 shadow-sm"
             aria-label="Toggle theme"
           >
-            {theme === 'light' ? <Moon className="w-4 h-4 md:w-5 md:h-5" /> : <Sun className="w-4 h-4 md:w-5 md:h-5" />}
+            {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
           </button>
-          <div className="flex items-center gap-1.5 md:gap-2 pl-1.5 md:pl-2 border-l border-gray-200 dark:border-gray-800">
-            <Link to="/login" className="px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-indigo-400 transition-colors">
-              Log in
+          <div className="flex items-center gap-2 pl-2 border-l border-gray-100 dark:border-gray-800">
+            <Link to="/login" className="px-4 py-2.5 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:text-emerald-500 transition-colors">
+              Session
             </Link>
-            <Link to="/register" className="px-4 md:px-6 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-primary-600 text-white text-[10px] md:text-sm font-semibold hover:bg-primary-700 shadow-md shadow-primary-600/20 hover:shadow-lg transition-all active:scale-95 whitespace-nowrap">
-              Get Started
+            <Link to="/register" className="px-5 md:px-7 py-2.5 md:py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] md:text-xs font-black uppercase tracking-widest hover:brightness-110 shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all">
+              Initialize
             </Link>
           </div>
         </nav>
@@ -95,8 +99,14 @@ const AppLayout = ({ children }) => {
   );
 
   const PublicFooter = () => (
-    <footer className="container mx-auto px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-      © {new Date().getFullYear()} AgriGuard Mycology. All rights reserved.
+    <footer className="container mx-auto px-4 py-12 text-center">
+      <div className="flex items-center justify-center gap-3 mb-4 opacity-50">
+        <Shield className="w-4 h-4 text-emerald-500" />
+        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 dark:text-gray-400">Advanced OS Deployment</span>
+      </div>
+      <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+        © {new Date().getFullYear()} AgriGuard Mycology. Decentralized Intelligence for Modern Agriculture.
+      </p>
     </footer>
   );
 

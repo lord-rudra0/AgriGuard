@@ -1,183 +1,140 @@
 import { Link } from 'react-router-dom';
-import { Shield, Mail, Phone, MapPin, Github, Twitter, Linkedin } from 'lucide-react';
+import { Shield, Mail, Phone, MapPin, Github, Twitter, Linkedin, ExternalLink, ArrowRight } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
+  const sections = [
+    {
+      title: 'Platform',
+      links: [
+        { name: 'Dashboard', href: '/dashboard' },
+        { name: 'Analytics', href: '/analytics' },
+        { name: 'Mushroom Scan', href: '/scan' },
+        { name: 'Community Chat', href: '/chat' },
+      ]
+    },
+    {
+      title: 'Resources',
+      links: [
+        { name: 'Growth Recipes', href: '/recipes' },
+        { name: 'Threshold Guide', href: '/thresholds' },
+        { name: 'Fleet Manager', href: '/devices' },
+        { name: 'Alert Console', href: '/alerts' },
+      ]
+    },
+    {
+      title: 'Company',
+      links: [
+        { name: 'Privacy Policy', href: '/privacy' },
+        { name: 'Terms of Service', href: '/terms' },
+        { name: 'Support Deck', href: '/support' },
+        { name: 'Documentation', href: '#' },
+      ]
+    }
+  ];
+
   return (
-    <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Main footer content */}
-        <div className="py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand section */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-primary-600 to-indigo-600 shadow-sm ring-1 ring-black/5">
-                <Shield className="w-5 h-5 text-white" />
+    <footer className="relative bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-white/5 pt-16 pb-32 md:pb-12 overflow-hidden">
+      {/* Background Glow */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[80%] h-32 bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16">
+
+          {/* Brand Identity */}
+          <div className="md:col-span-4 space-y-6">
+            <Link to="/dashboard" className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
+                <Shield className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-extrabold bg-gradient-to-r from-primary-600 via-indigo-600 to-fuchsia-500 bg-clip-text text-transparent">
+              <span className="text-xl font-black bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent uppercase tracking-tight">
                 AgriGuard
               </span>
-            </div>
-            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-              Advanced agricultural monitoring system with real-time sensor data, 
-              AI-powered insights, and community collaboration for modern farming.
+            </Link>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed max-w-sm uppercase tracking-tight">
+              Empowering modern mycology through AI-driven insights, real-time sensing, and precision environmental control.
             </p>
-            <div className="flex space-x-3">
-              <a 
-                href="#" 
-                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a 
-                href="#" 
-                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-5 h-5" />
-              </a>
-              <a 
-                href="#" 
-                className="p-2 rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 ring-1 ring-black/5 dark:ring-white/10 hover:brightness-110 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
-                aria-label="GitHub"
-              >
-                <Github className="w-5 h-5" />
-              </a>
+            <div className="flex gap-3">
+              {[Twitter, Linkedin, Github].map((Icon, idx) => (
+                <a
+                  key={idx}
+                  href="#"
+                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-900 border border-transparent hover:border-emerald-500/30 hover:bg-white dark:hover:bg-gray-800 text-gray-400 hover:text-emerald-500 transition-all shadow-sm"
+                >
+                  <Icon className="w-5 h-5" />
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Quick links */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Quick Links
-            </h3>
-            <nav className="space-y-2">
-              <Link 
-                to="/dashboard" 
-                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
-              >
-                Dashboard
-              </Link>
-              <Link 
-                to="/analytics" 
-                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
-              >
-                Analytics
-              </Link>
-              <Link 
-                to="/chat" 
-                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
-              >
-                Community Chat
-              </Link>
-              <Link 
-                to="/alerts" 
-                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
-              >
-                Alerts
-              </Link>
-            </nav>
-          </div>
-
-          {/* Features */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Features
-            </h3>
-            <nav className="space-y-2">
-              <Link 
-                to="/learning" 
-                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
-              >
-                Learning Resources
-              </Link>
-              <Link 
-                to="/maintenance" 
-                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
-              >
-                Maintenance Logs
-              </Link>
-              <Link 
-                to="/community" 
-                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
-              >
-                Community Forum
-              </Link>
-              <Link 
-                to="/ai-predictions" 
-                className="block px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
-              >
-                AI Predictions
-              </Link>
-            </nav>
-          </div>
-
-          {/* Contact info */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Contact Info
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-300">
-                <Mail className="w-4 h-4 text-primary-600" />
-                <span className="text-sm">support@agriguard.com</span>
+          {/* Navigation Grid */}
+          <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-8">
+            {sections.map((section) => (
+              <div key={section.title} className="space-y-5">
+                <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">
+                  {section.title}
+                </h3>
+                <nav className="flex flex-col gap-3">
+                  {section.links.map((link) => (
+                    <Link
+                      key={link.name}
+                      to={link.href}
+                      className="group flex items-center gap-1.5 text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors uppercase tracking-widest"
+                    >
+                      {link.name}
+                      <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  ))}
+                </nav>
               </div>
-              <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-300">
-                <Phone className="w-4 h-4 text-primary-600" />
-                <span className="text-sm">+91 98765 43210</span>
-              </div>
-              <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-300">
-                <MapPin className="w-4 h-4 text-primary-600" />
-                <span className="text-sm">Kochi, Kerala, India</span>
-              </div>
-            </div>
-            
-            <div className="pt-4">
-              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                Newsletter
-              </h4>
-              <div className="flex space-x-2">
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
-                />
-                <button className="px-4 py-2 text-sm text-white rounded-md bg-gradient-to-r from-primary-600 to-indigo-600 shadow-sm ring-1 ring-black/5 hover:brightness-110 hover:scale-[1.01] transition-all duration-200">
-                  Subscribe
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Bottom section */}
-        <div className="py-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div className="text-sm text-gray-600 dark:text-gray-300">
-              © {currentYear} AgriGuard. All rights reserved. Built with ❤️ for sustainable farming.
-            </div>
-            <div className="flex space-x-6 text-sm">
-              <Link 
-                to="/privacy" 
-                className="px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
-              >
-                Privacy Policy
-              </Link>
-              <Link 
-                to="/terms" 
-                className="px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
-              >
-                Terms of Service
-              </Link>
-              <Link 
-                to="/support" 
-                className="px-2 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-800/40 transition-all duration-200 ring-1 ring-transparent hover:ring-black/5 dark:hover:ring-white/10"
-              >
-                Support
-              </Link>
-            </div>
+        {/* Newsletter / Contact Row */}
+        <div className="mt-16 py-8 border-t border-gray-100 dark:border-white/5 flex flex-col lg:flex-row items-center justify-between gap-8">
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 md:gap-10">
+            {[
+              { icon: Mail, label: 'Ops Support', value: 'ops@agriguard.com' },
+              { icon: Phone, label: 'Direct Line', value: '+91 98765 43210' },
+              { icon: MapPin, label: 'HQ Location', value: 'Kochi, India' }
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{label}</span>
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-tight">{value}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="w-full lg:w-80 relative group">
+            <input
+              type="email"
+              placeholder="Newsletter Subscription"
+              className="w-full pl-5 pr-12 py-3 bg-gray-50 dark:bg-gray-900 border border-transparent focus:border-emerald-500/50 rounded-2xl text-xs font-bold text-gray-900 dark:text-white outline-none transition-all placeholder:text-gray-400 placeholder:uppercase"
+            />
+            <button className="absolute right-2 top-1.2 inset-y-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-500/20">
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Legal Bottom */}
+        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+          <div className="flex items-center gap-2">
+            <span>© {currentYear} AgriGuard Mycology</span>
+            <div className="w-1 h-1 rounded-full bg-emerald-500" />
+            <span>Built by the DeepMind Nexus Team</span>
+          </div>
+          <div className="flex gap-6">
+            <a href="#" className="hover:text-emerald-500 transition-colors">Privacy</a>
+            <a href="#" className="hover:text-emerald-500 transition-colors">Terms</a>
+            <a href="#" className="hover:text-emerald-500 transition-colors">Nodes</a>
           </div>
         </div>
       </div>
