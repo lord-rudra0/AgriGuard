@@ -29,7 +29,7 @@ export const registerTalkSocket = (io) => {
             console.log(`[TalkAgent] User ${socket.user?.id} requested Live API connection with voice: ${requestedVoice}`);
 
             const API_KEY = process.env.GEMINI_API_KEY;
-            const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp';
+            const MODEL = process.env.GEMINI_AUDIO_MODEL || 'gemini-2.0-flash-exp';
 
             // Switch to v1alpha as it often has better support for new voices
             const URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${API_KEY}`;

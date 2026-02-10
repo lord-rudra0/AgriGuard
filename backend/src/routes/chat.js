@@ -19,7 +19,7 @@ try {
 
 // Helper to lazily get the model, reading env at request time.
 // IMPORTANT: we do NOT try an unsupported hardcoded default model name because
-// that can result in 404s from the provider. Require `GEMINI_MODEL` to be set.
+// that can result in 404s from the provider. Require `GEMINI_TEXT_MODEL` to be set.
 function getModel() {
   try {
     if (!genAI) {
@@ -29,9 +29,9 @@ function getModel() {
       }
     }
 
-    const modelName = process.env.GEMINI_MODEL;
+    const modelName = process.env.GEMINI_TEXT_MODEL;
     if (!modelName) {
-      console.warn('[chat] GEMINI_MODEL not set; AI model not selected. Set GEMINI_MODEL to a supported model name.');
+      console.warn('[chat] GEMINI_TEXT_MODEL not set; AI model not selected. Set GEMINI_TEXT_MODEL to a supported model name.');
       return null;
     }
 
@@ -50,15 +50,15 @@ router.post('/ai', authenticateToken, async (req, res) => {
     const model = getModel();
     if (!model) {
       return res.status(503).json({
-        message: 'AI service not fully configured. Please set GEMINI_API_KEY and GEMINI_MODEL environment variables and restart the backend.',
+        message: 'AI service not fully configured. Please set GEMINI_API_KEY and GEMINI_TEXT_MODEL environment variables and restart the backend.',
         hasGeminiKey: !!process.env.GEMINI_API_KEY,
-        hasModel: !!process.env.GEMINI_MODEL,
-        required: ['GEMINI_API_KEY', 'GEMINI_MODEL']
+        hasModel: !!process.env.GEMINI_TEXT_MODEL,
+        required: ['GEMINI_API_KEY', 'GEMINI_TEXT_MODEL']
       });
     }
 
     const { message, context, image } = req.body;
-    
+
     if (!message) {
       return res.status(400).json({ message: 'Message is required' });
     }
@@ -107,11 +107,11 @@ router.post('/ai', authenticateToken, async (req, res) => {
     logError(error, 'AI chat');
     const msg = (error?.response?.data?.error) || error?.message || 'Unknown error';
     if (/api key|unauthorized|permission/i.test(msg)) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         message: 'AI service configuration error. Please verify GEMINI_API_KEY permissions.'
       });
     }
-    return res.status(500).json({ 
+    return res.status(500).json({
       message: 'AI failed to generate a reply. Please try again.'
     });
   }
@@ -130,7 +130,7 @@ router.post('/analyze-data', authenticateToken, async (req, res) => {
       });
     }
     const { sensorData, timeframe = '24h' } = req.body;
-    
+
     if (!sensorData) {
       return res.status(400).json({ message: 'Sensor data is required' });
     }

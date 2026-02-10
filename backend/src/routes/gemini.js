@@ -27,9 +27,9 @@ try {
 router.post('/chat', authenticateToken, async (req, res) => {
   try {
     if (!genAI) {
-      return res.status(503).json({ 
-        success: false, 
-        message: 'AI service not configured. Please set GEMINI_API_KEY environment variable.' 
+      return res.status(503).json({
+        success: false,
+        message: 'AI service not configured. Please set GEMINI_API_KEY environment variable.'
       });
     }
 
@@ -45,9 +45,9 @@ router.post('/chat', authenticateToken, async (req, res) => {
     // Keep prompt concise
     const prompt = userContent.slice(0, 4000);
 
-    const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+    const modelName = process.env.GEMINI_TEXT_MODEL || 'gemini-2.0-flash';
     if (!modelName) {
-      return res.status(503).json({ success: false, message: 'GEMINI_MODEL not configured. Please set GEMINI_MODEL to a supported model name.' });
+      return res.status(503).json({ success: false, message: 'GEMINI_TEXT_MODEL not configured. Please set GEMINI_TEXT_MODEL to a supported model name.' });
     }
 
     const model = genAI.getGenerativeModel({ model: modelName });

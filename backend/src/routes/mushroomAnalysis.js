@@ -14,7 +14,7 @@ let genAI = null;
 router.post('/analyze', upload.single('image'), async (req, res) => {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
-        const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+        const modelName = process.env.GEMINI_TEXT_MODEL || 'gemini-2.0-flash';
 
         if (!apiKey) {
             console.warn('[MushroomAnalysis] API configuration missing.');
