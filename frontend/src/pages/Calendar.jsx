@@ -27,44 +27,52 @@ const ReminderInput = ({ reminders, setReminders }) => {
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reminders (minutes before)</label>
-      <div className="flex gap-2">
+      <label className="block text-[10px] font-bold text-gray-700 dark:text-gray-300 mb-1.5 ml-1 uppercase tracking-widest">Reminders</label>
+      <div className="flex gap-2 mb-2">
         <input
           type="number"
           min="0"
-          className="input flex-1"
-          placeholder="e.g., 60 for 1 hour before"
+          className="w-full px-2.5 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
+          placeholder="Min before..."
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addReminder()}
         />
-        <button type="button" className="btn-primary" onClick={addReminder}>
-          <Plus className="w-4 h-4" /> Add
+        <button
+          type="button"
+          className="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-colors shadow-lg shadow-emerald-500/20"
+          onClick={addReminder}
+        >
+          <Plus className="w-3.5 h-3.5" />
         </button>
       </div>
-      <div className="flex flex-wrap gap-2 mt-3">
+      <div className="flex flex-wrap gap-1.5">
         {presets.map((p) => (
           <button
             type="button"
             key={p}
             onClick={() => !reminders.includes(p) && setReminders([...reminders, p].sort((a, b) => a - b))}
-            className={`chip hover:brightness-110 ${reminders.includes(p) ? 'ring-2 ring-primary-400' : ''}`}
-            title={`Add ${p} min reminder`}
+            className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase transition-all border ${reminders.includes(p)
+              ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
+              : 'bg-white/50 text-gray-600 border-gray-200 hover:border-emerald-300 hover:text-emerald-600 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700'
+              }`}
           >
-            <Clock className="w-3 h-3" /> {p >= 1440 ? `${p/1440}d` : `${p}m`}
+            {p >= 1440 ? `${p / 1440}d` : `${p}m`}
           </button>
         ))}
       </div>
-      <div className="flex flex-wrap gap-2 mt-3">
-        {reminders.map((r) => (
-          <span key={r} className="chip">
-            <Clock className="w-3 h-3" /> {r} min
-            <button type="button" onClick={() => removeReminder(r)} className="ml-1 text-gray-600 dark:text-gray-300 hover:opacity-80">
-              <X className="w-3 h-3" />
-            </button>
-          </span>
-        ))}
-      </div>
+      {(reminders.length > 0) && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {reminders.map((r) => (
+            <span key={r} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-orange-50 text-orange-600 border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800/30">
+              <Clock className="w-2.5 h-2.5" /> {r}m
+              <button type="button" onClick={() => removeReminder(r)} className="ml-1 hover:text-red-500 transition-colors">
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -156,129 +164,228 @@ export default function Calendar() {
   }, [events]);
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <CalendarIcon className="w-6 h-6" /> Calendar
-        </h1>
+    <div className="relative h-[calc(100vh-7rem)] overflow-hidden bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+      {/* Background Decorative Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-emerald-500/10 dark:bg-emerald-500/5 blur-[120px] rounded-full" />
+        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-emerald-600/10 dark:bg-emerald-600/5 blur-[100px] rounded-full" />
+        <div className="absolute bottom-[10%] left-[20%] w-[20%] h-[20%] bg-teal-500/10 dark:bg-teal-500/5 blur-[100px] rounded-full" />
       </div>
 
-      {/* Form */}
-      <div className="card p-4 sm:p-6 mb-8">
-        <form onSubmit={upsertEvent} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
-            <input
-              type="text"
-              className="input w-full"
-              placeholder="e.g., Irrigation cycle check"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              required
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-            <textarea
-              className="input w-full min-h-[80px]"
-              placeholder="Optional details"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-          </div>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col py-3">
+        {/* Compact Header */}
+        <div className="flex-shrink-0 mb-3 flex items-center justify-between">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Room</label>
-            <input
-              type="text"
-              className="input w-full"
-              placeholder="e.g., Room-2"
-              value={form.roomId}
-              onChange={(e) => setForm({ ...form, roomId: e.target.value })}
-            />
+            <h1 className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 uppercase tracking-tight flex items-center gap-3">
+              <div className="p-1.5 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg shadow-lg shadow-emerald-500/20">
+                <CalendarIcon className="w-5 h-5 text-white" />
+              </div>
+              Calendar
+            </h1>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start</label>
-            <input
-              type="datetime-local"
-              className="input w-full"
-              value={form.startAt}
-              onChange={(e) => setForm({ ...form, startAt: e.target.value })}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End</label>
-            <input
-              type="datetime-local"
-              className="input w-full"
-              value={form.endAt}
-              onChange={(e) => setForm({ ...form, endAt: e.target.value })}
-            />
-          </div>
-          <div className="md:col-span-2">
-            <ReminderInput
-              reminders={form.reminders}
-              setReminders={(reminders) => setForm({ ...form, reminders })}
-            />
-          </div>
-          <div className="md:col-span-2 flex gap-2 justify-end">
-            {editingId && (
-              <button type="button" className="btn-secondary" onClick={resetForm}>Cancel</button>
-            )}
-            <button type="submit" className="btn-primary" disabled={saving}>
-              <Save className="w-4 h-4" /> {editingId ? 'Update Event' : 'Create Event'}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Upcoming list */}
-      <div className="card">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming</h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{upcoming.length} events</span>
         </div>
-        {loading ? (
-          <div className="p-6 text-gray-500 dark:text-gray-400">Loading...</div>
-        ) : upcoming.length === 0 ? (
-          <div className="p-6 text-gray-500 dark:text-gray-400">No events scheduled.</div>
-        ) : (
-          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-            {upcoming.map((ev) => (
-              <li key={ev._id} className="px-4 py-3 flex items-start justify-between gap-4">
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-white">{ev.title}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300">
-                    {format(parseISO(ev.startAt), 'PPpp')}
-                    {ev.endAt ? ` - ${format(parseISO(ev.endAt), 'PPpp')}` : ''}
-                    {ev.roomId ? (
-                      <span className="ml-2 chip">Room: {ev.roomId}</span>
-                    ) : null}
-                  </div>
-                  {ev.description && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">{ev.description}</div>
-                  )}
-                  {(ev.reminders?.length || 0) > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {ev.reminders.map((r) => (
-                        <span key={r.minutesBefore} className="chip">
-                          <Clock className="w-3 h-3" /> {r.minutesBefore} min before
-                        </span>
-                      ))}
+
+        {/* Main Content - Split Grid with separate scrolling */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-0">
+          {/* Event Form Column - Scrollable */}
+          <div className="lg:col-span-4 h-full overflow-hidden flex flex-col">
+            <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[1.2rem] p-4 shadow-xl border border-white/20 dark:border-gray-800 h-full flex flex-col">
+              <h2 className="text-base font-black text-gray-900 dark:text-white mb-3 uppercase tracking-wider flex items-center gap-2 flex-shrink-0">
+                {editingId ? 'Edit Event' : 'New Event'}
+              </h2>
+
+              <div className="flex-1 overflow-y-auto scrollbar-hide pr-1 flex flex-col">
+                <form onSubmit={upsertEvent} className="flex-1 flex flex-col gap-2.5 pb-2">
+                  <div className="grid grid-cols-3 gap-2.5 flex-shrink-0">
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-widest">Title</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
+                        placeholder="Event Title"
+                        value={form.title}
+                        onChange={(e) => setForm({ ...form, title: e.target.value })}
+                        required
+                      />
                     </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button className="btn-secondary" onClick={() => editEvent(ev)}>Edit</button>
-                  <button className="btn-danger" onClick={() => deleteEvent(ev._id)}>
-                    <Trash2 className="w-4 h-4" /> Delete
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+                    <div className="col-span-1">
+                      <label className="block text-[10px] font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-widest">Room</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
+                        placeholder="Room"
+                        value={form.roomId}
+                        onChange={(e) => setForm({ ...form, roomId: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5 flex-shrink-0">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-widest">Start</label>
+                      <input
+                        type="datetime-local"
+                        className="w-full px-2.5 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
+                        value={form.startAt}
+                        onChange={(e) => setForm({ ...form, startAt: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-widest">End</label>
+                      <input
+                        type="datetime-local"
+                        className="w-full px-2.5 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
+                        value={form.endAt}
+                        onChange={(e) => setForm({ ...form, endAt: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 flex flex-col min-h-[100px]">
+                    <label className="block text-[10px] font-bold text-gray-700 dark:text-gray-300 mb-1 ml-1 uppercase tracking-widest">Description</label>
+                    <textarea
+                      className="w-full h-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 resize-none"
+                      placeholder="Details..."
+                      value={form.description}
+                      onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="pt-1 flex-shrink-0">
+                    <ReminderInput
+                      reminders={form.reminders}
+                      setReminders={(reminders) => setForm({ ...form, reminders })}
+                    />
+                  </div>
+
+                  <div className="flex gap-2.5 pt-2 flex-shrink-0">
+                    {editingId && (
+                      <button
+                        type="button"
+                        className="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+                        onClick={resetForm}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="flex-1 flex items-center justify-center px-6 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg shadow-emerald-500/20 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus:outline-none disabled:opacity-50 uppercase tracking-widest"
+                    >
+                      {saving ? <span className="animate-pulse">Saving...</span> : (
+                        <>
+                          <Save className="w-3.5 h-3.5 mr-2" />
+                          {editingId ? 'Update' : 'Add Event'}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          {/* Upcoming list - Scrollable */}
+          <div className="lg:col-span-8 h-full overflow-hidden flex flex-col">
+            <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[1.2rem] p-5 md:p-6 shadow-xl border border-white/20 dark:border-gray-800 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
+                <h2 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                  Upcoming Schedule
+                </h2>
+                <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-wider">
+                  {upcoming.length} Events
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto scrollbar-hide pr-2">
+                {loading ? (
+                  <div className="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 animate-pulse">
+                    <CalendarIcon className="w-10 h-10 mb-4 opacity-20" />
+                    <p>Loading schedule...</p>
+                  </div>
+                ) : upcoming.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
+                    <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
+                      <CalendarIcon className="w-6 h-6 opacity-30" />
+                    </div>
+                    <p className="text-sm font-medium">No upcoming events found</p>
+                    <p className="text-xs mt-1 opacity-70">Add a new event to get started</p>
+                  </div>
+                ) : (
+                  <ul className="space-y-3">
+                    {upcoming.map((ev) => (
+                      <li key={ev._id} className="group relative bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 border border-gray-100 dark:border-gray-700/50 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 rounded-xl p-4 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <h3 className="font-bold text-gray-900 dark:text-white text-sm truncate pr-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                {ev.title}
+                              </h3>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
+                              <span className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700/50 px-2 py-0.5 rounded-lg">
+                                <Clock className="w-3 h-3" />
+                                <span className="font-medium">
+                                  {format(parseISO(ev.startAt), 'MMM d, h:mm a')}
+                                </span>
+                              </span>
+                              {ev.endAt && (
+                                <span className="opacity-60">to {format(parseISO(ev.endAt), 'h:mm a')}</span>
+                              )}
+                              {ev.roomId && (
+                                <span className="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wide border border-indigo-100 dark:border-indigo-800/30">
+                                  {ev.roomId}
+                                </span>
+                              )}
+                            </div>
+
+                            {ev.description && (
+                              <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-1 leading-relaxed opacity-90 mb-2">
+                                {ev.description}
+                              </p>
+                            )}
+
+                            {(ev.reminders?.length || 0) > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {ev.reminders.map((r, i) => (
+                                  <span key={i} className="inline-flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded-md border border-orange-100 dark:border-orange-900/30">
+                                    <Clock className="w-2.5 h-2.5" /> {r.minutesBefore}m
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1 sm:self-start opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+                            <button
+                              className="p-1.5 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
+                              onClick={() => editEvent(ev)}
+                              title="Edit Event"
+                            >
+                              <span className="sr-only">Edit</span>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            </button>
+                            <button
+                              className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              onClick={() => deleteEvent(ev._id)}
+                              title="Delete Event"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </div >
   );
 }
