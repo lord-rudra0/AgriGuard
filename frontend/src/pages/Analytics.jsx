@@ -3,6 +3,7 @@ import axios from 'axios';
 import ExportButtons from '../components/analytics/ExportButtons';
 import SavedViews from '../components/analytics/SavedViews';
 import ReportScheduler from '../components/analytics/ReportScheduler';
+import StabilityAnalytics from '../components/analytics/StabilityAnalytics';
 import {
 	ResponsiveContainer,
 	LineChart,
@@ -25,6 +26,14 @@ const TIMEFRAMES = [
 	{ key: '7d', label: '7D' },
 	{ key: '30d', label: '30D' },
 ];
+
+const THRESHOLDS = {
+	temperature: { min: 18, max: 28, ideal: 23 },
+	humidity: { min: 40, max: 80, ideal: 60 },
+	co2: { min: 300, max: 600, ideal: 450 },
+	light: { min: 200, max: 800, ideal: 500 },
+	soilMoisture: { min: 30, max: 70, ideal: 50 }
+};
 
 const niceLabel = (t) => {
 	if (!t) return '';
@@ -75,13 +84,22 @@ export default function Analytics() {
 		return () => { active = false; };
 	}, [timeframe]);
 
-	const { chartData, types, summary, counts } = useMemo(() => {
+	const { chartData, types, summary, counts, stabilityData } = useMemo(() => {
 		const timeMap = new Map();
 		const typeSet = new Set();
 		const typeStats = {};
 		const typeCounts = {};
 
-		for (const r of rows) {
+		// Sort rows by date/hour to calculate consecutive periods correctly
+		const sortedRows = [...rows].sort((a, b) => {
+			const timeA = new Date(a._id.date).getTime() + (a._id.hour * 3600000);
+			const timeB = new Date(b._id.date).getTime() + (b._id.hour * 3600000);
+			return timeA - timeB;
+		});
+
+		const sensorSequences = {};
+
+		for (const r of sortedRows) {
 			const { sensorType, hour, date } = r._id || {};
 			if (!sensorType || hour == null || !date) continue;
 			typeSet.add(sensorType);
@@ -99,22 +117,69 @@ export default function Analytics() {
 			typeStats[sensorType] = stat;
 
 			typeCounts[sensorType] = (typeCounts[sensorType] || 0) + (r.count || 0);
+
+			if (!sensorSequences[sensorType]) sensorSequences[sensorType] = [];
+			sensorSequences[sensorType].push(r.avgValue);
 		}
 
 		const sortedTimes = Array.from(timeMap.keys()).sort();
 		const data = sortedTimes.map((k) => timeMap.get(k));
 
 		const summary = {};
-		for (const t of Object.keys(typeStats)) {
+		const stabilityData = {};
+
+		for (const t of Array.from(typeSet)) {
 			const s = typeStats[t];
+			const threshold = THRESHOLDS[t] || { min: 0, max: 100, ideal: 50 };
+			const sequence = sensorSequences[t] || [];
+
+			let stableHours = 0;
+			let currentStableStreak = 0;
+			let maxStableStreak = 0;
+			let currentUnstableStreak = 0;
+			let maxUnstableStreak = 0;
+			let totalDiff = 0;
+
+			for (let i = 0; i < sequence.length; i++) {
+				const val = sequence[i];
+				const isStable = val >= threshold.min && val <= threshold.max;
+
+				if (isStable) {
+					stableHours++;
+					currentStableStreak++;
+					maxUnstableStreak = Math.max(maxUnstableStreak, currentUnstableStreak);
+					currentUnstableStreak = 0;
+				} else {
+					currentUnstableStreak++;
+					maxStableStreak = Math.max(maxStableStreak, currentStableStreak);
+					currentStableStreak = 0;
+				}
+
+				if (i > 0) {
+					totalDiff += Math.abs(val - sequence[i - 1]);
+				}
+			}
+			maxStableStreak = Math.max(maxStableStreak, currentStableStreak);
+			maxUnstableStreak = Math.max(maxUnstableStreak, currentUnstableStreak);
+
 			summary[t] = {
 				min: isFinite(s.min) ? Number(s.min.toFixed(2)) : null,
 				max: isFinite(s.max) ? Number(s.max.toFixed(2)) : null,
 				avg: s.n ? Number((s.sum / s.n).toFixed(2)) : null,
 			};
+
+			stabilityData[t] = {
+				score: sequence.length ? Math.round((stableHours / sequence.length) * 100) : 0,
+				fluctuation: sequence.length > 1 ? Number((totalDiff / (sequence.length - 1)).toFixed(2)) : 0,
+				maxStable: maxStableStreak,
+				maxUnstable: maxUnstableStreak,
+				stablePercent: sequence.length ? Math.round((stableHours / sequence.length) * 100) : 0,
+				unstablePercent: sequence.length ? 100 - Math.round((stableHours / sequence.length) * 100) : 0,
+				stdDevIdeal: sequence.length ? Number(Math.sqrt(sequence.reduce((acc, val) => acc + Math.pow(val - threshold.ideal, 2), 0) / sequence.length).toFixed(2)) : 0
+			};
 		}
 
-		return { chartData: data, types: Array.from(typeSet), summary, counts: typeCounts };
+		return { chartData: data, types: Array.from(typeSet), summary, counts: typeCounts, stabilityData };
 	}, [rows]);
 
 	useEffect(() => {
@@ -155,8 +220,8 @@ export default function Analytics() {
 									key={tf.key}
 									onClick={() => setTimeframe(tf.key)}
 									className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${timeframe === tf.key
-											? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
-											: 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
+										? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+										: 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
 										}`}
 								>
 									{tf.label}
@@ -249,6 +314,22 @@ export default function Analytics() {
 								</div>
 							</div>
 						))}
+					</div>
+
+					{/* Stability & Consistency Section */}
+					<div className="flex flex-col gap-6">
+						<div className="flex items-center justify-between">
+							<h2 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-3">
+								<div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+									<Activity className="w-5 h-5 text-emerald-500" />
+								</div>
+								Stability & Consistency Profile
+							</h2>
+							<div className="px-3 py-1 bg-white/50 dark:bg-gray-800/50 rounded-full border border-gray-100 dark:border-gray-700 text-[10px] font-black text-gray-400 uppercase tracking-tighter">
+								Analysis Window: {timeframe}
+							</div>
+						</div>
+						<StabilityAnalytics data={stabilityData} activeTypes={activeTypes} />
 					</div>
 
 					{/* Charts Row */}
