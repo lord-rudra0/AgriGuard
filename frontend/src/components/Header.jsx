@@ -70,7 +70,7 @@ const Header = () => {
   const isActive = (path) => location.pathname === path;
 
   // Primary mobile tabs (high frequency actions)
-  const primaryMobile = ['Dashboard', 'Analytics', 'Scan', 'Chat', 'Settings'];
+  const primaryMobile = ['Dashboard', 'Scan', 'Chat', 'Settings'];
   const mobileNav = navigation.filter(n => primaryMobile.includes(n.name));
 
   // Desktop categories
@@ -161,11 +161,6 @@ const Header = () => {
 
           {/* Right Action Stack */}
           <div className="flex items-center gap-2 md:gap-3">
-
-            {/* Real-time Agent */}
-            <div className="hidden md:block">
-              <TalkAgent />
-            </div>
 
             {/* Notification Center */}
             {user && (
@@ -318,14 +313,12 @@ const Header = () => {
             );
           })}
 
-          {/* Central AI Scout Pulse */}
+          {/* Central AI Voice Hub */}
           <div className="px-2">
-            <Link to="/scan" className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg shadow-emerald-500/40 flex items-center justify-center border-4 border-white dark:border-gray-900 group active:scale-90 transition-transform -translate-y-4">
-              <Camera className="w-6 h-6 text-white" />
-            </Link>
+            <TalkAgent variant="nav" />
           </div>
 
-          {mobileNav.slice(3).map((item) => {
+          {mobileNav.slice(2).map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (

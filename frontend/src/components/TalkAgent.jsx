@@ -237,7 +237,7 @@ const TalkAgent = ({ variant = 'header' }) => {
         <>
             {/* Nav Column variant (for bottom navbar) */}
             {variant === 'nav' ? (
-                <li className="flex justify-center relative -top-6">
+                <div className="flex justify-center relative -top-6">
                     <button
                         onClick={handleMicClick}
                         className={`group relative h-16 w-16 flex flex-col items-center justify-center rounded-full transition-all duration-500 shadow-xl ${isOpen
@@ -266,7 +266,7 @@ const TalkAgent = ({ variant = 'header' }) => {
                             <div className="absolute inset-0 rounded-full border-2 border-white/20 animate-[spin_4s_linear_infinite]"></div>
                         )}
                     </button>
-                </li>
+                </div>
             ) : (
                 /* Header Button variant */
                 <button
