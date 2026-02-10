@@ -3,9 +3,9 @@ import SensorHistory from '../models/SensorHistory.js';
 import SensorData from '../models/SensorData.js';
 
 /**
- * Aggregates raw sensor data into hourly or daily buckets.
+ * Aggregates raw sensor data into hourly, daily, or weekly buckets.
  * @param {string} userId - ID of the user
- * @param {string} interval - 'hourly' or 'daily'
+ * @param {string} interval - 'hourly', 'daily', or 'weekly'
  * @param {Date} startTime - Start of the interval
  * @param {Date} endTime - End of the interval
  */
@@ -74,9 +74,8 @@ export async function runHistoryAggregation() {
         const currentHourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours());
         const prevHourStart = new Date(currentHourStart.getTime() - 60 * 60 * 1000);
 
-        // 2. Daily Aggregation (for the previous day)
-        const currentDayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const prevDayStart = new Date(currentDayStart.getTime() - 24 * 60 * 60 * 1000);
+        // 3. Weekly Aggregation (for the previous 7 days)
+        const prevWeekStart = new Date(currentDayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
 
         // Get unique users to aggregate for
         const userIds = await SensorData.distinct('metadata.userId');
@@ -85,8 +84,11 @@ export async function runHistoryAggregation() {
             // Hourly run
             await aggregateSensorData(userId, 'hourly', prevHourStart, currentHourStart);
 
-            // Daily run (usually better to run once at midnight, but this keeps it simple/idempotent)
+            // Daily run
             await aggregateSensorData(userId, 'daily', prevDayStart, currentDayStart);
+
+            // Weekly run
+            await aggregateSensorData(userId, 'weekly', prevWeekStart, currentDayStart);
         }
 
         console.log(`[${new Date().toISOString()}] Sensor history aggregation complete.`);

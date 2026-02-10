@@ -35,6 +35,7 @@ const SENSOR_TYPES = [
 const INTERVAL_TYPES = [
     { key: 'hourly', label: 'Hourly' },
     { key: 'daily', label: 'Daily' },
+    { key: 'weekly', label: 'Weekly' },
 ];
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -94,7 +95,10 @@ const SensorHistory = () => {
 
     const chartData = useMemo(() => {
         return history.map(item => ({
-            time: format(new Date(item.startTime), interval === 'hourly' ? 'MMM d, HH:mm' : 'MMM d'),
+            time: format(
+                new Date(item.startTime),
+                interval === 'hourly' ? 'MMM d, HH:mm' : interval === 'weekly' ? 'MMM d' : 'MMM d'
+            ),
             avg: item.metrics.avg,
             min: item.metrics.min,
             max: item.metrics.max,
@@ -180,8 +184,8 @@ const SensorHistory = () => {
                                         key={sensor.key}
                                         onClick={() => setSelectedSensor(sensor)}
                                         className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-black transition-all ${selectedSensor.key === sensor.key
-                                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-[1.02]'
-                                                : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-[1.02]'
+                                            : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
                                             }`}
                                     >
                                         <span>{sensor.label}</span>
@@ -200,8 +204,8 @@ const SensorHistory = () => {
                                         key={type.key}
                                         onClick={() => setInterval(type.key)}
                                         className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${interval === type.key
-                                                ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-black/5'
-                                                : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                                            ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-black/5'
+                                            : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                                             }`}
                                     >
                                         {type.label}

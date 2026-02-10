@@ -20,7 +20,7 @@ const sensorHistorySchema = new mongoose.Schema({
     },
     interval: {
         type: String,
-        enum: ['hourly', 'daily'],
+        enum: ['hourly', 'daily', 'weekly'],
         required: true
     },
     startTime: {
