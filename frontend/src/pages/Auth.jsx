@@ -87,7 +87,7 @@ const Auth = ({ initialMode = 'login' }) => {
                 <div className="absolute bottom-[10%] left-[20%] w-[20%] h-[20%] bg-teal-500/10 dark:bg-teal-500/5 blur-[100px] rounded-full" />
             </div>
 
-            <div className="relative max-w-5xl w-full bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden min-h-0 md:min-h-[650px] flex flex-col md:flex-row h-[95vh] md:h-auto max-h-[95vh] md:max-h-[90vh]">
+            <div className="relative max-w-5xl w-full bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden flex flex-col md:flex-row h-[85vh] md:h-auto md:min-h-[650px] max-h-[85vh] md:max-h-[90vh]">
 
                 {/* Animated Background Overlay (The Sliding Part) */}
                 <div
@@ -118,13 +118,12 @@ const Auth = ({ initialMode = 'login' }) => {
                     <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-500/20 blur-3xl rounded-full -ml-20 -mb-20"></div>
                 </div>
 
-                {/* Form Container: Left Side (Login) */}
-                <div className={`w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-center transition-all duration-700 ease-in-out z-10
+                <div className={`w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-center transition-all duration-700 ease-in-out z-10 flex-1 overflow-y-auto scrollbar-hide
           ${isLogin
                         ? 'opacity-100 translate-x-0 relative'
                         : 'opacity-0 -translate-x-full absolute pointer-events-none'
                     } lg:relative lg:translate-x-0`}>
-                    <div className="mb-6 md:mb-10 text-center lg:text-left transition-all duration-500 delay-100">
+                    <div className="mb-6 md:mb-10 py-4 text-center lg:text-left transition-all duration-500 delay-100 flex flex-col items-center lg:items-start">
                         <div className="flex items-center justify-center lg:justify-start mb-4">
                             <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transform rotate-3">
                                 <Shield className="w-6 h-6 text-white" />
@@ -211,13 +210,12 @@ const Auth = ({ initialMode = 'login' }) => {
                     </form>
                 </div>
 
-                {/* Form Container: Right Side (Register) */}
-                <div className={`w-full lg:w-1/2 p-5 md:p-10 flex flex-col justify-center transition-all duration-700 ease-in-out z-10
+                <div className={`w-full lg:w-1/2 p-5 md:p-10 flex flex-col justify-center transition-all duration-700 ease-in-out z-10 flex-1 overflow-y-auto scrollbar-hide
           ${!isLogin
                         ? 'opacity-100 translate-x-0 relative'
                         : 'opacity-0 translate-x-full absolute pointer-events-none'
                     } lg:relative lg:translate-x-0`}>
-                    <div className="mb-4 md:mb-6 text-center lg:text-left transition-all duration-500 delay-100">
+                    <div className="mb-4 md:mb-6 py-4 text-center lg:text-left transition-all duration-500 delay-100 flex flex-col items-center lg:items-start">
                         <h2 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300">
                             Create Account
                         </h2>
