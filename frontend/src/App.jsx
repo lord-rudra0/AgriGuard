@@ -22,6 +22,7 @@ import UserProfile from './pages/UserProfile';
 import Calendar from './pages/Calendar';
 import Devices from './pages/Devices';
 import History from './pages/History';
+import SensorHistory from './pages/SensorHistory';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -201,6 +202,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <History />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/sensor-history"
+                    element={
+                      <ProtectedRoute>
+                        <SensorHistory />
                       </ProtectedRoute>
                     }
                   />

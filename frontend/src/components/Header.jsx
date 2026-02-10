@@ -23,6 +23,7 @@ import {
   Cpu,
   Workflow,
   Plus,
+  TrendingUp,
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import CameraNavbar from '../components/CameraNavbar';
@@ -57,6 +58,7 @@ const Header = () => {
     { name: 'Scan', href: '/scan', icon: Camera },
     { name: 'Chat', href: '/chat', icon: MessageSquare },
     { name: 'History', href: '/history', icon: History },
+    { name: 'Sensor Archive', href: '/sensor-history', icon: TrendingUp },
     { name: 'Calendar', href: '/calendar', icon: CalendarIcon },
     { name: 'Thresholds', href: '/thresholds', icon: Workflow },
     { name: 'Recipes', href: '/recipes', icon: Cpu },
@@ -108,8 +110,8 @@ const Header = () => {
                   key={item.name}
                   to={item.href}
                   className={`flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${active
-                      ? 'bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-black/5'
-                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                    ? 'bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-black/5'
+                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                     }`}
                 >
                   <Icon className={`w-4 h-4 ${active ? 'text-emerald-500' : ''}`} />
@@ -142,8 +144,8 @@ const Header = () => {
                           to={item.href}
                           onClick={() => setIsMoreOpen(false)}
                           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${active
-                              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                             }`}
                         >
                           <Icon className="w-4 h-4" />
