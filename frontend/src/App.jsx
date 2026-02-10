@@ -110,7 +110,7 @@ const AppLayout = ({ children }) => {
       </main>
       {/* Floating ChatBot only for authenticated users and not on Chat page */}
       {user && !isChat && <ChatBot />}
-      {user ? (location.pathname === '/chat' ? null : <Footer />) : <PublicFooter />}
+      {user ? (location.pathname === '/chat' ? null : <Footer />) : (!isAuthPage && <PublicFooter />)}
     </div>
   );
 };

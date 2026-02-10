@@ -87,7 +87,7 @@ const Auth = ({ initialMode = 'login' }) => {
                 <div className="absolute bottom-[10%] left-[20%] w-[20%] h-[20%] bg-teal-500/10 dark:bg-teal-500/5 blur-[100px] rounded-full" />
             </div>
 
-            <div className="relative max-w-5xl w-full bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden min-h-[650px] flex flex-col md:flex-row">
+            <div className="relative max-w-5xl w-full bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden min-h-0 md:min-h-[650px] flex flex-col md:flex-row h-[95vh] md:h-auto max-h-[95vh] md:max-h-[90vh]">
 
                 {/* Animated Background Overlay (The Sliding Part) */}
                 <div
@@ -118,9 +118,13 @@ const Auth = ({ initialMode = 'login' }) => {
                     <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-500/20 blur-3xl rounded-full -ml-20 -mb-20"></div>
                 </div>
 
-                {/* Form Container: Left Side Layout */}
-                <div className={`w-full lg:w-1/2 p-8 md:p-12 flex flex-col justify-center transition-all duration-700 ${isLogin ? 'lg:opacity-100' : 'lg:opacity-0 pointer-events-none lg:translate-x-full'}`}>
-                    <div className="mb-10 text-center lg:text-left">
+                {/* Form Container: Left Side (Login) */}
+                <div className={`w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-center transition-all duration-700 ease-in-out z-10
+          ${isLogin
+                        ? 'opacity-100 translate-x-0 relative'
+                        : 'opacity-0 -translate-x-full absolute pointer-events-none'
+                    } lg:relative lg:translate-x-0`}>
+                    <div className="mb-6 md:mb-10 text-center lg:text-left transition-all duration-500 delay-100">
                         <div className="flex items-center justify-center lg:justify-start mb-4">
                             <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transform rotate-3">
                                 <Shield className="w-6 h-6 text-white" />
@@ -129,12 +133,12 @@ const Auth = ({ initialMode = 'login' }) => {
                         <h2 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300">
                             Sign In
                         </h2>
-                        <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                        <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium truncate">
                             Access your AgriGuard dashboard
                         </p>
                     </div>
 
-                    <form onSubmit={handleLogin} className="space-y-6">
+                    <form onSubmit={handleLogin} className="space-y-6 transition-all duration-500 delay-200">
                         <div>
                             <label className="block text-[10px] font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1 uppercase tracking-widest">
                                 Email / Username / Phone
@@ -202,21 +206,25 @@ const Auth = ({ initialMode = 'login' }) => {
                         </button>
                         <div className="lg:hidden text-center text-sm font-bold pt-4">
                             <span className="text-gray-500">NEW HERE? </span>
-                            <button onClick={toggleMode} className="text-emerald-600 dark:text-emerald-400 hover:underline">CREATE ACCOUNT</button>
+                            <button type="button" onClick={toggleMode} className="text-emerald-600 dark:text-emerald-400 hover:underline">CREATE ACCOUNT</button>
                         </div>
                     </form>
                 </div>
 
-                {/* Form Container: Right Side Layout (Register) */}
-                <div className={`w-full lg:w-1/2 p-8 md:p-10 flex flex-col justify-center transition-all duration-700 ${!isLogin ? 'lg:opacity-100' : 'lg:opacity-0 pointer-events-none lg:-translate-x-full'}`}>
-                    <div className="mb-6 text-center lg:text-left">
+                {/* Form Container: Right Side (Register) */}
+                <div className={`w-full lg:w-1/2 p-5 md:p-10 flex flex-col justify-center transition-all duration-700 ease-in-out z-10
+          ${!isLogin
+                        ? 'opacity-100 translate-x-0 relative'
+                        : 'opacity-0 translate-x-full absolute pointer-events-none'
+                    } lg:relative lg:translate-x-0`}>
+                    <div className="mb-4 md:mb-6 text-center lg:text-left transition-all duration-500 delay-100">
                         <h2 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300">
                             Create Account
                         </h2>
                     </div>
 
-                    <form onSubmit={handleRegister} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={handleRegister} className="space-y-3 md:space-y-4 transition-all duration-500 delay-200">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                             {/* Fields copied exactly as original but with emerald colors */}
                             <div>
                                 <label className="block text-[10px] font-bold text-gray-700 dark:text-gray-300 mb-1.5 ml-1 uppercase tracking-widest">Full Name</label>
@@ -283,9 +291,9 @@ const Auth = ({ initialMode = 'login' }) => {
                         >
                             {loading ? 'CREATING...' : 'CREATE ACCOUNT'}
                         </button>
-                        <div className="lg:hidden text-center text-sm font-bold">
+                        <div className="lg:hidden text-center text-sm font-bold pt-4">
                             <span className="text-gray-500">ALREADY MEMBER? </span>
-                            <button onClick={toggleMode} className="text-emerald-600 dark:text-emerald-400 hover:underline uppercase">SIGN IN</button>
+                            <button type="button" onClick={toggleMode} className="text-emerald-600 dark:text-emerald-400 hover:underline uppercase">SIGN IN</button>
                         </div>
                     </form>
                 </div>
