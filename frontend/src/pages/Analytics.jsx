@@ -11,21 +11,7 @@ import PredictiveAnalytics from '../components/analytics/PredictiveAnalytics';
 import GrowthAnalytics from '../components/analytics/GrowthAnalytics';
 import EfficiencyAnalytics from '../components/analytics/EfficiencyAnalytics';
 import SystemHealthAnalytics from '../components/analytics/SystemHealthAnalytics';
-import {
-	ResponsiveContainer,
-	LineChart,
-	Line,
-	XAxis,
-	YAxis,
-	CartesianGrid,
-	Tooltip,
-	Legend,
-	BarChart,
-	Bar,
-	AreaChart,
-	Area,
-} from 'recharts';
-import { BarChart3, Calendar, RefreshCw, TrendingUp, Activity, Filter, Download, Trash2, ShieldAlert } from 'lucide-react';
+import { BarChart3, Activity, TrendingUp, ShieldAlert } from 'lucide-react';
 
 const TIMEFRAMES = [
 	{ key: '1h', label: '1H' },
@@ -41,23 +27,7 @@ const niceLabel = (t) => {
 	return t.slice(5); // "MM-DD HH:00"
 };
 
-const CustomTooltip = ({ active, payload, label }) => {
-	if (active && payload && payload.length) {
-		return (
-			<div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md p-3 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl">
-				<p className="text-xs font-bold text-gray-500 mb-2">{label}</p>
-				{payload.map((p, i) => (
-					<div key={i} className="flex items-center gap-2 text-xs font-medium mb-1">
-						<span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.stroke || p.fill }} />
-						<span className="text-gray-700 dark:text-gray-300 capitalize">{p.name}:</span>
-						<span className="font-bold text-gray-900 dark:text-white">{p.value}</span>
-					</div>
-				))}
-			</div>
-		);
-	}
-	return null;
-};
+
 
 export default function Analytics() {
 	const [timeframe, setTimeframe] = useState('24h');
@@ -65,8 +35,6 @@ export default function Analytics() {
 	const [error, setError] = useState('');
 	const [rows, setRows] = useState([]);
 	const [fullData, setFullData] = useState(null);
-	const [inserting, setInserting] = useState(false);
-	const [purging, setPurging] = useState(false);
 	const [activeTypes, setActiveTypes] = useState(null);
 
 	useEffect(() => {
@@ -166,79 +134,6 @@ export default function Analytics() {
 							setActiveTypes(ty.length ? ty : null);
 						}}
 					/>
-					<button
-						onClick={async () => {
-							setInserting(true);
-							setError('');
-							try {
-								const make = (type, unit, base, noise, n = 30) =>
-									Array.from({ length: n }, (_, i) => ({
-										type,
-										value: Math.round((base + (Math.random() - 0.5) * noise) * 10) / 10,
-										unit,
-										location: 'Greenhouse 1',
-										metadata: { batteryLevel: 0.8, signalStrength: 0.9 },
-									}));
-								const readings = [
-									...make('temperature', '°C', 23, 8),
-									...make('humidity', '%', 60, 30),
-									...make('co2', 'ppm', 450, 250),
-									...make('light', 'lux', 500, 400),
-									...make('soilMoisture', '%', 50, 20),
-								];
-								await axios.post('/api/sensors/data', { deviceId: 'dev-sim-1', readings });
-								// Wait slightly longer for aggregation
-								await new Promise((r) => setTimeout(r, 800));
-								const res = await axios.get('/api/sensors/analytics', { params: { timeframe } });
-								setRows(res.data?.analytics || []);
-								if (res.data?.analytics?.length === 0) {
-									setError('Data saved, but analytics hasn\'t aggregated yet. Please refresh in a moment.');
-								}
-							} catch (e) {
-								if (e.response?.status === 429) {
-									setError('Too many requests. Please wait a minute before generating more data.');
-								} else {
-									setError('Failed to generate simulation data. Check connection.');
-								}
-							} finally {
-								setInserting(false);
-							}
-						}}
-						className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all duration-300 ${inserting
-							? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-wait'
-							: 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-500/20'
-							}`}
-					>
-						<RefreshCw className={`w-3.5 h-3.5 ${inserting ? 'animate-spin' : ''}`} />
-						{inserting ? 'Synchronizing Pipeline...' : '✨ Generate Simulation Data'}
-					</button>
-
-					<button
-						onClick={async () => {
-							if (!window.confirm('Wipe all simulation data? This will clear dev-sim-1 readings.')) return;
-							setPurging(true);
-							setError('');
-							try {
-								const res = await axios.delete('/api/sensors/data', { params: { deviceId: 'dev-sim-1' } });
-								// Refresh analytics after purge
-								const analyticsRes = await axios.get('/api/sensors/analytics', { params: { timeframe } });
-								setRows(analyticsRes.data?.analytics || []);
-								alert(res.data?.message || 'Purged simulation data.');
-							} catch (e) {
-								setError('Failed to purge simulation data.');
-							} finally {
-								setPurging(false);
-							}
-						}}
-						className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all duration-300 ${purging
-							? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-wait'
-							: 'text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20'
-							}`}
-						title="Clear dev-sim-1 data"
-					>
-						<Trash2 className={`w-3.5 h-3.5 ${purging ? 'animate-pulse' : ''}`} />
-						{purging ? 'Purging...' : 'Purge Simulation'}
-					</button>
 				</div>
 
 				{error && (

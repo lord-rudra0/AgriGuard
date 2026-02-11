@@ -8,8 +8,8 @@ const StabilityAnalytics = ({ stabilityProfiles }) => {
                 <Activity className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-4 animate-pulse" />
                 <h3 className="text-sm font-black uppercase tracking-widest text-gray-400 font-outfit">No Stability Data Detected</h3>
                 <p className="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-tighter text-center max-w-[250px] leading-relaxed font-outfit">
-                    Consistency metrics require historical sensor readings. <br />
-                    Click <span className="text-emerald-500 underline">Demo Data</span> to populate simulation data.
+                    Consistency metrics require historical sensor data to be aggregated. <br />
+                    Please wait for the background pipeline to process recent readings.
                 </p>
             </div>
         );
