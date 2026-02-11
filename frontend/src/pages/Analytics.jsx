@@ -8,6 +8,7 @@ import DeviationAnalytics from '../components/analytics/DeviationAnalytics';
 import RiskAnalytics from '../components/analytics/RiskAnalytics';
 import ActionAnalytics from '../components/analytics/ActionAnalytics';
 import PredictiveAnalytics from '../components/analytics/PredictiveAnalytics';
+import GrowthAnalytics from '../components/analytics/GrowthAnalytics';
 import {
 	ResponsiveContainer,
 	LineChart,
@@ -366,7 +367,7 @@ export default function Analytics() {
 				</div>
 
 				{error && (
-					<div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl p-4 text-sm text-red-600 dark:text-red-400 font-medium">
+					<div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-900/50 rounded-xl p-4 text-sm text-red-600 dark:text-red-400 font-medium">
 						{error}
 					</div>
 				)}
@@ -375,6 +376,11 @@ export default function Analytics() {
 					{/* Action & Decision Section - Moved to Top */}
 					<div className="flex flex-col gap-6">
 						<ActionAnalytics chartData={chartData} />
+					</div>
+
+					{/* Growth Stage Analysis - Specialized Domain Knowledge */}
+					<div className="flex flex-col gap-6">
+						<GrowthAnalytics chartData={chartData} />
 					</div>
 
 					{/* Predictive Analytics Section */}
