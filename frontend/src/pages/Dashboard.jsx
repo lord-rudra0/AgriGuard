@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import useAlertsSocket from '../hooks/useAlertsSocket';
 import SensorCard from '../components/SensorCard';
+import FarmOverview from '../components/dashboard/FarmOverview';
 import {
   LineChart,
   Line,
@@ -266,6 +267,11 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Farm Overview Section */}
+        <div className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <FarmOverview />
         </div>
 
         {/* Charts and Alerts */}
