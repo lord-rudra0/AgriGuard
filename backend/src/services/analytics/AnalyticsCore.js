@@ -86,3 +86,28 @@ export const calculateSlope = (data) => {
     }
     return (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
 };
+
+/**
+ * Calculates R-Squared for linear regression data (Improvement #5)
+ */
+export const calculateRSquared = (data) => {
+    if (data.length < 3) return 0;
+    const n = data.length;
+    const yMean = data.reduce((a, b) => a + b, 0) / n;
+
+    // Total Sum of Squares
+    const tss = data.reduce((a, b) => a + Math.pow(b - yMean, 2), 0);
+    if (tss === 0) return 0;
+
+    // Sum of Squares of Residuals
+    const slope = calculateSlope(data);
+    const intercept = yMean - slope * ((n - 1) / 2);
+
+    let ssr = 0;
+    for (let i = 0; i < n; i++) {
+        const yPred = slope * i + intercept;
+        ssr += Math.pow(data[i] - yPred, 2);
+    }
+
+    return Math.max(0, 1 - (ssr / tss));
+};

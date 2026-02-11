@@ -23,13 +23,13 @@ export const getFullAnalytics = async (sensorData, historyData, userId, stageId 
     const chartData = historyData;
 
     // Compute all modules
-    const risk = calculateRiskProfile(sensorData, userId);
+    const risk = await calculateRiskProfile(sensorData, stageId);
     const recommendations = generateActionRecommendations(sensorData);
     const predictions = calculatePredictiveForecasts(sensorData);
-    const stability = calculateStabilityProfile(historyData);
+    const stability = await calculateStabilityProfile(historyData, stageId);
     const efficiency = calculateEfficiencyProfile(historyData);
     const health = calculateSystemHealthProfile(historyData);
-    const growth = calculateGrowthProfile(historyData, stageId);
+    const growth = await calculateGrowthProfile(historyData, stageId);
 
     // Calculate Summary (Min, Max, Avg) for History
     const summary = {};
@@ -43,8 +43,8 @@ export const getFullAnalytics = async (sensorData, historyData, userId, stageId 
 
         if (values.length > 0) {
             summary[type] = {
-                min: Math.min(...values),
-                max: Math.max(...values),
+                min: Math.round(Math.min(...values) * 10) / 10,
+                max: Math.round(Math.max(...values) * 10) / 10,
                 avg: Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10
             };
         }

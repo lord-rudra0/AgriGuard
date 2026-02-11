@@ -2,8 +2,8 @@
 // Growth Engine: Biological Compliance Analytics
 import { getStageConfig } from './StageEngine.js';
 
-export const calculateGrowthProfile = (chartData, selectedStageId = 'fruiting') => {
-    const stageConfig = getStageConfig(selectedStageId);
+export const calculateGrowthProfile = async (chartData, selectedStageId = 'fruiting') => {
+    const stageConfig = await getStageConfig(selectedStageId);
     if (!chartData || chartData.length === 0) return null;
 
     let totalPoints = chartData.length;

@@ -202,13 +202,25 @@ router.get('/analytics/full', authenticateToken, async (req, res) => {
       timestamp: { $gte: new Date(Date.now() - 6 * 60 * 60 * 1000) } // Last 6 hours
     }).sort({ timestamp: 1 });
 
-    // 2. Get aggregated history (for Stability/Efficiency)
-    // We use the same aggregation pipeline as /analytics but formatted for the engines
-    const historyData = await SensorData.aggregate([
+    // 2. Get Aggregated History (Hybrid Approach: Precomputed + Recent Raw)
+    const { default: SensorHistory } = await import('../models/SensorHistory.js');
+
+    // a. Fetch precomputed hourly buckets from SensorHistory
+    const precomputed = await SensorHistory.find({
+      'metadata.userId': req.user._id,
+      interval: 'hourly',
+      startTime: { $gte: startDate }
+    }).lean();
+
+    // b. Find most recent precomputed bucket to know where to start raw aggregation
+    const latestPrecomputed = precomputed.length > 0 ? precomputed.sort((a, b) => b.endTime - a.endTime)[0].endTime : startDate;
+
+    // c. Aggregate only the missing "tip" (raw data since last precomputed bucket)
+    const rawTip = await SensorData.aggregate([
       {
         $match: {
           'metadata.userId': req.user._id,
-          timestamp: { $gte: startDate }
+          timestamp: { $gte: latestPrecomputed }
         }
       },
       {
@@ -221,12 +233,20 @@ router.get('/analytics/full', authenticateToken, async (req, res) => {
           avgValue: { $avg: '$value' },
           timestamp: { $first: '$timestamp' }
         }
-      },
-      { $sort: { timestamp: 1 } }
+      }
     ]);
 
-    // Format historyData for components (flattened array with keys)
-    // The engines expect an array of objects like { timestamp, temperature, humidity, co2 }
+    // 3. Format into structure expected by Engines
+    // We combine precomputed (SensorHistory) and rawTip
+    const historyData = [
+      ...precomputed.map(h => ({
+        _id: { sensorType: h.metadata.sensorType },
+        avgValue: h.metrics.avg,
+        timestamp: h.startTime
+      })),
+      ...rawTip
+    ];
+
     const timeBuckets = {};
     historyData.forEach(d => {
       const timeKey = d.timestamp.toISOString();

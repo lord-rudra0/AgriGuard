@@ -22,9 +22,19 @@ const TIMEFRAMES = [
 
 
 
-const niceLabel = (t) => {
+const formatTimeLabel = (t) => {
 	if (!t) return '';
 	return t.slice(5); // "MM-DD HH:00"
+};
+
+const formatSensorName = (t) => {
+	if (!t) return '';
+	if (t === 'temperature') return 'Temperature';
+	if (t === 'humidity') return 'Humidity';
+	if (t === 'co2') return 'CO2';
+	if (t === 'soilMoisture') return 'Soil Moisture';
+	if (t === 'light') return 'Light Level';
+	return t.charAt(0).toUpperCase() + t.slice(1);
 };
 
 
@@ -60,7 +70,7 @@ export default function Analytics() {
 	const chartData = useMemo(() => {
 		return rows.map((r) => ({
 			...r,
-			name: niceLabel(r.name),
+			name: formatTimeLabel(r.name),
 		}));
 	}, [rows]);
 
@@ -171,25 +181,31 @@ export default function Analytics() {
 					{/* Summary Cards */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
 						{(activeTypes ?? types).map((t) => (
-							<div key={t} className="group relative bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+							<div key={t} className="group relative bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 min-w-[180px]">
 								<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
 								<div className="flex items-center justify-between mb-2">
-									<span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{t}</span>
+									<span className="text-[10px] font-black uppercase tracking-[0.1em] text-gray-500 dark:text-gray-400">{formatSensorName(t)}</span>
 									<Activity className="w-4 h-4 text-emerald-500 opacity-50 group-hover:opacity-100 transition-opacity" />
 								</div>
 								<div className="flex items-baseline gap-2 mb-3">
-									<span className="text-3xl font-black text-gray-900 dark:text-white">{summary[t]?.avg ?? '—'}</span>
-									<span className="text-xs font-medium text-gray-400 uppercase">Avg</span>
+									<span className="text-3xl font-black text-gray-900 dark:text-white">
+										{typeof summary[t]?.avg === 'number' ? summary[t].avg.toFixed(1) : '—'}
+									</span>
+									<span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Avg</span>
 								</div>
-								<div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
-									<div className="flex flex-col">
-										<span className="text-[10px] uppercase font-bold text-gray-400">Min</span>
-										<span className="font-bold text-gray-700 dark:text-gray-300">{summary[t]?.min ?? '-'}</span>
+								<div className="flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
+									<div className="flex-1 flex flex-col">
+										<span className="text-[8px] uppercase font-black text-gray-400 tracking-tighter">Min</span>
+										<span className="text-xs font-black text-gray-900 dark:text-gray-300">
+											{typeof summary[t]?.min === 'number' ? summary[t].min.toFixed(1) : '-'}
+										</span>
 									</div>
-									<div className="w-px h-6 bg-gray-200 dark:bg-gray-700" />
-									<div className="flex flex-col text-right">
-										<span className="text-[10px] uppercase font-bold text-gray-400">Max</span>
-										<span className="font-bold text-gray-700 dark:text-gray-300">{summary[t]?.max ?? '-'}</span>
+									<div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
+									<div className="flex-1 flex flex-col text-right">
+										<span className="text-[8px] uppercase font-black text-gray-400 tracking-tighter">Max</span>
+										<span className="text-xs font-black text-gray-900 dark:text-gray-300">
+											{typeof summary[t]?.max === 'number' ? summary[t].max.toFixed(1) : '-'}
+										</span>
 									</div>
 								</div>
 							</div>

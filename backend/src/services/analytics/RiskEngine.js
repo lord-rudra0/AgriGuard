@@ -2,9 +2,9 @@
 import { getStageConfig } from './StageEngine.js'; // Item 12: Centralized Config
 import { normalizeRisk, calculateConfidence } from './AnalyticsCore.js'; // Item 2: Normalization, Item 7: Confidence
 
-export const calculateRiskProfile = (sensorData, userId) => {
+export const calculateRiskProfile = async (sensorData, stageId = 'fruiting') => {
     // 1. Get Configuration (Stage-Aware)
-    const stage = getStageConfig('fruiting'); // In future, fetch actual stage for userId
+    const stage = await getStageConfig(stageId); // Item 12: Centralized Config
     const { ideal } = stage;
 
     // 2. Aggregate Data (Latest snapshot strategy for Real-time Risk)

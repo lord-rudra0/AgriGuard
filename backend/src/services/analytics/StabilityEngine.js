@@ -1,8 +1,8 @@
 import { getStageConfig } from './StageEngine.js';
 import { calculateSlope } from './AnalyticsCore.js';
 
-export const calculateStabilityProfile = (aggregatedData) => {
-    const stage = getStageConfig('fruiting');
+export const calculateStabilityProfile = async (aggregatedData, stageId = 'fruiting') => {
+    const stage = await getStageConfig(stageId);
     const stabilityProfiles = {};
     const sensors = ['temperature', 'humidity', 'co2'];
 
@@ -78,6 +78,11 @@ export const calculateStabilityProfile = (aggregatedData) => {
         const score = Math.round((stableCount / sensorData.length) * 100);
         const fluctuation = sensorData.length > 1 ? (diffSum / (sensorData.length - 1)).toFixed(2) : 0;
 
+        // Calculate Standard Deviation
+        const avg = sensorData.reduce((sum, d) => sum + d.avgValue, 0) / sensorData.length;
+        const squareDiffs = sensorData.map(d => Math.pow(d.avgValue - avg, 2));
+        const stdDev = Math.sqrt(squareDiffs.reduce((sum, sq) => sum + sq, 0) / sensorData.length);
+
         stabilityProfiles[type] = {
             score,
             stablePercent: score,
@@ -90,7 +95,7 @@ export const calculateStabilityProfile = (aggregatedData) => {
             spikeCount,
             drift,
             driftStatus,
-            stdDevIdeal: 0 // Placeholder
+            stdDevIdeal: Number(stdDev.toFixed(2))
         };
     });
 
