@@ -5,6 +5,7 @@ import SavedViews from '../components/analytics/SavedViews';
 import ReportScheduler from '../components/analytics/ReportScheduler';
 import StabilityAnalytics from '../components/analytics/StabilityAnalytics';
 import DeviationAnalytics from '../components/analytics/DeviationAnalytics';
+import RiskAnalytics from '../components/analytics/RiskAnalytics';
 import {
 	ResponsiveContainer,
 	LineChart,
@@ -19,7 +20,7 @@ import {
 	AreaChart,
 	Area,
 } from 'recharts';
-import { BarChart3, Calendar, RefreshCw, TrendingUp, Activity, Filter, Download, Trash2 } from 'lucide-react';
+import { BarChart3, Calendar, RefreshCw, TrendingUp, Activity, Filter, Download, Trash2, ShieldAlert } from 'lucide-react';
 
 const TIMEFRAMES = [
 	{ key: '1h', label: '1H' },
@@ -429,6 +430,19 @@ export default function Analytics() {
 							chartData={chartData}
 							timeframe={timeframe}
 						/>
+					</div>
+
+					{/* Risk & Threat Section */}
+					<div className="flex flex-col gap-6">
+						<div className="flex items-center justify-between">
+							<h2 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-3">
+								<div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
+									<ShieldAlert className="w-5 h-5 text-rose-500" />
+								</div>
+								Risk & Threat Assessment
+							</h2>
+						</div>
+						<RiskAnalytics chartData={chartData} />
 					</div>
 
 					{/* Charts Row */}
