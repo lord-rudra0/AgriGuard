@@ -8,7 +8,7 @@ export default function SavedViews({ currentTimeframe = '24h', currentTypes = []
   const [loading, setLoading] = useState(false);
 
   const fetchViews = async () => {
-    const res = await axios.get('/api/analytics/views');
+    const res = await axios.get('/api/analytics-views');
     setViews(res.data?.views || []);
   };
 
@@ -20,7 +20,7 @@ export default function SavedViews({ currentTimeframe = '24h', currentTypes = []
     if (!name.trim()) return;
     setLoading(true);
     try {
-      await axios.post('/api/analytics/views', { name: name.trim(), timeframe: currentTimeframe, types: currentTypes });
+      await axios.post('/api/analytics-views', { name: name.trim(), timeframe: currentTimeframe, types: currentTypes });
       setName('');
       await fetchViews();
     } finally {
@@ -29,7 +29,7 @@ export default function SavedViews({ currentTimeframe = '24h', currentTypes = []
   };
 
   const removeView = async (id) => {
-    await axios.delete(`/api/analytics/views/${id}`);
+    await axios.delete(`/api/analytics-views/${id}`);
     await fetchViews();
   };
 

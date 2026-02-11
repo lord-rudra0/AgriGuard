@@ -4,6 +4,7 @@ import ExportButtons from '../components/analytics/ExportButtons';
 import SavedViews from '../components/analytics/SavedViews';
 import ReportScheduler from '../components/analytics/ReportScheduler';
 import StabilityAnalytics from '../components/analytics/StabilityAnalytics';
+import DeviationAnalytics from '../components/analytics/DeviationAnalytics';
 import {
 	ResponsiveContainer,
 	LineChart,
@@ -33,6 +34,21 @@ const THRESHOLDS = {
 	co2: { min: 300, max: 600, ideal: 450 },
 	light: { min: 200, max: 800, ideal: 500 },
 	soilMoisture: { min: 30, max: 70, ideal: 50 }
+};
+
+// Helper: Calculate linear regression slope
+const calculateTrend = (values) => {
+	if (values.length < 2) return 0;
+	const n = values.length;
+	let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+	for (let i = 0; i < n; i++) {
+		sumX += i;
+		sumY += values[i];
+		sumXY += i * values[i];
+		sumXX += i * i;
+	}
+	const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+	return slope;
 };
 
 const niceLabel = (t) => {
@@ -92,7 +108,9 @@ export default function Analytics() {
 		const typeCounts = {};
 
 		// Sort rows by date/hour to calculate consecutive periods correctly
-		const sortedRows = [...rows].sort((a, b) => {
+		// Sort rows by date/hour to calculate consecutive periods correctly
+		const sortedRows = [...(rows || [])].sort((a, b) => {
+			if (!a?._id || !b?._id) return 0;
 			const timeA = new Date(a._id.date).getTime() + (a._id.hour * 3600000);
 			const timeB = new Date(b._id.date).getTime() + (b._id.hour * 3600000);
 			return timeA - timeB;
@@ -134,17 +152,24 @@ export default function Analytics() {
 			const threshold = THRESHOLDS[t] || { min: 0, max: 100, ideal: 50 };
 			const sequence = sensorSequences[t] || [];
 
+			let totalDiff = 0;
+			let totalDev = 0;
+			let maxDelta = 0;
+			let spikeCount = 0;
 			let stableHours = 0;
 			let currentStableStreak = 0;
 			let maxStableStreak = 0;
 			let currentUnstableStreak = 0;
 			let maxUnstableStreak = 0;
-			let totalDiff = 0;
+
+			// Define spike thresholds (e.g. >10% jump)
+			const spikeThreshold = (threshold.max - threshold.min) * 0.1;
 
 			for (let i = 0; i < sequence.length; i++) {
 				const val = sequence[i];
 				const isStable = val >= threshold.min && val <= threshold.max;
 
+				// Stability Logic
 				if (isStable) {
 					stableHours++;
 					currentStableStreak++;
@@ -156,12 +181,24 @@ export default function Analytics() {
 					currentStableStreak = 0;
 				}
 
+				// Deviation Logic
+				totalDev += Math.abs(val - threshold.ideal);
+
+				// Rate of Change / Spike Logic
 				if (i > 0) {
-					totalDiff += Math.abs(val - sequence[i - 1]);
+					const delta = Math.abs(val - sequence[i - 1]);
+					totalDiff += delta;
+					maxDelta = Math.max(maxDelta, delta);
+					if (delta > spikeThreshold) spikeCount++;
 				}
 			}
 			maxStableStreak = Math.max(maxStableStreak, currentStableStreak);
 			maxUnstableStreak = Math.max(maxUnstableStreak, currentUnstableStreak);
+
+			const slope = calculateTrend(sequence);
+			let driftStatus = 'Stable';
+			if (slope > 0.1) driftStatus = 'Drifting Up';
+			if (slope < -0.1) driftStatus = 'Drifting Down';
 
 			summary[t] = {
 				min: isFinite(s.min) ? Number(s.min.toFixed(2)) : null,
@@ -176,7 +213,13 @@ export default function Analytics() {
 				maxUnstable: maxUnstableStreak,
 				stablePercent: sequence.length ? Math.round((stableHours / sequence.length) * 100) : 0,
 				unstablePercent: sequence.length ? 100 - Math.round((stableHours / sequence.length) * 100) : 0,
-				stdDevIdeal: sequence.length ? Number(Math.sqrt(sequence.reduce((acc, val) => acc + Math.pow(val - threshold.ideal, 2), 0) / sequence.length).toFixed(2)) : 0
+				stdDevIdeal: sequence.length ? Number(Math.sqrt(sequence.reduce((acc, val) => acc + Math.pow(val - threshold.ideal, 2), 0) / sequence.length).toFixed(2)) : 0,
+				// New Deviation Metrics
+				avgDev: sequence.length ? Number((totalDev / sequence.length).toFixed(2)) : 0,
+				drift: Number(slope.toFixed(3)),
+				driftStatus,
+				maxDelta: Number(maxDelta.toFixed(2)),
+				spikeCount
 			};
 		}
 
@@ -368,6 +411,24 @@ export default function Analytics() {
 							</div>
 						</div>
 						<StabilityAnalytics data={stabilityData} activeTypes={activeTypes} />
+					</div>
+
+					{/* Deviation & Drift Section */}
+					<div className="flex flex-col gap-6">
+						<div className="flex items-center justify-between">
+							<h2 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-3">
+								<div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+									<TrendingUp className="w-5 h-5 text-indigo-500" />
+								</div>
+								Drift & Deviation Analysis
+							</h2>
+						</div>
+						<DeviationAnalytics
+							data={stabilityData}
+							activeTypes={activeTypes}
+							chartData={chartData}
+							timeframe={timeframe}
+						/>
 					</div>
 
 					{/* Charts Row */}
