@@ -7,6 +7,7 @@ import StabilityAnalytics from '../components/analytics/StabilityAnalytics';
 import DeviationAnalytics from '../components/analytics/DeviationAnalytics';
 import RiskAnalytics from '../components/analytics/RiskAnalytics';
 import ActionAnalytics from '../components/analytics/ActionAnalytics';
+import PredictiveAnalytics from '../components/analytics/PredictiveAnalytics';
 import {
 	ResponsiveContainer,
 	LineChart,
@@ -374,6 +375,11 @@ export default function Analytics() {
 					{/* Action & Decision Section - Moved to Top */}
 					<div className="flex flex-col gap-6">
 						<ActionAnalytics chartData={chartData} />
+					</div>
+
+					{/* Predictive Analytics Section */}
+					<div className="flex flex-col gap-6">
+						<PredictiveAnalytics chartData={chartData} />
 					</div>
 
 					{/* Summary Cards */}

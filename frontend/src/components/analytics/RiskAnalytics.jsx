@@ -8,9 +8,34 @@ import {
     PolarRadiusAxis,
     Tooltip
 } from 'recharts';
-import { ShieldCheck, AlertTriangle, CloudRain, Wind, ThermometerSun, Droplets } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, CloudRain, Wind, ThermometerSun, Droplets, Sparkles, Loader2, MessageSquarePlus } from 'lucide-react';
+import axios from 'axios';
 
 const RiskAnalytics = ({ chartData = [] }) => {
+    const [loadingAnalysis, setLoadingAnalysis] = React.useState({});
+    const [aiAnalysis, setAiAnalysis] = React.useState({});
+
+    const handleAskAI = async (risk, e) => {
+        e.stopPropagation();
+        if (aiAnalysis[risk.subject]) return;
+
+        setLoadingAnalysis(prev => ({ ...prev, [risk.subject]: true }));
+        try {
+            const prompt = `I have a calculated ${risk.subject} risk score of ${risk.A}%. The threat level is ${risk.A < 30 ? 'Low' : risk.A < 70 ? 'Moderate' : 'Critical'}. What are the specific environmental drivers for this risk and how can I mitigate it?`;
+            const token = localStorage.getItem('token');
+            const res = await axios.post('/api/chat/ai', { message: prompt }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const text = res.data?.message || res.data?.reply || res.data?.text || 'Could not generate advice.';
+            setAiAnalysis(prev => ({ ...prev, [risk.subject]: text }));
+        } catch (err) {
+            console.error(err);
+            setAiAnalysis(prev => ({ ...prev, [risk.subject]: 'Failed to contact AI.' }));
+        } finally {
+            setLoadingAnalysis(prev => ({ ...prev, [risk.subject]: false }));
+        }
+    };
+
     const riskScores = useMemo(() => {
         if (!chartData || chartData.length === 0) return null;
 
@@ -76,8 +101,8 @@ const RiskAnalytics = ({ chartData = [] }) => {
             <div className="flex items-center justify-between mb-2 relative z-10">
                 <div className="flex items-center gap-3">
                     <div className={`p-2.5 rounded-xl ${threatLevel === 'Critical' ? 'bg-rose-500/10 text-rose-500' :
-                            threatLevel === 'Moderate' ? 'bg-yellow-500/10 text-yellow-500' :
-                                'bg-emerald-500/10 text-emerald-500'
+                        threatLevel === 'Moderate' ? 'bg-yellow-500/10 text-yellow-500' :
+                            'bg-emerald-500/10 text-emerald-500'
                         }`}>
                         <ShieldCheck className="w-5 h-5" />
                     </div>
@@ -136,12 +161,59 @@ const RiskAnalytics = ({ chartData = [] }) => {
                                 ></div>
                             </div>
                             <span className="text-xs font-bold text-gray-900 dark:text-white mt-1">{risk.A}%</span>
+
+                            {/* Actions */}
+                            < div className="flex gap-2 mt-2 w-full justify-center" >
+                                <button
+                                    onClick={(e) => handleAskAI(risk, e)}
+                                    disabled={loadingAnalysis[risk.subject]}
+                                    className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-emerald-500 hover:text-white transition-all text-gray-400"
+                                    title="Get AI Risk Insights"
+                                >
+                                    {loadingAnalysis[risk.subject] ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.dispatchEvent(new CustomEvent('open-chatbot', {
+                                            detail: {
+                                                prompt: `My ${risk.subject} is at ${risk.A}% (${risk.A < 30 ? 'Low' : risk.A < 70 ? 'Moderate' : 'Critical'}). What steps should I take to reduce this?`
+                                            }
+                                        }));
+                                    }}
+                                    className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-indigo-500 hover:text-white transition-all text-gray-400"
+                                    title="Open Chat"
+                                >
+                                    <MessageSquarePlus className="w-3 h-3" />
+                                </button>
+                            </div>
+
+                            {/* Inline AI Analysis */}
+                            {(aiAnalysis[risk.subject] || loadingAnalysis[risk.subject]) && (
+                                <div className="mt-2 text-left w-full bg-white dark:bg-gray-800/50 p-2 rounded-lg border border-gray-100 dark:border-white/5 animate-in fade-in slide-in-from-top-1">
+                                    <div className="flex items-center gap-1 mb-1">
+                                        <Sparkles className="w-3 h-3 text-emerald-500" />
+                                        <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">AI Risk Analysis</span>
+                                    </div>
+                                    {loadingAnalysis[risk.subject] ? (
+                                        <div className="space-y-1">
+                                            <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                            <div className="h-2 w-2/3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                        </div>
+                                    ) : (
+                                        <p className="text-[10px] text-gray-600 dark:text-gray-300 leading-snug">
+                                            {aiAnalysis[risk.subject]}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
                         </div>
                     ))}
                 </div>
-            </div>
+            </div >
 
-        </div>
+        </div >
     );
 };
 
