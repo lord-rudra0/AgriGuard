@@ -15,6 +15,18 @@ const ChatBot = () => {
     if (endRef.current) endRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open]);
 
+  // Listen for external open commands
+  useEffect(() => {
+    const handleOpen = (e) => {
+      setOpen(true);
+      if (e.detail?.prompt) {
+        setInput(e.detail.prompt);
+      }
+    };
+    window.addEventListener('open-chatbot', handleOpen);
+    return () => window.removeEventListener('open-chatbot', handleOpen);
+  }, []);
+
   const sendMessage = async () => {
     const trimmed = input.trim();
     if (!trimmed || loading) return;

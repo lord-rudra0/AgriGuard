@@ -7,8 +7,11 @@ import ChatListItem from '../components/chat/ChatListItem';
 import MessageBubble from '../components/chat/MessageBubble';
 import Composer from '../components/chat/Composer';
 
+import { useLocation } from 'react-router-dom';
+
 const Chat = () => {
   const { socket, presence, joinChat, leaveChat, setTyping } = useSocket();
+  const location = useLocation();
   const { user } = useAuth();
   const [chats, setChats] = useState([]);
   const [showNewChat, setShowNewChat] = useState(false);
@@ -166,6 +169,23 @@ const Chat = () => {
     }
     setInput(val);
   };
+
+  // Handle auto-prompt from other pages (e.g. Analytics)
+  useEffect(() => {
+    if (location.state?.askAi && chats.length > 0 && !selectedChat) {
+      // Auto-select the first chat if none selected
+      setSelectedChat(chats[0]);
+    }
+  }, [location.state, chats]);
+
+  useEffect(() => {
+    if (location.state?.askAi && location.state?.autoPrompt && selectedChat) {
+      setAskAIActive(true);
+      setInput(location.state.autoPrompt);
+      // Optional: clear state so it doesn't re-trigger
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, selectedChat]);
 
   const handleUpload = (file) => {
     if (!file || !file.type?.startsWith('image/')) {

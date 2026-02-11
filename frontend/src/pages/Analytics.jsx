@@ -6,6 +6,7 @@ import ReportScheduler from '../components/analytics/ReportScheduler';
 import StabilityAnalytics from '../components/analytics/StabilityAnalytics';
 import DeviationAnalytics from '../components/analytics/DeviationAnalytics';
 import RiskAnalytics from '../components/analytics/RiskAnalytics';
+import ActionAnalytics from '../components/analytics/ActionAnalytics';
 import {
 	ResponsiveContainer,
 	LineChart,
@@ -443,6 +444,11 @@ export default function Analytics() {
 							</h2>
 						</div>
 						<RiskAnalytics chartData={chartData} />
+					</div>
+
+					{/* Action & Decision Section */}
+					<div className="flex flex-col gap-6">
+						<ActionAnalytics chartData={chartData} />
 					</div>
 
 					{/* Trends & Distribution charts removed as per request */}
