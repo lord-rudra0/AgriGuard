@@ -126,7 +126,9 @@ export default function Landing() {
             <div className="absolute -inset-4 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 blur-3xl opacity-50 rounded-[40px]" />
             <div className="relative rounded-[32px] overflow-hidden border border-white/20 dark:border-gray-800 shadow-2xl shadow-indigo-500/10">
               <img
-                src="/images/landing/hero_mushroom.png"
+                // src="/images/landing/hero_mushroom.png"
+                // src="https://ibb.co/LXGtfJN3"
+                src="https://i.ibb.co/LXGtfJN3/hero.jpg"
                 alt="AgriGuard Mushroom Lab AI"
                 className="w-full aspect-[4/3] object-cover"
               />
