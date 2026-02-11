@@ -10,6 +10,7 @@ import ActionAnalytics from '../components/analytics/ActionAnalytics';
 import PredictiveAnalytics from '../components/analytics/PredictiveAnalytics';
 import GrowthAnalytics from '../components/analytics/GrowthAnalytics';
 import EfficiencyAnalytics from '../components/analytics/EfficiencyAnalytics';
+import SystemHealthAnalytics from '../components/analytics/SystemHealthAnalytics';
 import {
 	ResponsiveContainer,
 	LineChart,
@@ -387,6 +388,11 @@ export default function Analytics() {
 					{/* Efficiency & Optimization - Cost Saving */}
 					<div className="flex flex-col gap-6">
 						<EfficiencyAnalytics chartData={chartData} />
+					</div>
+
+					{/* System Intelligence - Reliability & Trust */}
+					<div className="flex flex-col gap-6">
+						<SystemHealthAnalytics chartData={chartData} />
 					</div>
 
 					{/* Predictive Analytics Section */}
