@@ -64,15 +64,13 @@ export const calculatePredictiveForecasts = (chartData) => {
             }
 
             if (predictedEvent && timeToEvent < 24) {
+                const predictedValue = Number((currentVal + (slope * 24)).toFixed(2));
                 results.push({
-                    id: key,
-                    metric: threshold.label,
-                    current: Number(currentVal.toFixed(2)),
+                    type: threshold.label,
+                    currentValue: Number(currentVal.toFixed(2)),
+                    predictedValue: predictedValue,
                     unit: threshold.unit,
-                    slope: Number(slope.toFixed(3)),
-                    event: predictedEvent,
-                    hours: Number(timeToEvent.toFixed(1)),
-                    boundary: targetBoundary,
+                    insight: `${predictedEvent} expected in ${timeToEvent.toFixed(1)}h. Trend: ${slope > 0 ? '+' : ''}${slope.toFixed(2)}${threshold.unit}/h.`,
                     severity: timeToEvent < 4 ? 'critical' : timeToEvent < 12 ? 'warning' : 'info'
                 });
             }

@@ -31,6 +31,25 @@ export const getFullAnalytics = async (sensorData, historyData, userId, stageId 
     const health = calculateSystemHealthProfile(historyData);
     const growth = calculateGrowthProfile(historyData, stageId);
 
+    // Calculate Summary (Min, Max, Avg) for History
+    const summary = {};
+    const sensorTypes = [...new Set(historyData.map(d => d._id?.sensorType).filter(Boolean))];
+
+    sensorTypes.forEach(type => {
+        const values = historyData
+            .filter(d => d._id?.sensorType === type)
+            .map(d => d.avgValue)
+            .filter(v => typeof v === 'number');
+
+        if (values.length > 0) {
+            summary[type] = {
+                min: Math.min(...values),
+                max: Math.max(...values),
+                avg: Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10
+            };
+        }
+    });
+
     // Improvement #7: Calculate Global Confidence
     const globalConfidence = Math.round(
         (risk.confidence * 0.4) + (health.systemConfidence * 0.6)
@@ -39,6 +58,7 @@ export const getFullAnalytics = async (sensorData, historyData, userId, stageId 
     return {
         timestamp: new Date(),
         globalConfidence,
+        summary,
         risk,
         recommendations,
         predictions,

@@ -73,15 +73,19 @@ export const calculateRiskProfile = (sensorData, userId) => {
     else if (finalRiskScore > 30) { level = 'Moderate'; color = 'text-amber-500'; }
 
     return {
-        score: finalRiskScore,
+        overallScore: finalRiskScore,
         level,
         levelColor: color,
         confidence,
-        breakdown: {
-            temperature: Math.round(tempRiskRaw),
-            humidity: Math.round(humRiskRaw),
-            co2: Math.round(co2RiskRaw)
-        },
+        factors: [
+            { name: 'Temperature', value: Math.round(tempRiskRaw), color: '#fbbf24' },
+            { name: 'Humidity', value: Math.round(humRiskRaw), color: '#38bdf8' },
+            { name: 'CO2', value: Math.round(co2RiskRaw), color: '#818cf8' }
+        ],
+        signals: [
+            { name: 'Heat Stress', value: (currentTemp > 25 && currentHum > 70) ? 'High' : 'Normal', type: 'thermal' },
+            { name: 'Mold Risk', value: (currentTemp > 22 && currentHum > 85) ? 'High' : 'Low', type: 'purity' }
+        ],
         meta: {
             stage: stage.label,
             idealTemp: ideal.temperature.ideal

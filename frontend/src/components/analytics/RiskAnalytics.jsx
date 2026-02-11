@@ -104,7 +104,7 @@ const RiskAnalytics = ({ riskProfile }) => {
                 {/* Radar Chart */}
                 <div className="h-64 w-full relative z-10">
                     <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={riskFactors.map(f => ({ subject: f.name, A: f.value }))}>
+                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={(riskFactors || []).map(f => ({ subject: f.name, A: f.value }))}>
                             <PolarGrid stroke="#333" strokeOpacity={0.2} />
                             <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 10, fontWeight: 'bold' }} />
                             <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />

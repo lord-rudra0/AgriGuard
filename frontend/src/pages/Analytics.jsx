@@ -34,13 +34,7 @@ const TIMEFRAMES = [
 	{ key: '30d', label: '30D' },
 ];
 
-const THRESHOLDS = {
-	temperature: { min: 18, max: 28, ideal: 23 },
-	humidity: { min: 40, max: 80, ideal: 60 },
-	co2: { min: 300, max: 600, ideal: 450 },
-	light: { min: 200, max: 800, ideal: 500 },
-	soilMoisture: { min: 30, max: 70, ideal: 50 }
-};
+
 
 const niceLabel = (t) => {
 	if (!t) return '';
@@ -80,10 +74,11 @@ export default function Analytics() {
 		setLoading(true);
 		setError('');
 		axios
-			.get('/api/sensors/analytics', { params: { timeframe } })
+			.get('/api/sensors/analytics/full', { params: { timeframe } })
 			.then((res) => {
 				if (!active) return;
-				setRows(res.data?.analytics || []);
+				setFullData(res.data?.data || null);
+				setRows(res.data?.history || []);
 			})
 			.catch((e) => {
 				if (!active) return;
@@ -101,24 +96,8 @@ export default function Analytics() {
 		}));
 	}, [rows]);
 
-	const types = useMemo(() => {
-		if (chartData.length === 0) return [];
-		return Object.keys(chartData[0]).filter((k) => k !== 'name' && k !== 'timestamp');
-	}, [chartData]);
-
-	const summary = useMemo(() => {
-		if (chartData.length === 0) return {};
-		const result = {};
-		types.forEach((type) => {
-			const values = chartData.map((d) => d[type]).filter((v) => v !== undefined);
-			result[type] = {
-				min: Math.min(...values),
-				max: Math.max(...values),
-				avg: Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10,
-			};
-		});
-		return result;
-	}, [chartData, types]);
+	const summary = fullData?.summary || {};
+	const types = Object.keys(summary);
 
 	if (loading && !fullData) {
 		return (
