@@ -47,8 +47,8 @@ const STAGES = {
     }
 };
 
-const GrowthAnalytics = ({ chartData = [] }) => {
-    const [currentStage, setCurrentStage] = useState('fruiting'); // Default to fruiting for demo
+const GrowthAnalytics = ({ growthProfile }) => {
+    const [currentStage, setCurrentStage] = useState('fruiting'); // Keeping state for visual toggle, but data is from backend
     const [loadingAnalysis, setLoadingAnalysis] = useState(false);
     const [aiAnalysis, setAiAnalysis] = useState('');
 
@@ -81,62 +81,8 @@ const GrowthAnalytics = ({ chartData = [] }) => {
         }
     };
 
-
-    // --- Core Logic ---
-    const metrics = useMemo(() => {
-        if (!chartData || chartData.length === 0) return null;
-
-        let totalTime = chartData.length;
-        let idealTime = 0;
-        let stressTime = 0;
-
-        const details = {
-            temperature: { ideal: 0, stress: 0, compliance: 0 },
-            humidity: { ideal: 0, stress: 0, compliance: 0 },
-            co2: { ideal: 0, stress: 0, compliance: 0 }
-        };
-
-        chartData.forEach(d => {
-            let isPointIdeal = true;
-            let isPointStress = false;
-
-            // Check each metric against Stage-Specific Thresholds
-            ['temperature', 'humidity', 'co2'].forEach(key => {
-                const val = d[key] || 0;
-                const range = stageConfig.ideal[key];
-
-                if (val >= range.min && val <= range.max) {
-                    details[key].ideal++;
-                } else {
-                    isPointIdeal = false;
-                    // "Stress" is defined as >10% deviation from min/max
-                    if (val < range.min * 0.9 || val > range.max * 1.1) {
-                        details[key].stress++;
-                        isPointStress = true;
-                    }
-                }
-            });
-
-            if (isPointIdeal) idealTime++;
-            if (isPointStress) stressTime++;
-        });
-
-        // Calculate Percentages
-        ['temperature', 'humidity', 'co2'].forEach(key => {
-            details[key].compliance = Math.round((details[key].ideal / totalTime) * 100);
-        });
-
-        const complianceScore = Math.round((idealTime / totalTime) * 100);
-        const stressScore = Math.round((stressTime / totalTime) * 100);
-
-        return {
-            complianceScore,
-            stressScore,
-            stressHours: stressTime, // Assuming 1 point = 1 hour for simplicity, or scale appropriately
-            details
-        };
-
-    }, [chartData, currentStage]);
+    if (!growthProfile) return null;
+    const metrics = growthProfile;
 
     if (!metrics) return null;
 
@@ -161,8 +107,8 @@ const GrowthAnalytics = ({ chartData = [] }) => {
                                 setAiAnalysis(''); // Clear old analysis
                             }}
                             className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${currentStage === stage.id
-                                    ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white'
-                                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                                ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white'
+                                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                                 }`}
                         >
                             {stage.label.split(' ')[0]} {/* Show short name */}

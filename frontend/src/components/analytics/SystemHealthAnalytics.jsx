@@ -11,89 +11,9 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
-const SystemHealthAnalytics = ({ chartData = [] }) => {
-
-    const systemHealth = useMemo(() => {
-        if (!chartData || chartData.length === 0) return null;
-
-        const sensors = {
-            temperature: { reliability: 100, quality: 100, trust: 100, gaps: 0, noise: 0, label: 'Thermometer' },
-            humidity: { reliability: 100, quality: 100, trust: 100, gaps: 0, noise: 0, label: 'Hygrometer' },
-            co2: { reliability: 100, quality: 100, trust: 100, gaps: 0, noise: 0, label: 'CO2 Sensor' }
-        };
-
-        const totalPoints = chartData.length;
-        // Assuming 1 point per hour expected. 
-        // We can check time diffs to find gaps.
-
-        let totalGaps = 0;
-        let totalNoise = 0;
-
-        for (let i = 1; i < chartData.length; i++) {
-            const curr = chartData[i];
-            const prev = chartData[i - 1];
-
-            // 1. Reliability (Gap Detection)
-            // If time diff > 1.5 hours (approx), it's a gap
-            const currTime = new Date(curr.name).getTime();
-            const prevTime = new Date(prev.name).getTime();
-            const diffHours = (currTime - prevTime) / 3600000;
-
-            if (diffHours > 1.5) {
-                const missedPoints = Math.floor(diffHours) - 1;
-                totalGaps += missedPoints;
-                // Penalize all sensors for system downtime
-                Object.keys(sensors).forEach(k => sensors[k].gaps += missedPoints);
-            }
-
-            // 2. Data Quality (Noise/Impossible Jumps)
-            ['temperature', 'humidity', 'co2'].forEach(key => {
-                const val = curr[key];
-                const prevVal = prev[key];
-                if (val === undefined || prevVal === undefined) return;
-
-                // Physics check: Impossible jumps
-                // Temp > 10C jump in 1 hr
-                if (key === 'temperature' && Math.abs(val - prevVal) > 10) sensors[key].noise++;
-                // Hum > 40% jump
-                if (key === 'humidity' && Math.abs(val - prevVal) > 40) sensors[key].noise++;
-                // CO2 > 2000ppm jump
-                if (key === 'co2' && Math.abs(val - prevVal) > 2000) sensors[key].noise++;
-            });
-        }
-
-        // Calculate Final Scores
-        let systemSumTrust = 0;
-
-        Object.keys(sensors).forEach(key => {
-            const s = sensors[key];
-
-            // Reliability: Uptime %
-            const expectedTotal = totalPoints + s.gaps; // Points we SHOULD have had
-            s.reliability = Math.max(0, Math.round(((totalPoints) / expectedTotal) * 100));
-
-            // Quality: Clean %
-            s.quality = Math.max(0, Math.round(((totalPoints - s.noise) / totalPoints) * 100));
-
-            // Trust Score (Weighted)
-            // 60% Reliability, 40% Quality
-            s.trust = Math.round((s.reliability * 0.6) + (s.quality * 0.4));
-
-            systemSumTrust += s.trust;
-        });
-
-        const systemConfidence = Math.round(systemSumTrust / 3);
-
-        return {
-            sensors,
-            systemConfidence,
-            totalGaps,
-            totalPoints
-        };
-
-    }, [chartData]);
-
-    if (!systemHealth) return null;
+const SystemHealthAnalytics = ({ healthProfile }) => {
+    if (!healthProfile) return null;
+    const systemHealth = healthProfile;
 
     const getTrustColor = (score) => {
         if (score >= 90) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
@@ -121,8 +41,8 @@ const SystemHealthAnalytics = ({ chartData = [] }) => {
                 </h3>
 
                 <div className={`px-4 py-1.5 rounded-full border text-xs font-black uppercase tracking-wider flex items-center gap-2 ${systemHealth.systemConfidence >= 90
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                        : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                    : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
                     }`}>
                     <Activity className="w-4 h-4" />
                     System Confidence: {systemHealth.systemConfidence}%

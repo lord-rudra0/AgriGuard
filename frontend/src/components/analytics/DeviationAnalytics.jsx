@@ -11,18 +11,18 @@ import {
     ReferenceLine
 } from 'recharts';
 
-const DeviationAnalytics = ({ data, activeTypes, chartData, timeframe }) => {
-    if (!data || Object.keys(data).length === 0) return null;
+const DeviationAnalytics = ({ stabilityProfiles, chartData, timeframe }) => {
+    if (!stabilityProfiles || Object.keys(stabilityProfiles).length === 0) return null;
 
     // Safety check for chartData to prevent crashes if undefined
     const safeChartData = Array.isArray(chartData) ? chartData : [];
 
-    const displayTypes = activeTypes || Object.keys(data);
+    const displayTypes = Object.keys(stabilityProfiles);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {displayTypes.map((type) => {
-                const stats = data[type];
+                const stats = stabilityProfiles[type];
                 if (!stats) return null;
 
                 const isDriftingUp = stats.drift > 0.1;

@@ -16,13 +16,22 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-const ActionAnalytics = ({ chartData = [] }) => {
+const ActionAnalytics = ({ recommendations = [] }) => {
     const [loadingAnalysis, setLoadingAnalysis] = React.useState({});
     const [aiAnalysis, setAiAnalysis] = React.useState({});
 
+    // Icon Mapping (Improvement #1)
+    const IconMap = {
+        Wind: <Wind className="w-5 h-5" />,
+        Droplets: <Droplets className="w-5 h-5" />,
+        ThermometerSnowflake: <ThermometerSnowflake className="w-5 h-5" />,
+        CheckCircle2: <CheckCircle2 className="w-5 h-5" />,
+        AlertTriangle: <AlertTriangle className="w-5 h-5" />
+    };
+
     const handleAskAI = async (rec, e) => {
         e.stopPropagation();
-        if (aiAnalysis[rec.id]) return; // Already fetched
+        if (aiAnalysis[rec.id]) return;
 
         setLoadingAnalysis(prev => ({ ...prev, [rec.id]: true }));
         try {
@@ -41,129 +50,7 @@ const ActionAnalytics = ({ chartData = [] }) => {
         }
     };
 
-    const recommendations = useMemo(() => {
-        if (!chartData || chartData.length === 0) return [];
-
-        // Get the most recent data point for immediate status
-        const latest = chartData[chartData.length - 1];
-        const avgTemp = chartData.reduce((acc, d) => acc + (d.temperature || 0), 0) / chartData.length;
-        const avgHum = chartData.reduce((acc, d) => acc + (d.humidity || 0), 0) / chartData.length;
-
-        const actions = [];
-        let idCounter = 1;
-
-        // --- Recommendation Engine Logic ---
-
-        // 1. Heat Stress (High Temp + High Humidity)
-        if (latest.temperature > 25 && latest.humidity > 70) {
-            actions.push({
-                id: idCounter++,
-                type: 'critical',
-                title: 'Heat Stress Detected',
-                action: 'Increase Ventilation Immediately',
-                description: 'Temperature and humidity are critically high. Risk of bacterial blotch.',
-                icon: <Wind className="w-5 h-5" />,
-                impact: {
-                    riskReduction: -25,
-                    stabilityGain: +15,
-                    targetMetric: 'Temp & Humidity'
-                }
-            });
-        }
-
-        // 2. High Humidity / Mold Risk
-        else if (latest.humidity > 85) {
-            actions.push({
-                id: idCounter++,
-                type: 'high',
-                title: 'Mold Risk High',
-                action: 'Dehumidify & Circulate Air',
-                description: 'Humidity > 85% promotes mold growth. Run dehumidifiers.',
-                icon: <Droplets className="w-5 h-5" />,
-                impact: {
-                    riskReduction: -20,
-                    stabilityGain: +10,
-                    targetMetric: 'Humidity'
-                }
-            });
-        }
-
-        // 3. Dryness / Desiccation
-        else if (latest.humidity < 40) {
-            actions.push({
-                id: idCounter++,
-                type: 'high',
-                title: 'Air Too Dry',
-                action: 'Activate Misting System',
-                description: 'Humidity < 40% will dry out mycelium. Increase moisture.',
-                icon: <Droplets className="w-5 h-5" />,
-                impact: {
-                    riskReduction: -15,
-                    stabilityGain: +10,
-                    targetMetric: 'Humidity'
-                }
-            });
-        }
-
-        // 4. Cold Stress
-        if (latest.temperature < 18) {
-            actions.push({
-                id: idCounter++,
-                type: 'medium',
-                title: 'Low Temperature',
-                action: 'Check Heating / Insulation',
-                description: 'Temp < 18°C slows growth significantly.',
-                icon: <ThermometerSnowflake className="w-5 h-5" />,
-                impact: {
-                    riskReduction: -10,
-                    stabilityGain: +5,
-                    targetMetric: 'Temperature'
-                }
-            });
-        }
-
-        // 5. High CO2
-        if (latest.co2 > 800) {
-            actions.push({
-                id: idCounter++,
-                type: 'medium',
-                title: 'Poor Air Quality',
-                action: 'Increase Fresh Air Intake',
-                description: 'CO2 > 800ppm enables spindly growth.',
-                icon: <Wind className="w-5 h-5" />,
-                impact: {
-                    riskReduction: -10,
-                    stabilityGain: +5,
-                    targetMetric: 'CO2'
-                }
-            });
-        }
-
-        // 6. Perfect Conditions (Positive Reinforcement)
-        if (actions.length === 0) {
-            actions.push({
-                id: idCounter++,
-                type: 'success',
-                title: 'Optimal Conditions',
-                action: 'Maintain Current Settings',
-                description: 'All metrics are within the Goldilocks zone. Great job!',
-                icon: <CheckCircle2 className="w-5 h-5" />,
-                impact: {
-                    riskReduction: 0,
-                    stabilityGain: +2,
-                    targetMetric: 'Overall'
-                }
-            });
-        }
-
-        return actions.sort((a, b) => {
-            const priority = { critical: 0, high: 1, medium: 2, success: 3 };
-            return priority[a.type] - priority[b.type];
-        });
-
-    }, [chartData]);
-
-    if (!recommendations.length) return null;
+    if (!recommendations || recommendations.length === 0) return null;
 
     return (
         <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-3xl p-6 shadow-lg relative overflow-hidden">
@@ -208,7 +95,7 @@ const ActionAnalytics = ({ chartData = [] }) => {
                                             rec.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' :
                                                 'bg-indigo-500/10 text-indigo-500'
                                         }`}>
-                                        {rec.icon}
+                                        {IconMap[rec.iconName] || <Zap className="w-5 h-5" />}
                                     </div>
                                     <div>
                                         <h4 className="text-lg font-black text-gray-900 dark:text-white leading-tight mb-1">

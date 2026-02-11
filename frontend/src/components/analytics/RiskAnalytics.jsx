@@ -11,9 +11,18 @@ import {
 import { ShieldCheck, AlertTriangle, CloudRain, Wind, ThermometerSun, Droplets, Sparkles, Loader2, MessageSquarePlus } from 'lucide-react';
 import axios from 'axios';
 
-const RiskAnalytics = ({ chartData = [] }) => {
+const RiskAnalytics = ({ riskProfile }) => {
     const [loadingAnalysis, setLoadingAnalysis] = React.useState({});
     const [aiAnalysis, setAiAnalysis] = React.useState({});
+
+    if (!riskProfile) return null;
+
+    const {
+        overallScore: overallRisk,
+        factors: riskFactors,
+        signals: indicators,
+        confidence
+    } = riskProfile;
 
     const handleAskAI = async (risk, e) => {
         e.stopPropagation();
@@ -36,63 +45,33 @@ const RiskAnalytics = ({ chartData = [] }) => {
         }
     };
 
-    const riskScores = useMemo(() => {
-        if (!chartData || chartData.length === 0) return null;
+    const getRiskVariant = (score) => {
+        if (score < 30) return {
+            color: 'emerald',
+            bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+            text: 'text-emerald-600 dark:text-emerald-400',
+            border: 'border-emerald-200 dark:border-emerald-500/20',
+            label: 'Minimal'
+        };
+        if (score < 60) return {
+            color: 'orange',
+            bg: 'bg-orange-50 dark:bg-orange-500/10',
+            text: 'text-orange-600 dark:text-orange-400',
+            border: 'border-orange-200 dark:border-orange-500/20',
+            label: 'Moderate'
+        };
+        return {
+            color: 'rose',
+            bg: 'bg-rose-50 dark:bg-rose-500/10',
+            text: 'text-rose-600 dark:text-rose-400',
+            border: 'border-rose-200 dark:border-rose-500/20',
+            label: 'CRITICAL'
+        };
+    };
 
-        let maxHeatStress = 0;
-        let maxMold = 0;
-        let maxDryness = 0;
-        let maxAirQuality = 0;
-
-        // Iterate through data to find peak risks
-        chartData.forEach(d => {
-            const temp = d.temperature || 0;
-            const hum = d.humidity || 0;
-            const co2 = d.co2 || 0;
-
-            // 1. Heat Stress (High Temp + High Humidity)
-            // Danger Zone: Temp > 25°C AND Humidity > 70%
-            if (temp > 25 && hum > 70) {
-                const score = Math.min(100, ((temp - 25) * 5) + ((hum - 70) * 2));
-                maxHeatStress = Math.max(maxHeatStress, score);
-            }
-
-            // 2. Mold Risk (Warm + Wet)
-            // Danger Zone: Temp > 22°C AND Humidity > 80%
-            if (temp > 22 && hum > 80) {
-                const score = Math.min(100, ((temp - 22) * 4) + ((hum - 80) * 4));
-                maxMold = Math.max(maxMold, score);
-            }
-
-            // 3. Dryness Risk (Hot + Dry)
-            // Danger Zone: Temp > 25°C AND Humidity < 40%
-            if (temp > 25 && hum < 40) {
-                const score = Math.min(100, ((temp - 25) * 4) + ((40 - hum) * 3));
-                maxDryness = Math.max(maxDryness, score);
-            }
-
-            // 4. Air Quality Risk (High CO2)
-            // Danger Zone: CO2 > 800ppm
-            if (co2 > 800) {
-                const score = Math.min(100, (co2 - 600) / 10);
-                maxAirQuality = Math.max(maxAirQuality, score);
-            }
-        });
-
-        return [
-            { subject: 'Heat Stress', A: Math.round(maxHeatStress), fullMark: 100 },
-            { subject: 'Mold Risk', A: Math.round(maxMold), fullMark: 100 },
-            { subject: 'Dryness', A: Math.round(maxDryness), fullMark: 100 },
-            { subject: 'Poor Air', A: Math.round(maxAirQuality), fullMark: 100 },
-        ];
-    }, [chartData]);
-
-    if (!riskScores) return null;
-
-    // Calculate overall threat level (max of individual risks)
-    const maxRisk = Math.max(...riskScores.map(r => r.A));
-    const threatLevel = maxRisk < 30 ? 'Low' : maxRisk < 70 ? 'Moderate' : 'Critical';
-    const threatColor = maxRisk < 30 ? 'text-emerald-500' : maxRisk < 70 ? 'text-yellow-500' : 'text-rose-500';
+    const variant = getRiskVariant(overallRisk);
+    const threatLevel = variant.label;
+    const threatColor = variant.text;
 
     return (
         <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-3xl p-6 shadow-lg relative overflow-hidden">
@@ -116,8 +95,8 @@ const RiskAnalytics = ({ chartData = [] }) => {
                     </div>
                 </div>
                 <div className="text-right">
-                    <span className={`text-2xl font-black ${threatColor}`}>{maxRisk}%</span>
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Max Threat</p>
+                    <span className={`text-2xl font-black ${threatColor}`}>{overallRisk}%</span>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Overall Risk</p>
                 </div>
             </div>
 
@@ -125,15 +104,15 @@ const RiskAnalytics = ({ chartData = [] }) => {
                 {/* Radar Chart */}
                 <div className="h-64 w-full relative z-10">
                     <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={riskScores}>
+                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={riskFactors.map(f => ({ subject: f.name, A: f.value }))}>
                             <PolarGrid stroke="#333" strokeOpacity={0.2} />
                             <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 10, fontWeight: 'bold' }} />
                             <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                             <Radar
                                 name="Risk Level"
                                 dataKey="A"
-                                stroke={maxRisk > 50 ? "#f43f5e" : "#10b981"}
-                                fill={maxRisk > 50 ? "#f43f5e" : "#10b981"}
+                                stroke={overallRisk > 50 ? "#f43f5e" : "#10b981"}
+                                fill={overallRisk > 50 ? "#f43f5e" : "#10b981"}
                                 fillOpacity={0.4}
                             />
                             <Tooltip
@@ -146,38 +125,39 @@ const RiskAnalytics = ({ chartData = [] }) => {
 
                 {/* Risk Breakdown Cards */}
                 <div className="grid grid-cols-2 gap-3">
-                    {riskScores.map((risk) => (
-                        <div key={risk.subject} className="p-3 bg-gray-50 dark:bg-black/20 rounded-2xl border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center text-center">
-                            {risk.subject === 'Heat Stress' && <ThermometerSun className="w-5 h-5 text-orange-500 mb-2" />}
-                            {risk.subject === 'Mold Risk' && <Droplets className="w-5 h-5 text-blue-500 mb-2" />}
-                            {risk.subject === 'Dryness' && <Wind className="w-5 h-5 text-yellow-500 mb-2" />}
-                            {risk.subject === 'Poor Air' && <CloudRain className="w-5 h-5 text-gray-400 mb-2" />}
+                    {riskFactors.map((risk) => (
+                        <div key={risk.name} className="p-3 bg-gray-50 dark:bg-black/20 rounded-2xl border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center text-center">
+                            {risk.name === 'Heat Stress' && <ThermometerSun className="w-5 h-5 text-orange-500 mb-2" />}
+                            {risk.name === 'Mold Risk' && <Droplets className="w-5 h-5 text-blue-500 mb-2" />}
+                            {risk.name === 'Dryness' && <Wind className="w-5 h-5 text-yellow-500 mb-2" />}
+                            {risk.name === 'Air Quality' && <CloudRain className="w-5 h-5 text-gray-400 mb-2" />}
+                            {risk.name === 'Instability' && <Activity className="w-5 h-5 text-pink-500 mb-2" />}
 
-                            <span className="text-[10px] font-black uppercase tracking-tighter text-gray-500 mb-1">{risk.subject}</span>
+                            <span className="text-[10px] font-black uppercase tracking-tighter text-gray-500 mb-1">{risk.name}</span>
                             <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
                                 <div
-                                    className={`h-full rounded-full ${paramsToColor(risk.A)}`}
-                                    style={{ width: `${risk.A}%` }}
+                                    className={`h-full rounded-full`}
+                                    style={{ width: `${risk.value}%`, backgroundColor: risk.color }}
                                 ></div>
                             </div>
-                            <span className="text-xs font-bold text-gray-900 dark:text-white mt-1">{risk.A}%</span>
+                            <span className="text-xs font-bold text-gray-900 dark:text-white mt-1">{risk.value}%</span>
 
                             {/* Actions */}
                             < div className="flex gap-2 mt-2 w-full justify-center" >
                                 <button
-                                    onClick={(e) => handleAskAI(risk, e)}
-                                    disabled={loadingAnalysis[risk.subject]}
+                                    onClick={(e) => handleAskAI({ subject: risk.name, A: risk.value }, e)}
+                                    disabled={loadingAnalysis[risk.name]}
                                     className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-emerald-500 hover:text-white transition-all text-gray-400"
                                     title="Get AI Risk Insights"
                                 >
-                                    {loadingAnalysis[risk.subject] ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                                    {loadingAnalysis[risk.name] ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                                 </button>
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         window.dispatchEvent(new CustomEvent('open-chatbot', {
                                             detail: {
-                                                prompt: `My ${risk.subject} is at ${risk.A}% (${risk.A < 30 ? 'Low' : risk.A < 70 ? 'Moderate' : 'Critical'}). What steps should I take to reduce this?`
+                                                prompt: `My ${risk.name} is at ${risk.value}% (${risk.value < 30 ? 'Low' : risk.value < 70 ? 'Moderate' : 'Critical'}). What steps should I take to reduce this?`
                                             }
                                         }));
                                     }}
@@ -189,20 +169,20 @@ const RiskAnalytics = ({ chartData = [] }) => {
                             </div>
 
                             {/* Inline AI Analysis */}
-                            {(aiAnalysis[risk.subject] || loadingAnalysis[risk.subject]) && (
+                            {(aiAnalysis[risk.name] || loadingAnalysis[risk.name]) && (
                                 <div className="mt-2 text-left w-full bg-white dark:bg-gray-800/50 p-2 rounded-lg border border-gray-100 dark:border-white/5 animate-in fade-in slide-in-from-top-1">
                                     <div className="flex items-center gap-1 mb-1">
                                         <Sparkles className="w-3 h-3 text-emerald-500" />
                                         <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">AI Risk Analysis</span>
                                     </div>
-                                    {loadingAnalysis[risk.subject] ? (
+                                    {loadingAnalysis[risk.name] ? (
                                         <div className="space-y-1">
                                             <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                                             <div className="h-2 w-2/3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                                         </div>
                                     ) : (
                                         <p className="text-[10px] text-gray-600 dark:text-gray-300 leading-snug">
-                                            {aiAnalysis[risk.subject]}
+                                            {aiAnalysis[risk.name]}
                                         </p>
                                     )}
                                 </div>

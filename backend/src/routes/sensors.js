@@ -3,6 +3,8 @@ import SensorData from '../models/SensorData.js';
 import Alert from '../models/Alert.js';
 import UserSettings from '../models/UserSettings.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { getFullAnalytics } from '../services/analytics/AnalyticsService.js';
+
 
 const router = express.Router();
 
@@ -176,6 +178,75 @@ router.get('/analytics', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get analytics error:', error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// @route   GET /api/sensors/analytics/full
+// @desc    Get precomputed production-grade analytics
+// @access  Private
+router.get('/analytics/full', authenticateToken, async (req, res) => {
+  try {
+    const { timeframe = '24h', stage = 'fruiting' } = req.query;
+
+    let startDate;
+    switch (timeframe) {
+      case '1h': startDate = new Date(Date.now() - 60 * 60 * 1000); break;
+      case '24h': startDate = new Date(Date.now() - 24 * 60 * 60 * 1000); break;
+      case '7d': startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); break;
+      default: startDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    }
+
+    // 1. Get recent raw data (for Risk/Predictive)
+    const recentData = await SensorData.find({
+      'metadata.userId': req.user._id,
+      timestamp: { $gte: new Date(Date.now() - 6 * 60 * 60 * 1000) } // Last 6 hours
+    }).sort({ timestamp: 1 });
+
+    // 2. Get aggregated history (for Stability/Efficiency)
+    // We use the same aggregation pipeline as /analytics but formatted for the engines
+    const historyData = await SensorData.aggregate([
+      {
+        $match: {
+          'metadata.userId': req.user._id,
+          timestamp: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            sensorType: '$metadata.sensorType',
+            hour: { $hour: '$timestamp' },
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } }
+          },
+          avgValue: { $avg: '$value' },
+          timestamp: { $first: '$timestamp' }
+        }
+      },
+      { $sort: { timestamp: 1 } }
+    ]);
+
+    // Format historyData for components (flattened array with keys)
+    // The engines expect an array of objects like { timestamp, temperature, humidity, co2 }
+    const timeBuckets = {};
+    historyData.forEach(d => {
+      const timeKey = d.timestamp.toISOString();
+      if (!timeBuckets[timeKey]) timeBuckets[timeKey] = { name: timeKey };
+      timeBuckets[timeKey][d._id.sensorType] = d.avgValue;
+    });
+    const formattedHistory = Object.values(timeBuckets).sort((a, b) => new Date(a.name) - new Date(b.name));
+
+    // 3. Call Analytics Service
+    const fullAnalytics = await getFullAnalytics(recentData, historyData, req.user._id, stage);
+
+    res.json({
+      success: true,
+      data: fullAnalytics,
+      history: formattedHistory // Still return history for charts
+    });
+
+  } catch (error) {
+    console.error('Full analytics error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 

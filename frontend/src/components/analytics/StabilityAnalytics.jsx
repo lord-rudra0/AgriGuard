@@ -1,8 +1,8 @@
 import React from 'react';
 import { ShieldCheck, AlertTriangle, Zap, Activity, Clock, Target } from 'lucide-react';
 
-const StabilityAnalytics = ({ data, activeTypes }) => {
-    if (!data || Object.keys(data).length === 0) {
+const StabilityAnalytics = ({ stabilityProfiles }) => {
+    if (!stabilityProfiles || Object.keys(stabilityProfiles).length === 0) {
         return (
             <div className="flex flex-col items-center justify-center p-12 bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-dashed border-gray-200 dark:border-gray-800 rounded-3xl">
                 <Activity className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-4 animate-pulse" />
@@ -15,12 +15,12 @@ const StabilityAnalytics = ({ data, activeTypes }) => {
         );
     }
 
-    const displayTypes = activeTypes || Object.keys(data);
+    const displayTypes = Object.keys(stabilityProfiles);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayTypes.map((type) => {
-                const stats = data[type];
+                const stats = stabilityProfiles[type];
                 if (!stats) return null;
 
                 const isVeryStable = stats.score >= 90;

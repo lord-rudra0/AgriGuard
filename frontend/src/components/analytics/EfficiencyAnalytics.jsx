@@ -13,94 +13,12 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-const EfficiencyAnalytics = ({ chartData = [] }) => {
+const EfficiencyAnalytics = ({ efficiencyProfile }) => {
     const [loadingAnalysis, setLoadingAnalysis] = useState(false);
     const [aiAnalysis, setAiAnalysis] = useState('');
 
-    const efficiency = useMemo(() => {
-        if (!chartData || chartData.length === 0) return null;
-
-        const result = {
-            ventilation: { score: 100, status: 'Optimal', issue: null, icon: Wind, color: 'text-sky-500' },
-            water: { score: 100, status: 'Optimal', issue: null, icon: Droplets, color: 'text-blue-500' },
-            energy: { score: 100, status: 'Optimal', issue: null, icon: Zap, color: 'text-amber-500' },
-        };
-
-        let lowCo2Count = 0;
-        let rapidCo2Fluctuation = 0;
-        let overMistingCount = 0;
-        let humidityDropCount = 0;
-        let overLightingCount = 0;
-
-        // Process Data
-        for (let i = 0; i < chartData.length; i++) {
-            const d = chartData[i];
-            const prev = i > 0 ? chartData[i - 1] : d;
-
-            // 1. Ventilation (CO2)
-            if (d.co2 < 380) lowCo2Count++; // Outdoor is ~400, so <380 is essentially just fresh air (fan running 100%)
-            if (Math.abs(d.co2 - prev.co2) > 200) rapidCo2Fluctuation++;
-
-            // 2. Water (Humidity)
-            if (d.humidity > 98) overMistingCount++;
-            if (prev.humidity - d.humidity > 15) humidityDropCount++; // Dropped 15% in one step (inefficient)
-
-            // 3. Energy (Light)
-            // Assuming we have 'light' metric, if not default to 0
-            const light = d.light || 0;
-            if (light > 500) overLightingCount++;
-        }
-
-        const totalHours = chartData.length; // Approximate
-
-        // Score Calculation & Rules
-
-        // --- Ventilation ---
-        if (lowCo2Count > totalHours * 0.5) { // >50% time running fans max
-            result.ventilation.score = 60;
-            result.ventilation.status = 'Over-Ventilating';
-            result.ventilation.issue = 'Fans running excessively. CO2 is below ambient needs.';
-            result.ventilation.color = 'text-rose-500';
-        } else if (rapidCo2Fluctuation > totalHours * 0.2) {
-            result.ventilation.score = 75;
-            result.ventilation.status = 'Unstable Cycling';
-            result.ventilation.issue = 'Rapid CO2 swings detect fan cycling issues.';
-            result.ventilation.color = 'text-amber-500';
-        }
-
-        // --- Water ---
-        if (overMistingCount > totalHours * 0.3) {
-            result.water.score = 50;
-            result.water.status = 'Saturation Risk';
-            result.water.issue = 'Humidity >98% for prolonged periods. Risk of bacterial blotch.';
-            result.water.color = 'text-rose-500';
-        } else if (humidityDropCount > 3) {
-            result.water.score = 80;
-            result.water.status = 'Inefficient Misting';
-            result.water.issue = 'Large humidity drops detected. Check sealings.';
-            result.water.color = 'text-amber-500';
-        }
-
-        // --- Energy ---
-        // Simple logic: if light is ON (>500 lux) for > 14 hours
-        // Since we don't know "time of day" easily in this loop without parsing dates, 
-        // we'll just check percentage of time illuminated.
-        const lightOnPct = (overLightingCount / totalHours) * 100;
-        if (lightOnPct > 60) { // > 14.4 hours
-            result.energy.score = 70;
-            result.energy.status = 'High Consumption';
-            result.energy.issue = 'Lighting duration exceeds 14 hours.';
-            result.energy.color = 'text-amber-500';
-        }
-
-        // Calculate Overall Efficiency
-        const overallScore = Math.round(
-            (result.ventilation.score + result.water.score + result.energy.score) / 3
-        );
-
-        return { ...result, overallScore };
-
-    }, [chartData]);
+    if (!efficiencyProfile) return null;
+    const efficiency = efficiencyProfile;
 
     // AI Handler
     const handleAskAI = async (e) => {
@@ -152,11 +70,12 @@ const EfficiencyAnalytics = ({ chartData = [] }) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 {Object.entries(efficiency).map(([key, data]) => {
                     if (key === 'overallScore') return null;
+                    const Icon = key === 'ventilation' ? Wind : key === 'water' ? Droplets : Zap;
                     return (
                         <div key={key} className={`bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 border ${data.score < 80 ? 'border-amber-500/30 bg-amber-500/5' : 'border-gray-100 dark:border-white/5'}`}>
                             <div className="flex items-start justify-between mb-3">
                                 <div className={`p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm ${data.color}`}>
-                                    <data.icon className="w-5 h-5" />
+                                    <Icon className="w-5 h-5" />
                                 </div>
                                 <span className={`text-xl font-black ${data.score < 70 ? 'text-rose-500' : data.score < 90 ? 'text-amber-500' : 'text-emerald-500'}`}>
                                     {data.score}%

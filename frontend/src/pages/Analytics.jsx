@@ -42,21 +42,6 @@ const THRESHOLDS = {
 	soilMoisture: { min: 30, max: 70, ideal: 50 }
 };
 
-// Helper: Calculate linear regression slope
-const calculateTrend = (values) => {
-	if (values.length < 2) return 0;
-	const n = values.length;
-	let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-	for (let i = 0; i < n; i++) {
-		sumX += i;
-		sumY += values[i];
-		sumXY += i * values[i];
-		sumXX += i * i;
-	}
-	const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-	return slope;
-};
-
 const niceLabel = (t) => {
 	if (!t) return '';
 	return t.slice(5); // "MM-DD HH:00"
@@ -85,6 +70,7 @@ export default function Analytics() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
 	const [rows, setRows] = useState([]);
+	const [fullData, setFullData] = useState(null);
 	const [inserting, setInserting] = useState(false);
 	const [purging, setPurging] = useState(false);
 	const [activeTypes, setActiveTypes] = useState(null);
@@ -107,137 +93,46 @@ export default function Analytics() {
 		return () => { active = false; };
 	}, [timeframe]);
 
-	const { chartData, types, summary, counts, stabilityData } = useMemo(() => {
-		const timeMap = new Map();
-		const typeSet = new Set();
-		const typeStats = {};
-		const typeCounts = {};
-
-		// Sort rows by date/hour to calculate consecutive periods correctly
-		// Sort rows by date/hour to calculate consecutive periods correctly
-		const sortedRows = [...(rows || [])].sort((a, b) => {
-			if (!a?._id || !b?._id) return 0;
-			const timeA = new Date(a._id.date).getTime() + (a._id.hour * 3600000);
-			const timeB = new Date(b._id.date).getTime() + (b._id.hour * 3600000);
-			return timeA - timeB;
-		});
-
-		const sensorSequences = {};
-
-		for (const r of sortedRows) {
-			const { sensorType, hour, date } = r._id || {};
-			if (!sensorType || hour == null || !date) continue;
-			typeSet.add(sensorType);
-
-			const key = `${date} ${String(hour).padStart(2, '0')}:00`;
-			const entry = timeMap.get(key) || { time: key };
-			entry[sensorType] = r.avgValue;
-			timeMap.set(key, entry);
-
-			const stat = typeStats[sensorType] || { min: Infinity, max: -Infinity, sum: 0, n: 0 };
-			stat.min = Math.min(stat.min, r.minValue);
-			stat.max = Math.max(stat.max, r.maxValue);
-			stat.sum += r.avgValue;
-			stat.n += 1;
-			typeStats[sensorType] = stat;
-
-			typeCounts[sensorType] = (typeCounts[sensorType] || 0) + (r.count || 0);
-
-			if (!sensorSequences[sensorType]) sensorSequences[sensorType] = [];
-			sensorSequences[sensorType].push(r.avgValue);
-		}
-
-		const sortedTimes = Array.from(timeMap.keys()).sort();
-		const data = sortedTimes.map((k) => timeMap.get(k));
-
-		const summary = {};
-		const stabilityData = {};
-
-		for (const t of Array.from(typeSet)) {
-			const s = typeStats[t];
-			const threshold = THRESHOLDS[t] || { min: 0, max: 100, ideal: 50 };
-			const sequence = sensorSequences[t] || [];
-
-			let totalDiff = 0;
-			let totalDev = 0;
-			let maxDelta = 0;
-			let spikeCount = 0;
-			let stableHours = 0;
-			let currentStableStreak = 0;
-			let maxStableStreak = 0;
-			let currentUnstableStreak = 0;
-			let maxUnstableStreak = 0;
-
-			// Define spike thresholds (e.g. >10% jump)
-			const spikeThreshold = (threshold.max - threshold.min) * 0.1;
-
-			for (let i = 0; i < sequence.length; i++) {
-				const val = sequence[i];
-				const isStable = val >= threshold.min && val <= threshold.max;
-
-				// Stability Logic
-				if (isStable) {
-					stableHours++;
-					currentStableStreak++;
-					maxUnstableStreak = Math.max(maxUnstableStreak, currentUnstableStreak);
-					currentUnstableStreak = 0;
-				} else {
-					currentUnstableStreak++;
-					maxStableStreak = Math.max(maxStableStreak, currentStableStreak);
-					currentStableStreak = 0;
-				}
-
-				// Deviation Logic
-				totalDev += Math.abs(val - threshold.ideal);
-
-				// Rate of Change / Spike Logic
-				if (i > 0) {
-					const delta = Math.abs(val - sequence[i - 1]);
-					totalDiff += delta;
-					maxDelta = Math.max(maxDelta, delta);
-					if (delta > spikeThreshold) spikeCount++;
-				}
-			}
-			maxStableStreak = Math.max(maxStableStreak, currentStableStreak);
-			maxUnstableStreak = Math.max(maxUnstableStreak, currentUnstableStreak);
-
-			const slope = calculateTrend(sequence);
-			let driftStatus = 'Stable';
-			if (slope > 0.1) driftStatus = 'Drifting Up';
-			if (slope < -0.1) driftStatus = 'Drifting Down';
-
-			summary[t] = {
-				min: isFinite(s.min) ? Number(s.min.toFixed(2)) : null,
-				max: isFinite(s.max) ? Number(s.max.toFixed(2)) : null,
-				avg: s.n ? Number((s.sum / s.n).toFixed(2)) : null,
-			};
-
-			stabilityData[t] = {
-				score: sequence.length ? Math.round((stableHours / sequence.length) * 100) : 0,
-				fluctuation: sequence.length > 1 ? Number((totalDiff / (sequence.length - 1)).toFixed(2)) : 0,
-				maxStable: maxStableStreak,
-				maxUnstable: maxUnstableStreak,
-				stablePercent: sequence.length ? Math.round((stableHours / sequence.length) * 100) : 0,
-				unstablePercent: sequence.length ? 100 - Math.round((stableHours / sequence.length) * 100) : 0,
-				stdDevIdeal: sequence.length ? Number(Math.sqrt(sequence.reduce((acc, val) => acc + Math.pow(val - threshold.ideal, 2), 0) / sequence.length).toFixed(2)) : 0,
-				// New Deviation Metrics
-				avgDev: sequence.length ? Number((totalDev / sequence.length).toFixed(2)) : 0,
-				drift: Number(slope.toFixed(3)),
-				driftStatus,
-				maxDelta: Number(maxDelta.toFixed(2)),
-				spikeCount
-			};
-		}
-
-		return { chartData: data, types: Array.from(typeSet), summary, counts: typeCounts, stabilityData };
+	// --- Processed Data using Backend Response ---
+	const chartData = useMemo(() => {
+		return rows.map((r) => ({
+			...r,
+			name: niceLabel(r.name),
+		}));
 	}, [rows]);
 
-	useEffect(() => {
-		if (!types || types.length === 0) return;
-		if (activeTypes === null) return;
-		const filtered = activeTypes.filter((t) => types.includes(t));
-		if (filtered.length !== activeTypes.length) setActiveTypes(filtered);
-	}, [types]);
+	const types = useMemo(() => {
+		if (chartData.length === 0) return [];
+		return Object.keys(chartData[0]).filter((k) => k !== 'name' && k !== 'timestamp');
+	}, [chartData]);
+
+	const summary = useMemo(() => {
+		if (chartData.length === 0) return {};
+		const result = {};
+		types.forEach((type) => {
+			const values = chartData.map((d) => d[type]).filter((v) => v !== undefined);
+			result[type] = {
+				min: Math.min(...values),
+				max: Math.max(...values),
+				avg: Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10,
+			};
+		});
+		return result;
+	}, [chartData, types]);
+
+	if (loading && !fullData) {
+		return (
+			<div className="min-h-screen pt-24 px-4 flex flex-col items-center justify-center">
+				<div className="relative">
+					<div className="w-20 h-20 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
+					<Activity className="absolute inset-0 m-auto w-8 h-8 text-emerald-500 animate-pulse" />
+				</div>
+				<p className="mt-6 text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest animate-pulse">
+					Computing Analytical Insights...
+				</p>
+			</div>
+		);
+	}
 
 	return (
 		<div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300 overflow-hidden">
@@ -279,11 +174,10 @@ export default function Analytics() {
 							))}
 						</div>
 
-						<ExportButtons timeframe={timeframe} printSelector="#analytics-print-area" />
+						<ExportButtons data={chartData} timeframe={timeframe} />
 					</div>
 				</div>
 
-				{/* Saved Views & Controls */}
 				<div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/20 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
 					<SavedViews
 						currentTimeframe={timeframe}
@@ -377,27 +271,27 @@ export default function Analytics() {
 				<div id="analytics-print-area" className="flex flex-col gap-6">
 					{/* Action & Decision Section - Moved to Top */}
 					<div className="flex flex-col gap-6">
-						<ActionAnalytics chartData={chartData} />
+						<ActionAnalytics recommendations={fullData?.recommendations || []} />
 					</div>
 
-					{/* Growth Stage Analysis - Specialized Domain Knowledge */}
+					{/* Growth Stage Analysis */}
 					<div className="flex flex-col gap-6">
-						<GrowthAnalytics chartData={chartData} />
+						<GrowthAnalytics growthProfile={fullData?.growth} />
 					</div>
 
-					{/* Efficiency & Optimization - Cost Saving */}
+					{/* Efficiency & Optimization */}
 					<div className="flex flex-col gap-6">
-						<EfficiencyAnalytics chartData={chartData} />
+						<EfficiencyAnalytics efficiencyProfile={fullData?.efficiency} />
 					</div>
 
-					{/* System Intelligence - Reliability & Trust */}
+					{/* System Intelligence */}
 					<div className="flex flex-col gap-6">
-						<SystemHealthAnalytics chartData={chartData} />
+						<SystemHealthAnalytics healthProfile={fullData?.health} />
 					</div>
 
 					{/* Predictive Analytics Section */}
 					<div className="flex flex-col gap-6">
-						<PredictiveAnalytics chartData={chartData} />
+						<PredictiveAnalytics predictions={fullData?.predictions || []} />
 					</div>
 
 					{/* Summary Cards */}
@@ -441,7 +335,7 @@ export default function Analytics() {
 								Analysis Window: {timeframe}
 							</div>
 						</div>
-						<StabilityAnalytics data={stabilityData} activeTypes={activeTypes} />
+						<StabilityAnalytics stabilityProfiles={fullData?.stability || {}} />
 					</div>
 
 					{/* Deviation & Drift Section */}
@@ -455,8 +349,7 @@ export default function Analytics() {
 							</h2>
 						</div>
 						<DeviationAnalytics
-							data={stabilityData}
-							activeTypes={activeTypes}
+							stabilityProfiles={fullData?.stability || {}}
 							chartData={chartData}
 							timeframe={timeframe}
 						/>
@@ -472,7 +365,7 @@ export default function Analytics() {
 								Risk & Threat Assessment
 							</h2>
 						</div>
-						<RiskAnalytics chartData={chartData} />
+						<RiskAnalytics riskProfile={fullData?.risk} />
 					</div>
 
 
