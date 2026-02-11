@@ -371,6 +371,11 @@ export default function Analytics() {
 				)}
 
 				<div id="analytics-print-area" className="flex flex-col gap-6">
+					{/* Action & Decision Section - Moved to Top */}
+					<div className="flex flex-col gap-6">
+						<ActionAnalytics chartData={chartData} />
+					</div>
+
 					{/* Summary Cards */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
 						{(activeTypes ?? types).map((t) => (
@@ -446,10 +451,7 @@ export default function Analytics() {
 						<RiskAnalytics chartData={chartData} />
 					</div>
 
-					{/* Action & Decision Section */}
-					<div className="flex flex-col gap-6">
-						<ActionAnalytics chartData={chartData} />
-					</div>
+
 
 					{/* Trends & Distribution charts removed as per request */}
 
