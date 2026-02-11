@@ -7,7 +7,7 @@ const ChatBot = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'model', content: 'Hi! I\'m your AgriGuard assistant powered by Gemini. Ask me anything about your sensors, alerts, or best practices.' }
+    { role: 'model', content: 'Hi! I\'m your AgriGuard AI assistant. Ask me anything about your sensors, alerts, or best practices.' }
   ]);
   const endRef = useRef(null);
 

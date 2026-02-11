@@ -10,10 +10,37 @@ import {
     MoveDown,
     Sprout,
     CheckCircle2,
-    MessageSquarePlus
+    MessageSquarePlus,
+    Sparkles,
+    Loader2
 } from 'lucide-react';
+import axios from 'axios';
 
 const ActionAnalytics = ({ chartData = [] }) => {
+    const [loadingAnalysis, setLoadingAnalysis] = React.useState({});
+    const [aiAnalysis, setAiAnalysis] = React.useState({});
+
+    const handleAskAI = async (rec, e) => {
+        e.stopPropagation();
+        if (aiAnalysis[rec.id]) return; // Already fetched
+
+        setLoadingAnalysis(prev => ({ ...prev, [rec.id]: true }));
+        try {
+            const prompt = `I have a ${rec.title} alert (${rec.description}). The recommendation is to ${rec.action}. Please provide a brief, specific strategy (max 2 sentences) to resolve this.`;
+            const token = localStorage.getItem('token');
+            const res = await axios.post('/api/chat/ai', { message: prompt }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const text = res.data?.message || res.data?.reply || res.data?.text || 'Could not generate advice.';
+            setAiAnalysis(prev => ({ ...prev, [rec.id]: text }));
+        } catch (err) {
+            console.error(err);
+            setAiAnalysis(prev => ({ ...prev, [rec.id]: 'Failed to contact AI.' }));
+        } finally {
+            setLoadingAnalysis(prev => ({ ...prev, [rec.id]: false }));
+        }
+    };
+
     const recommendations = useMemo(() => {
         if (!chartData || chartData.length === 0) return [];
 
@@ -214,22 +241,54 @@ const ActionAnalytics = ({ chartData = [] }) => {
                                         </div>
                                     )}
                                 </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        window.dispatchEvent(new CustomEvent('open-chatbot', {
-                                            detail: {
-                                                prompt: `I have a ${rec.title} alert (${rec.description}). The recommendation is to ${rec.action}. specific advice do you have for this situation?`
-                                            }
-                                        }));
-                                    }}
-                                    className="ml-4 p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-indigo-500 hover:text-white transition-all duration-300 shadow-sm"
-                                    title="Ask AI for advice"
-                                >
-                                    <MessageSquarePlus className="w-5 h-5" />
-                                </button>
-
+                                <div className="flex flex-col gap-2">
+                                    <button
+                                        onClick={(e) => handleAskAI(rec, e)}
+                                        disabled={loadingAnalysis[rec.id]}
+                                        className="ml-4 p-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all duration-300 shadow-sm border border-indigo-100 dark:border-indigo-500/20"
+                                        title="Get AI Insights"
+                                    >
+                                        {loadingAnalysis[rec.id] ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            window.dispatchEvent(new CustomEvent('open-chatbot', {
+                                                detail: {
+                                                    prompt: `I have a ${rec.title} alert (${rec.description}). The recommendation is to ${rec.action}. specific advice do you have for this situation?`
+                                                }
+                                            }));
+                                        }}
+                                        className="ml-4 p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm"
+                                        title="Open Chat"
+                                    >
+                                        <MessageSquarePlus className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
+
+                            {/* Inline AI Analysis */}
+                            {(aiAnalysis[rec.id] || loadingAnalysis[rec.id]) && (
+                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="flex gap-3">
+                                        <div className="flex-shrink-0 mt-0.5">
+                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+                                                <Sparkles className="w-3.5 h-3.5 text-white" />
+                                            </div>
+                                        </div>
+                                        <div className="flex-1">
+                                            <h5 className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1">AI Insight</h5>
+                                            {loadingAnalysis[rec.id] ? (
+                                                <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                            ) : (
+                                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                    {aiAnalysis[rec.id]}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
