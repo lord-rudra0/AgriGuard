@@ -342,7 +342,7 @@ const importRoute = async (routePath, routeName) => {
 };
 
 // Import routes with error handling - using routes index for reliability
-let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, mushroomAnalysisRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes;
+let authRoutes, sensorRoutes, chatRoutes, chatSystemRoutes, settingsRoutes, alertsRoutes, geminiRoutes, mushroomAnalysisRoutes, analyticsViewsRoutes, reportsRoutes, recipesRoutes, phasesRoutes, thresholdsRoutes, calendarRoutes, iotRoutes;
 let notificationsRoutes;
 
 // Import routes one by one with error handling - more robust approach
@@ -372,6 +372,7 @@ const loadRoutes = async () => {
       calendarRoutes = routesIndex.calendarRoutes;
       notificationsRoutes = routesIndex.notificationsRoutes;
       mushroomAnalysisRoutes = routesIndex.mushroomAnalysisRoutes;
+      iotRoutes = routesIndex.iotRoutes;
 
       console.log('✅ All routes loaded from index');
     } catch (indexError) {
@@ -393,6 +394,7 @@ const loadRoutes = async () => {
       phasesRoutes = await importRoute('./routes/phases.js', 'Phases');
       thresholdsRoutes = await importRoute('./routes/thresholds.js', 'Thresholds');
       calendarRoutes = await importRoute('./routes/calendar.js', 'Calendar');
+      iotRoutes = await importRoute('./routes/iot.js', 'IoT');
     }
 
     // Use routes only if they imported successfully
@@ -414,6 +416,7 @@ const loadRoutes = async () => {
     if (calendarRoutes) app.use('/api/calendar', calendarRoutes);
     if (notificationsRoutes) app.use('/api/notifications', notificationsRoutes);
     if (mushroomAnalysisRoutes) app.use('/api/analyze/mushroom', mushroomAnalysisRoutes);
+    if (iotRoutes) app.use('/api/iot', iotRoutes);
 
     // Note: /api/config/push is mounted synchronously in the top-level server to
     // avoid cold-start 404s; do not define it here to prevent duplicate handlers.
