@@ -6,23 +6,34 @@ export const calculateGrowthProfile = async (chartData, selectedStageId = 'fruit
     const stageConfig = await getStageConfig(selectedStageId);
     if (!chartData || chartData.length === 0) return null;
 
-    let totalPoints = chartData.length;
+    const requiredMetrics = ['temperature', 'humidity', 'co2'];
+    let evaluablePoints = 0;
     let idealTime = 0;
     let stressTime = 0;
 
     const details = {
-        temperature: { ideal: 0, stress: 0, compliance: 0 },
-        humidity: { ideal: 0, stress: 0, compliance: 0 },
-        co2: { ideal: 0, stress: 0, compliance: 0 }
+        temperature: { ideal: 0, stress: 0, compliance: 0, samples: 0 },
+        humidity: { ideal: 0, stress: 0, compliance: 0, samples: 0 },
+        co2: { ideal: 0, stress: 0, compliance: 0, samples: 0 }
     };
 
     chartData.forEach(d => {
+        const hasAllMetrics = requiredMetrics.every((key) => typeof d[key] === 'number');
+        if (!hasAllMetrics) {
+            requiredMetrics.forEach((key) => {
+                if (typeof d[key] === 'number') details[key].samples++;
+            });
+            return;
+        }
+
+        evaluablePoints++;
         let isPointIdeal = true;
         let isPointStress = false;
 
-        ['temperature', 'humidity', 'co2'].forEach(key => {
-            const val = d[key] || 0;
+        requiredMetrics.forEach(key => {
+            const val = d[key];
             const range = stageConfig.ideal[key];
+            details[key].samples++;
 
             if (val >= range.min && val <= range.max) {
                 details[key].ideal++;
@@ -40,12 +51,15 @@ export const calculateGrowthProfile = async (chartData, selectedStageId = 'fruit
         if (isPointStress) stressTime++;
     });
 
-    ['temperature', 'humidity', 'co2'].forEach(key => {
-        details[key].compliance = Math.round((details[key].ideal / totalPoints) * 100);
+    requiredMetrics.forEach(key => {
+        const sampleCount = details[key].samples;
+        details[key].compliance = sampleCount > 0
+            ? Math.round((details[key].ideal / sampleCount) * 100)
+            : 0;
     });
 
-    const complianceScore = Math.round((idealTime / totalPoints) * 100);
-    const stressScore = Math.round((stressTime / totalPoints) * 100);
+    const complianceScore = evaluablePoints > 0 ? Math.round((idealTime / evaluablePoints) * 100) : 0;
+    const stressScore = evaluablePoints > 0 ? Math.round((stressTime / evaluablePoints) * 100) : 0;
 
     // Improvement #Stress: Bio-Cumulative Stress Hours (BCSH)
     // A "Health Budget" logic. 20+ hours of stress is considered "Compromised"
@@ -62,7 +76,9 @@ export const calculateGrowthProfile = async (chartData, selectedStageId = 'fruit
         meta: {
             stageId: stageConfig.id,
             stageLabel: stageConfig.label,
-            totalHours: totalPoints,
+            totalHours: evaluablePoints,
+            inputRows: chartData.length,
+            insufficientData: evaluablePoints === 0,
             isNightMode: stageConfig.isNightMode || false
         }
     };
