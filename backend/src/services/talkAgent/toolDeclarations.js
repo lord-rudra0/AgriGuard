@@ -138,6 +138,35 @@ export const TALK_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: "triage_alert",
+    description: "Suggest and execute an alert triage playbook. Executes only when confirm=true.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        alertId: { type: "STRING", description: "Alert ID to triage" },
+        action: {
+          type: "STRING",
+          enum: ["resolve", "escalate", "followup", "ignore"],
+          description: "Action to execute. If omitted, recommended action is used on confirm."
+        },
+        escalateSeverity: {
+          type: "STRING",
+          enum: ["medium", "high", "critical"],
+          description: "Target severity when action='escalate'"
+        },
+        followupMinutes: {
+          type: "NUMBER",
+          description: "Minutes from now for follow-up event when action='followup'"
+        },
+        confirm: {
+          type: "BOOLEAN",
+          description: "Must be true only after explicit user confirmation."
+        }
+      },
+      required: ["alertId"]
+    }
+  },
+  {
     name: "list_thresholds",
     description: "List user thresholds, optionally filtered by metric and room.",
     parameters: {

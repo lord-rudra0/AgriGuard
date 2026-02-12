@@ -475,6 +475,105 @@ const executeCreateAlertFollowupEvent = async (args, userId, socket) => {
   return { success: true, event: serialized, sourceAlertId: alertId };
 };
 
+const ALERT_SEVERITY_ORDER = ['low', 'medium', 'high', 'critical'];
+
+const getNextSeverity = (current = 'low') => {
+  const idx = ALERT_SEVERITY_ORDER.indexOf(String(current));
+  if (idx < 0 || idx >= ALERT_SEVERITY_ORDER.length - 1) return 'critical';
+  return ALERT_SEVERITY_ORDER[idx + 1];
+};
+
+const buildAlertPlaybook = (alert) => {
+  const recommendations = [];
+  const severity = String(alert?.severity || 'low');
+
+  if (severity === 'critical' || severity === 'high') {
+    recommendations.push({
+      action: 'followup',
+      reason: 'High-severity alerts should have a tracked follow-up task.'
+    });
+    recommendations.push({
+      action: 'escalate',
+      reason: severity === 'critical'
+        ? 'Already critical; escalation not applicable.'
+        : `Escalate to ${getNextSeverity(severity)} if issue persists.`
+    });
+    recommendations.push({
+      action: 'resolve',
+      reason: 'Resolve only after mitigation is confirmed.'
+    });
+  } else {
+    recommendations.push({
+      action: 'resolve',
+      reason: 'If condition has normalized, resolve to clear active queue.'
+    });
+    recommendations.push({
+      action: 'followup',
+      reason: 'Create follow-up task to verify stability.'
+    });
+    recommendations.push({
+      action: 'escalate',
+      reason: `Escalate to ${getNextSeverity(severity)} if repeated or worsening.`
+    });
+  }
+
+  const recommendedAction = recommendations[0]?.action || 'followup';
+  return { recommendedAction, recommendations };
+};
+
+const executeTriageAlert = async (args, userId, socket) => {
+  const alertId = normalizeOptionalText(args?.alertId);
+  if (!alertId) return { error: "alertId is required" };
+
+  const alert = await Alert.findOne({ _id: alertId, userId });
+  if (!alert) return { error: "Alert not found" };
+
+  const playbook = buildAlertPlaybook(alert);
+  const requestedAction = normalizeOptionalText(args?.action);
+  const action = requestedAction || playbook.recommendedAction;
+  const confirm = normalizeConfirm(args?.confirm);
+
+  if (!confirm) {
+    return {
+      needsMoreInfo: true,
+      nextField: 'confirm',
+      question: `Recommended action is '${playbook.recommendedAction}'. Confirm to execute '${action}'?`,
+      playbook: {
+        alert: toAlertPayload(alert),
+        ...playbook
+      }
+    };
+  }
+
+  if (action === 'resolve') {
+    return executeResolveAlert({ alertId, actionTaken: 'Resolved via Talk AI triage playbook' }, userId, socket);
+  }
+
+  if (action === 'escalate') {
+    const target = normalizeOptionalText(args?.escalateSeverity) || getNextSeverity(alert.severity);
+    if (target === alert.severity) {
+      return { success: true, message: `Alert is already at ${target} severity`, alert: toAlertPayload(alert) };
+    }
+    return executeEscalateAlert({ alertId, severity: target }, userId, socket);
+  }
+
+  if (action === 'followup') {
+    const minsRaw = Number(args?.followupMinutes);
+    const minutesFromNow = Number.isFinite(minsRaw) && minsRaw >= 0 ? minsRaw : 30;
+    return executeCreateAlertFollowupEvent(
+      { alertId, minutesFromNow, title: `Follow up: ${alert.title}` },
+      userId,
+      socket
+    );
+  }
+
+  if (action === 'ignore') {
+    return { success: true, message: 'No action executed for this alert.', alert: toAlertPayload(alert) };
+  }
+
+  return { error: "action must be one of: resolve, escalate, followup, ignore" };
+};
+
 const executeCalendarCreate = async (args, userId, socket) => {
   const collectionOrder = ['title', 'startAt', 'endAt', 'description', 'roomId', 'reminderMinutes'];
   const isConfirmed = normalizeConfirm(args?.confirm);
@@ -642,6 +741,7 @@ const executeTool = async (name, args, userId, socket) => {
   if (name === "resolve_alert") return executeResolveAlert(args, userId, socket);
   if (name === "escalate_alert") return executeEscalateAlert(args, userId, socket);
   if (name === "create_alert_followup_event") return executeCreateAlertFollowupEvent(args, userId, socket);
+  if (name === "triage_alert") return executeTriageAlert(args, userId, socket);
   if (name === "list_thresholds") return executeListThresholds(args, userId);
   if (name === "create_threshold") return executeCreateThreshold(args, userId, socket);
   if (name === "update_threshold") return executeUpdateThreshold(args, userId, socket);
