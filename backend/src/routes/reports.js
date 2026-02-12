@@ -25,12 +25,12 @@ async function aggregateAnalytics(userId, timeframe = '24h') {
   }
 
   const analytics = await SensorData.aggregate([
-    { $match: { userId, createdAt: { $gte: startDate } } },
+    { $match: { 'metadata.userId': userId, timestamp: { $gte: startDate } } },
     { $group: {
       _id: {
-        sensorType: '$sensorType',
-        hour: { $hour: '$createdAt' },
-        date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+        sensorType: '$metadata.sensorType',
+        hour: { $hour: '$timestamp' },
+        date: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } },
       },
       avgValue: { $avg: '$value' },
       minValue: { $min: '$value' },
