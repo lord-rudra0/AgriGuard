@@ -36,12 +36,27 @@ const NOTIFICATION_QUESTION = {
   confirm: "Please confirm: should I send this push notification now?"
 };
 
-const EXPERT_RESTRICTED_TOOLS = new Set([
-  'control_device',
-  'create_automation_rule',
-  'toggle_automation_rule',
-  'delete_automation_rule'
-]);
+const ROLE_POLICY = {
+  admin: { allow: '*' },
+  farmer: { allow: '*' },
+  expert: {
+    deny: new Set([
+      // Physical control and automation writes
+      'control_device',
+      'create_automation_rule',
+      'toggle_automation_rule',
+      'delete_automation_rule',
+      // Destructive mutation actions
+      'delete_threshold',
+      'delete_calendar_event',
+      'delete_report_schedule',
+      // Outbound send actions
+      'run_report_now',
+      'send_push_notification',
+      'notify_alert'
+    ])
+  }
+};
 const HIGH_RISK_ACTUATORS = new Set(['pump', 'irrigation']);
 const HIGH_RISK_DURATION_MINUTES = 15;
 
@@ -206,16 +221,17 @@ const normalizeOptionalText = (value) => {
 
 const checkToolPermission = (role, name) => {
   const r = String(role || '').toLowerCase();
-  if (r === 'admin') return { allowed: true };
-  if (r === 'farmer') return { allowed: true };
-  if (r === 'expert' && EXPERT_RESTRICTED_TOOLS.has(name)) {
+  const policy = ROLE_POLICY[r];
+  if (!policy) return { allowed: false, reason: "Unknown role; action denied." };
+
+  if (policy.allow === '*') return { allowed: true };
+  if (policy.deny?.has(name)) {
     return {
       allowed: false,
-      reason: "Your role does not allow physical-control or automation-write commands."
+      reason: `Your role does not allow '${name}' actions.`
     };
   }
-  if (r === 'expert') return { allowed: true };
-  return { allowed: false, reason: "Unknown role; action denied." };
+  return { allowed: true };
 };
 
 const writeTalkActionLog = async ({
