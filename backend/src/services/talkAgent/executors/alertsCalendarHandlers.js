@@ -1,5 +1,6 @@
 import Alert from '../../../models/Alert.js';
 import CalendarEvent from '../../../models/CalendarEvent.js';
+import { listIncidentPlaybooks, getIncidentPlaybook, buildIncidentPlaybookRun } from '../../incidentPlaybooks.js';
 import {
   NEXT_FIELD_QUESTION,
   normalizeConfirm,
@@ -34,6 +35,61 @@ const buildAlertPlaybook = (alert) => {
     recommendations.push({ action: 'escalate', reason: `Escalate to ${getNextSeverity(severity)} if repeated or worsening.` });
   }
   return { recommendedAction: recommendations[0]?.action || 'followup', recommendations };
+};
+
+const executeListIncidentPlaybooks = async () => ({ playbooks: listIncidentPlaybooks() });
+
+const executeGetIncidentPlaybook = async (args) => {
+  const playbookId = normalizeOptionalText(args?.playbookId);
+  if (!playbookId) return { error: 'playbookId is required' };
+  const playbook = getIncidentPlaybook(playbookId);
+  if (!playbook) return { error: 'Playbook not found' };
+  return { playbook };
+};
+
+const executeRunIncidentPlaybook = async (args, userId, socket) => {
+  const alertId = normalizeOptionalText(args?.alertId);
+  if (!alertId) return { error: 'alertId is required' };
+  const alert = await Alert.findOne({ _id: alertId, userId });
+  if (!alert) return { error: 'Alert not found' };
+
+  const run = buildIncidentPlaybookRun(alert, normalizeOptionalText(args?.playbookId));
+  const requestedAction = normalizeOptionalText(args?.action) || 'recommend';
+  if (requestedAction === 'recommend') {
+    return { success: true, alert: toAlertPayload(alert), ...run };
+  }
+
+  if (!normalizeConfirm(args?.confirm)) {
+    return {
+      needsMoreInfo: true,
+      nextField: 'confirm',
+      question: `Recommended action is '${run.recommendation.action}'. Confirm to execute '${requestedAction}'?`,
+      alert: toAlertPayload(alert),
+      ...run
+    };
+  }
+
+  if (requestedAction === 'resolve') {
+    return executeResolveAlert({ alertId, actionTaken: `Resolved via playbook ${run.playbook.id}` }, userId, socket);
+  }
+  if (requestedAction === 'escalate') {
+    const target = normalizeOptionalText(args?.escalateSeverity) || run.recommendation.escalateSeverity;
+    return executeEscalateAlert({ alertId, severity: target }, userId, socket);
+  }
+  if (requestedAction === 'followup') {
+    const minsRaw = Number(args?.followupMinutes);
+    const minutesFromNow = Number.isFinite(minsRaw) && minsRaw >= 0 ? minsRaw : 30;
+    return executeCreateAlertFollowupEvent(
+      { alertId, minutesFromNow, title: `Follow up: ${alert.title}` },
+      userId,
+      socket
+    );
+  }
+  if (requestedAction === 'ignore') {
+    return { success: true, message: 'No action executed for this playbook run.', alert: toAlertPayload(alert), ...run };
+  }
+
+  return { error: 'action must be one of: recommend, followup, escalate, resolve, ignore' };
 };
 
 const executeResolveAlert = async (args, userId, socket) => {
@@ -233,6 +289,9 @@ const executeCalendarDelete = async (args, userId, socket) => {
 };
 
 export const executeAlertCalendarTool = async (name, args, userId, socket) => {
+  if (name === "list_incident_playbooks") return executeListIncidentPlaybooks();
+  if (name === "get_incident_playbook") return executeGetIncidentPlaybook(args);
+  if (name === "run_incident_playbook") return executeRunIncidentPlaybook(args, userId, socket);
   if (name === "resolve_alert") return executeResolveAlert(args, userId, socket);
   if (name === "escalate_alert") return executeEscalateAlert(args, userId, socket);
   if (name === "create_alert_followup_event") return executeCreateAlertFollowupEvent(args, userId, socket);

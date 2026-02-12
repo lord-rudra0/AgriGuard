@@ -1,5 +1,62 @@
 export const ALERTS_AUTOMATION_DECLARATIONS = [
   {
+    name: "list_incident_playbooks",
+    description: "List available incident response playbooks.",
+    parameters: {
+      type: "OBJECT",
+      properties: {}
+    }
+  },
+  {
+    name: "get_incident_playbook",
+    description: "Get details of a specific incident playbook.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        playbookId: {
+          type: "STRING",
+          enum: ["temperature_spike", "humidity_drift", "irrigation_fault"],
+          description: "Incident playbook ID"
+        }
+      },
+      required: ["playbookId"]
+    }
+  },
+  {
+    name: "run_incident_playbook",
+    description: "Build and optionally execute a playbook for an alert. Executes changes only when confirm=true.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        alertId: { type: "STRING", description: "Alert ID to run playbook on" },
+        playbookId: {
+          type: "STRING",
+          enum: ["temperature_spike", "humidity_drift", "irrigation_fault"],
+          description: "Optional explicit playbook"
+        },
+        action: {
+          type: "STRING",
+          enum: ["recommend", "followup", "escalate", "resolve", "ignore"],
+          description: "Action to execute; default is recommendation-only."
+        },
+        escalateSeverity: {
+          type: "STRING",
+          enum: ["medium", "high", "critical"],
+          description: "Optional escalation target when action='escalate'"
+        },
+        followupMinutes: {
+          type: "NUMBER",
+          description: "Optional minutes from now when action='followup'"
+        },
+        confirm: {
+          type: "BOOLEAN",
+          description: "Must be true only after explicit user confirmation for non-recommend actions."
+        }
+      },
+      required: ["alertId"]
+    }
+  },
+  {
     name: "resolve_alert",
     description: "Resolve an alert by ID and optionally record action taken.",
     parameters: {

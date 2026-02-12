@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import Alert from '../models/Alert.js';
+import { listIncidentPlaybooks, getIncidentPlaybook, buildIncidentPlaybookRun } from '../services/incidentPlaybooks.js';
 
 const router = express.Router();
 
@@ -48,6 +49,32 @@ router.get('/', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error('Error fetching alerts', err);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// GET /api/alerts/playbooks - list incident playbooks
+router.get('/playbooks', authenticateToken, async (_req, res) => {
+  return res.json({ success: true, playbooks: listIncidentPlaybooks() });
+});
+
+// GET /api/alerts/playbooks/:id - get one incident playbook
+router.get('/playbooks/:id', authenticateToken, async (req, res) => {
+  const playbook = getIncidentPlaybook(req.params.id);
+  if (!playbook) return res.status(404).json({ success: false, message: 'Playbook not found' });
+  return res.json({ success: true, playbook });
+});
+
+// GET /api/alerts/:id/playbook - build recommended playbook run for alert
+router.get('/:id/playbook', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const alert = await Alert.findOne({ _id: req.params.id, userId }).lean();
+    if (!alert) return res.status(404).json({ success: false, message: 'Alert not found' });
+    const run = buildIncidentPlaybookRun(alert, req.query.playbookId ? String(req.query.playbookId) : null);
+    return res.json({ success: true, alertId: String(alert._id), ...run });
+  } catch (err) {
+    console.error('Error fetching alert playbook', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
