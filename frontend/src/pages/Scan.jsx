@@ -10,6 +10,9 @@ export default function Scan() {
   const { scannedFile, clearScan } = useScan();
   const [preview, setPreview] = useState(null);
   const [file, setFile] = useState(null);
+  const [imageUrl, setImageUrl] = useState('');
+  const [urlLoading, setUrlLoading] = useState(false);
+  const [urlError, setUrlError] = useState('');
 
   const [predicting, setPredicting] = useState(false);
   const [analysis, setAnalysis] = useState(null);
@@ -44,6 +47,7 @@ export default function Scan() {
 
   const handleFile = (f) => {
     if (!f) return;
+    setUrlError('');
     if (preview) URL.revokeObjectURL(preview);
     setFile(f);
     setPreview(URL.createObjectURL(f));
@@ -69,6 +73,82 @@ export default function Scan() {
         setPredicting(false);
       }
     })();
+  };
+
+  const pickFilenameFromUrl = (url, contentType = '') => {
+    try {
+      const parsed = new URL(url);
+      const rawName = (parsed.pathname.split('/').pop() || '').trim();
+      if (rawName) return decodeURIComponent(rawName);
+    } catch {
+      // Ignore parse errors and fallback to content type mapping.
+    }
+    const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : contentType.includes('gif') ? 'gif' : 'jpg';
+    return `scan-from-link.${ext}`;
+  };
+
+  const handleImageUrlSubmit = async () => {
+    const trimmed = imageUrl.trim();
+    if (!trimmed) return;
+    setUrlError('');
+
+    // Support pasted data URLs from clipboard (data:image/...;base64,...)
+    if (trimmed.startsWith('data:image/')) {
+      const match = trimmed.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+      if (!match) {
+        setUrlError('Invalid data image URL format.');
+        return;
+      }
+      try {
+        setUrlLoading(true);
+        const mimeType = match[1];
+        const base64 = match[2];
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const ext = mimeType.includes('png') ? 'png' : mimeType.includes('webp') ? 'webp' : mimeType.includes('gif') ? 'gif' : 'jpg';
+        const fileFromDataUrl = new File([bytes], `scan-pasted.${ext}`, { type: mimeType });
+        handleFile(fileFromDataUrl);
+      } catch (err) {
+        setUrlError(err?.message || 'Could not decode pasted data image.');
+      } finally {
+        setUrlLoading(false);
+      }
+      return;
+    }
+
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(trimmed);
+    } catch {
+      setUrlError('Please enter a valid image URL or data:image base64 string.');
+      return;
+    }
+
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      setUrlError('Only http/https image links are supported.');
+      return;
+    }
+
+    try {
+      setUrlLoading(true);
+      const resp = await fetch(parsedUrl.toString());
+      if (!resp.ok) {
+        throw new Error(`Image request failed (${resp.status})`);
+      }
+      const contentType = resp.headers.get('content-type') || '';
+      if (!contentType.startsWith('image/')) {
+        throw new Error('Link does not point to an image.');
+      }
+      const blob = await resp.blob();
+      const fileFromUrl = new File([blob], pickFilenameFromUrl(parsedUrl.toString(), contentType), { type: contentType || 'image/jpeg' });
+      handleFile(fileFromUrl);
+    } catch (err) {
+      const msg = err?.message || 'Unable to read image from URL. The site may block cross-origin access.';
+      setUrlError(msg);
+    } finally {
+      setUrlLoading(false);
+    }
   };
 
   const handleDetailedAnalysis = async () => {
@@ -100,6 +180,8 @@ export default function Scan() {
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
     setFile(null);
+    setImageUrl('');
+    setUrlError('');
     setAnalysis(null);
     setDetailedAnalysis(null);
     // clear shared context as well
@@ -190,6 +272,32 @@ export default function Scan() {
               >
                 Upload image
               </button>
+
+              <div className="mt-4 flex gap-2">
+                <input
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleImageUrlSubmit();
+                    }
+                  }}
+                  placeholder="Paste image URL..."
+                  className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/15 bg-white dark:bg-gray-900/60 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                />
+                <button
+                  onClick={handleImageUrlSubmit}
+                  disabled={urlLoading}
+                  className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition-colors disabled:opacity-60"
+                >
+                  {urlLoading ? 'Loading...' : 'Use Link'}
+                </button>
+              </div>
+              {urlError && (
+                <div className="mt-2 text-xs text-red-600 dark:text-red-400 text-left">{urlError}</div>
+              )}
 
               <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">PNG/JPG — keep images small for faster results</div>
               <div className="mt-4 flex gap-2 justify-center">
