@@ -55,7 +55,11 @@ export default function Thresholds() {
   useEffect(() => {
     if (!socket) return undefined;
     const onTalkAction = (payload = {}) => {
-      if (payload.action === 'threshold_created' || payload.action === 'threshold_updated') {
+      if (
+        payload.action === 'threshold_created'
+        || payload.action === 'threshold_updated'
+        || payload.action === 'threshold_deleted'
+      ) {
         load();
       }
     };

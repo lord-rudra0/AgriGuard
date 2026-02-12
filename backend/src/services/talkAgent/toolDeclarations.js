@@ -161,6 +161,17 @@ export const TALK_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: "delete_threshold",
+    description: "Delete a threshold by ID.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        thresholdId: { type: "STRING", description: "Threshold ID" }
+      },
+      required: ["thresholdId"]
+    }
+  },
+  {
     name: "create_calendar_event",
     description: "Create a calendar event for the user.",
     parameters: {

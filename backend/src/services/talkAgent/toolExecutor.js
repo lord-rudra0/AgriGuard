@@ -188,6 +188,17 @@ const executeUpdateThreshold = async (args, userId, socket) => {
   }
 };
 
+const executeDeleteThreshold = async (args, userId, socket) => {
+  const thresholdId = normalizeOptionalText(args?.thresholdId);
+  if (!thresholdId) return { error: "thresholdId is required" };
+
+  const threshold = await Threshold.findOneAndDelete({ _id: thresholdId, userId });
+  if (!threshold) return { error: "Threshold not found" };
+
+  emitThresholdAction(socket, 'threshold_deleted', { thresholdId });
+  return { success: true, message: "Threshold deleted", thresholdId };
+};
+
 const executeResolveAlert = async (args, userId, socket) => {
   const alertId = args?.alertId ? String(args.alertId) : null;
   if (!alertId) return { error: "alertId is required" };
@@ -437,6 +448,7 @@ const executeTool = async (name, args, userId, socket) => {
   if (name === "list_thresholds") return executeListThresholds(args, userId);
   if (name === "create_threshold") return executeCreateThreshold(args, userId, socket);
   if (name === "update_threshold") return executeUpdateThreshold(args, userId, socket);
+  if (name === "delete_threshold") return executeDeleteThreshold(args, userId, socket);
 
   if (name === "create_calendar_event") return executeCalendarCreate(args, userId, socket);
   if (name === "list_calendar_events") return executeCalendarList(args, userId);
