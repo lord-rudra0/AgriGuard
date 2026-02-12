@@ -11,6 +11,7 @@ import PredictiveAnalytics from '../components/analytics/PredictiveAnalytics';
 import GrowthAnalytics from '../components/analytics/GrowthAnalytics';
 import EfficiencyAnalytics from '../components/analytics/EfficiencyAnalytics';
 import SystemHealthAnalytics from '../components/analytics/SystemHealthAnalytics';
+import SeasonalStrategyAnalytics from '../components/analytics/SeasonalStrategyAnalytics';
 import { BarChart3, Activity, TrendingUp, ShieldAlert } from 'lucide-react';
 
 const TIMEFRAMES = [
@@ -195,6 +196,11 @@ export default function Analytics() {
 					{/* System Intelligence */}
 					<div className="flex flex-col gap-6">
 						<SystemHealthAnalytics healthProfile={fullData?.health} />
+					</div>
+
+					{/* Seasonal Strategy */}
+					<div className="flex flex-col gap-6">
+						<SeasonalStrategyAnalytics />
 					</div>
 
 					{/* Predictive Analytics Section */}
