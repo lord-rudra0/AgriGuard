@@ -51,7 +51,7 @@ const SeasonalStrategyAnalytics = () => {
     setCreatingTasks(true);
     try {
       const token = localStorage.getItem('token');
-      const requests = strategy.weeklyPlan.map((weekItem) => {
+      const planned = strategy.weeklyPlan.map((weekItem) => {
         const startAt = createWeeklyDate(weekItem.week);
         const endAt = new Date(startAt.getTime() + 60 * 60 * 1000);
         const title = `Week ${weekItem.week}: ${weekItem.theme} Strategy Check`;
@@ -62,22 +62,60 @@ const SeasonalStrategyAnalytics = () => {
           ...weekItem.actions.map((a) => `- ${a}`)
         ].join('\n');
 
-        return axios.post(
+        return {
+          week: weekItem.week,
+          title,
+          startAt,
+          endAt,
+          description
+        };
+      });
+
+      const earliest = new Date(Math.min(...planned.map((p) => p.startAt.getTime())));
+      const latest = new Date(Math.max(...planned.map((p) => p.endAt.getTime())) + 24 * 60 * 60 * 1000);
+
+      const existingRes = await axios.get('/api/calendar/events', {
+        params: { start: earliest.toISOString(), end: latest.toISOString(), limit: 1000 },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const existing = existingRes.data?.events || [];
+      const existingKeySet = new Set(
+        existing.map((ev) => {
+          const day = new Date(ev.startAt).toISOString().slice(0, 10);
+          return `${String(ev.title || '').trim().toLowerCase()}|${day}`;
+        })
+      );
+
+      const toCreate = planned.filter((p) => {
+        const day = p.startAt.toISOString().slice(0, 10);
+        const key = `${p.title.trim().toLowerCase()}|${day}`;
+        return !existingKeySet.has(key);
+      });
+
+      const requests = toCreate.map((p) =>
+        axios.post(
           '/api/calendar/events',
           {
-            title,
-            description,
+            title: p.title,
+            description: p.description,
             roomId: strategy?.context?.roomId || undefined,
-            startAt: startAt.toISOString(),
-            endAt: endAt.toISOString(),
+            startAt: p.startAt.toISOString(),
+            endAt: p.endAt.toISOString(),
             reminders: [{ minutesBefore: 60 }]
           },
           { headers: { Authorization: `Bearer ${token}` } }
-        );
-      });
+        )
+      );
 
       await Promise.all(requests);
-      toast.success(`Created ${strategy.weeklyPlan.length} calendar tasks`);
+      const skipped = planned.length - toCreate.length;
+      if (toCreate.length > 0 && skipped > 0) {
+        toast.success(`Created ${toCreate.length} tasks, skipped ${skipped} duplicates`);
+      } else if (toCreate.length > 0) {
+        toast.success(`Created ${toCreate.length} calendar tasks`);
+      } else {
+        toast('No new tasks created (all duplicates already exist)');
+      }
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to create calendar tasks');
     } finally {
