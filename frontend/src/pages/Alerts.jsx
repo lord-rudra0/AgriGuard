@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useSocket } from '../context/SocketContext';
-import { AlertTriangle, CheckCircle2, Filter, Loader2, Trash2, Bell, Check, X, Search, RefreshCw, ShieldAlert, Activity } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Circle, Filter, Loader2, Trash2, Bell, Check, X, Search, RefreshCw, ShieldAlert, Activity } from 'lucide-react';
 
 const severityColors = {
   low: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
@@ -70,6 +70,38 @@ const Alerts = () => {
     fetchAlerts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, filters.severity, filters.type, filters.status]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const onTalkAction = (data) => {
+      const action = data?.action;
+      const incomingAlert = data?.alert;
+
+      if ((action === 'alert_resolved' || action === 'alert_escalated') && incomingAlert?.id) {
+        setItems((prev) => {
+          const idx = prev.findIndex((a) => String(a._id) === String(incomingAlert.id));
+          if (idx === -1) {
+            fetchAlerts();
+            return prev;
+          }
+          const next = [...prev];
+          next[idx] = {
+            ...next[idx],
+            ...incomingAlert,
+            _id: next[idx]._id || incomingAlert.id
+          };
+          return next;
+        });
+      }
+    };
+
+    socket.on('talk:action', onTalkAction);
+    return () => {
+      socket.off('talk:action', onTalkAction);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket]);
 
   const markRead = async (id, isRead = true) => {
     try {
