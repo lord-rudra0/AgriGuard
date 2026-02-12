@@ -3,6 +3,7 @@ import axios from 'axios';
 import { format, parseISO } from 'date-fns';
 import { Calendar as CalendarIcon, Plus, Trash2, Clock, Save, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 
 const initialForm = {
   title: '',
@@ -79,6 +80,7 @@ const ReminderInput = ({ reminders, setReminders }) => {
 
 export default function Calendar() {
   const { user } = useAuth();
+  const { socket } = useSocket();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,6 +104,34 @@ export default function Calendar() {
 
   useEffect(() => {
     if (user) loadEvents();
+  }, [user]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const onTalkAction = (data) => {
+      const action = data?.action;
+      if (action === 'calendar_event_created' || action === 'calendar_event_updated' || action === 'calendar_event_deleted') {
+        loadEvents();
+      }
+    };
+
+    socket.on('talk:action', onTalkAction);
+    return () => {
+      socket.off('talk:action', onTalkAction);
+    };
+  }, [socket, user]);
+
+  useEffect(() => {
+    const onFocus = () => {
+      if (user) loadEvents();
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
   }, [user]);
 
   const resetForm = () => {

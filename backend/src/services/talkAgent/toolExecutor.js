@@ -1,0 +1,241 @@
+import SensorData from '../../models/SensorData.js';
+import ScanHistory from '../../models/ScanHistory.js';
+import Alert from '../../models/Alert.js';
+import CalendarEvent from '../../models/CalendarEvent.js';
+
+const NEXT_FIELD_QUESTION = {
+  title: "What should the event title be?",
+  startAt: "What is the start date and time?",
+  endAt: "What is the end date and time? You can say 'none'.",
+  description: "Do you want to add a description? You can say 'none'.",
+  roomId: "Do you want to assign this to a room? You can say 'none'.",
+  reminderMinutes: "Any reminders in minutes before the event? Example: 15, 60. You can say 'none'.",
+  confirm: "Please confirm: should I create this calendar event now?"
+};
+
+const normalizeConfirm = (value) => {
+  if (value === true) return true;
+  const str = String(value || '').trim().toLowerCase();
+  return ['true', 'yes', 'y', 'confirm', 'confirmed', 'ok', 'okay'].includes(str);
+};
+
+const normalizeReminderMinutes = (value) => {
+  if (Array.isArray(value)) {
+    return value.filter((m) => Number.isFinite(Number(m))).map((m) => Number(m));
+  }
+  const str = String(value ?? '').trim().toLowerCase();
+  if (!str || str === 'none' || str === 'no' || str === 'null') return [];
+  return String(value)
+    .split(',')
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isFinite(n));
+};
+
+const toCalendarEventPayload = (event) => ({
+  id: String(event._id),
+  title: event.title,
+  startAt: event.startAt,
+  endAt: event.endAt || null
+});
+
+const emitCalendarAction = (socket, action, payload) => {
+  socket.emit('talk:action', { action, ...payload });
+};
+
+const executeCalendarCreate = async (args, userId, socket) => {
+  const collectionOrder = ['title', 'startAt', 'endAt', 'description', 'roomId', 'reminderMinutes'];
+  const isConfirmed = normalizeConfirm(args?.confirm);
+
+  if (!isConfirmed) {
+    const firstMissing = collectionOrder.find((field) => args?.[field] === undefined);
+    if (firstMissing) {
+      return { needsMoreInfo: true, nextField: firstMissing, question: NEXT_FIELD_QUESTION[firstMissing] };
+    }
+    return { needsMoreInfo: true, nextField: 'confirm', question: NEXT_FIELD_QUESTION.confirm };
+  }
+
+  const startAt = args?.startAt ? new Date(args.startAt) : null;
+  const noEndAt = args?.endAt === null
+    || String(args?.endAt || '').trim().toLowerCase() === 'none'
+    || String(args?.endAt || '').trim() === '';
+  const endAt = noEndAt ? null : new Date(args.endAt);
+
+  if (!args?.title || !startAt || Number.isNaN(startAt.getTime())) {
+    return { error: "title and valid startAt are required" };
+  }
+  if (endAt && Number.isNaN(endAt.getTime())) {
+    return { error: "endAt must be a valid datetime" };
+  }
+
+  const reminderMinutes = normalizeReminderMinutes(args.reminderMinutes);
+  const description = args?.description && String(args.description).trim().toLowerCase() !== 'none'
+    ? String(args.description)
+    : '';
+  const roomId = args?.roomId && String(args.roomId).trim().toLowerCase() !== 'none'
+    ? String(args.roomId)
+    : null;
+
+  const event = await CalendarEvent.create({
+    userId,
+    title: String(args.title),
+    description,
+    roomId,
+    startAt,
+    endAt: endAt && !Number.isNaN(endAt.getTime()) ? endAt : undefined,
+    reminders: reminderMinutes.map((m) => ({ minutesBefore: m }))
+  });
+
+  const serialized = toCalendarEventPayload(event);
+  emitCalendarAction(socket, 'calendar_event_created', { event: serialized });
+  return { success: true, event: serialized };
+};
+
+const executeCalendarList = async (args, userId) => {
+  const startAt = args?.start ? new Date(args.start) : new Date();
+  const endAt = args?.end ? new Date(args.end) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const limitRaw = Number(args?.limit);
+  const limit = Math.min(Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 20, 100);
+
+  if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
+    return { error: "start/end must be valid datetimes" };
+  }
+
+  const events = await CalendarEvent.find({
+    userId,
+    startAt: { $gte: startAt, $lte: endAt }
+  }).sort({ startAt: 1 }).limit(limit).lean();
+
+  return {
+    events: events.map((e) => ({
+      id: String(e._id),
+      title: e.title,
+      startAt: e.startAt,
+      endAt: e.endAt || null,
+      description: e.description || ''
+    }))
+  };
+};
+
+const executeCalendarUpdate = async (args, userId, socket) => {
+  const eventId = args?.eventId ? String(args.eventId) : null;
+  if (!eventId) return { error: "eventId is required" };
+
+  const updates = {};
+  if (args?.title != null) updates.title = String(args.title);
+  if (args?.description != null) updates.description = String(args.description);
+  if (args?.roomId !== undefined) updates.roomId = args.roomId ? String(args.roomId) : null;
+
+  if (args?.startAt) {
+    const startAt = new Date(args.startAt);
+    if (Number.isNaN(startAt.getTime())) return { error: "startAt must be a valid datetime" };
+    updates.startAt = startAt;
+  }
+  if (args?.endAt !== undefined) {
+    if (!args.endAt) {
+      updates.endAt = undefined;
+    } else {
+      const endAt = new Date(args.endAt);
+      if (Number.isNaN(endAt.getTime())) return { error: "endAt must be a valid datetime" };
+      updates.endAt = endAt;
+    }
+  }
+  if (Array.isArray(args?.reminderMinutes)) {
+    const reminderMinutes = normalizeReminderMinutes(args.reminderMinutes);
+    updates.reminders = reminderMinutes.map((m) => ({ minutesBefore: m }));
+  }
+
+  const event = await CalendarEvent.findOneAndUpdate({ _id: eventId, userId }, updates, { new: true });
+  if (!event) return { error: "Event not found" };
+
+  const serialized = toCalendarEventPayload(event);
+  emitCalendarAction(socket, 'calendar_event_updated', { event: serialized });
+  return { success: true, event: serialized };
+};
+
+const executeCalendarDelete = async (args, userId, socket) => {
+  const eventId = args?.eventId ? String(args.eventId) : null;
+  if (!eventId) return { error: "eventId is required" };
+
+  const deleted = await CalendarEvent.deleteOne({ _id: eventId, userId });
+  if (deleted.deletedCount > 0) {
+    emitCalendarAction(socket, 'calendar_event_deleted', { eventId });
+    return { success: true, message: "Event deleted" };
+  }
+  return { error: "Event not found" };
+};
+
+const executeTool = async (name, args, userId, socket) => {
+  if (!userId) {
+    return { error: "User context missing for tool execution. Please reconnect and try again." };
+  }
+
+  if (name === "navigate_to") {
+    const pagePath = `/${args.page === 'dashboard' ? '' : args.page}`;
+    socket.emit('talk:action', { action: 'navigate', path: pagePath });
+    return { success: true, message: `Navigating to ${args.page} page now.` };
+  }
+
+  if (name === "get_latest_sensor_data") {
+    const data = await SensorData.findOne({
+      'metadata.userId': userId,
+      'metadata.sensorType': args.sensorType
+    }).sort({ timestamp: -1 });
+    return data
+      ? { value: data.value, unit: data.unit, timestamp: data.timestamp }
+      : { message: "No data found for this sensor type." };
+  }
+
+  if (name === "get_recent_scans") {
+    const scans = await ScanHistory.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('analysis createdAt');
+    return { scans: scans.map((s) => ({ result: s.analysis, date: s.createdAt })) };
+  }
+
+  if (name === "get_active_alerts") {
+    const query = { userId, isResolved: false };
+    if (args.minSeverity) {
+      const severities = ['low', 'medium', 'high', 'critical'];
+      const minIdx = severities.indexOf(args.minSeverity);
+      query.severity = { $in: severities.slice(minIdx) };
+    }
+    const alerts = await Alert.find(query).sort({ createdAt: -1 }).limit(10);
+    return { alerts: alerts.map((a) => ({ title: a.title, severity: a.severity, message: a.message })) };
+  }
+
+  if (name === "create_calendar_event") return executeCalendarCreate(args, userId, socket);
+  if (name === "list_calendar_events") return executeCalendarList(args, userId);
+  if (name === "update_calendar_event") return executeCalendarUpdate(args, userId, socket);
+  if (name === "delete_calendar_event") return executeCalendarDelete(args, userId, socket);
+
+  return { error: "Function not found" };
+};
+
+export const handleToolCall = async (geminiWs, toolCall, socket) => {
+  const responses = [];
+  const userId = socket.user?._id || socket.user?.id;
+
+  for (const call of toolCall.functionCalls) {
+    const { name, args, id } = call;
+    console.log(`[TalkAgent] Executing tool: ${name}`, args);
+
+    let result;
+    try {
+      result = await executeTool(name, args, userId, socket);
+    } catch (err) {
+      console.error(`[TalkAgent] Tool error (${name}):`, err);
+      result = { error: err.message };
+    }
+
+    responses.push({ name, id, response: result });
+  }
+
+  if (geminiWs && geminiWs.readyState === 1) {
+    geminiWs.send(JSON.stringify({
+      toolResponse: { functionResponses: responses }
+    }));
+    console.log(`[TalkAgent] Sent tool responses for ${responses.length} calls`);
+  }
+};
+
