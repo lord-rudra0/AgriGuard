@@ -62,6 +62,24 @@ const alertSchema = new mongoose.Schema({
     email: { type: Boolean, default: false },
     push: { type: Boolean, default: false },
     sms: { type: Boolean, default: false }
+  },
+  followupEventId: {
+    type: String,
+    default: null,
+    index: true
+  },
+  followupScheduledAt: {
+    type: Date,
+    default: null
+  },
+  followupSource: {
+    type: String,
+    enum: ['manual', 'auto'],
+    default: null
+  },
+  followupProcessingAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

@@ -1,15 +1,18 @@
 import mongoose from 'mongoose';
 import { pruneStaleSubscriptions } from '../jobs/pruneSubscriptions.js';
+import { runAutoAlertFollowups } from '../jobs/autoAlertFollowups.js';
 
 const SCHEDULER_INTERVAL_MS = 5 * 60 * 1000;
 const CAL_REMINDER_INTERVAL_MS = 60 * 1000;
 const PRUNE_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const HISTORY_AGG_INTERVAL_MS = 60 * 60 * 1000;
+const AUTO_FOLLOWUP_INTERVAL_MS = 5 * 60 * 1000;
 
 let schedulerTimer = null;
 let calTimer = null;
 let pruneTimer = null;
 let historyAggTimer = null;
+let autoFollowupTimer = null;
 
 const isSameLocalDate = (a, b) =>
   a.getFullYear() === b.getFullYear() &&
@@ -149,10 +152,23 @@ const startHistoryAggregationScheduler = async () => {
   }
 };
 
+const startAutoFollowupScheduler = async (io) => {
+  if (autoFollowupTimer) return;
+  autoFollowupTimer = setInterval(async () => {
+    try {
+      await runAutoAlertFollowups({ io, limit: 200 });
+    } catch (e) {
+      console.error('Auto follow-up scheduler error', e);
+    }
+  }, AUTO_FOLLOWUP_INTERVAL_MS);
+  console.log('✅ Auto follow-up scheduler started (every 5 minutes)');
+};
+
 export const startBackgroundJobs = ({ io }) => {
   setTimeout(() => {
     startScheduler();
     startCalendarReminderScheduler(io);
+    startAutoFollowupScheduler(io);
   }, 5000);
 
   setTimeout(() => {
