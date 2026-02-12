@@ -1,67 +1,50 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
     Sprout,
     Leaf,
-    Thermometer,
-    Droplets,
-    Wind,
-    CheckCircle2,
-    AlertTriangle,
     Target,
-    ArrowRight,
     Sparkles,
     Loader2,
     MessageSquarePlus
 } from 'lucide-react';
 import axios from 'axios';
 
-// --- Stage Definitions ---
-const STAGES = {
+const STAGE_VISUALS = {
     spawnRun: {
         id: 'spawnRun',
-        label: 'Spawn Run (Colonization)',
         icon: Sprout,
         color: 'text-amber-500',
         bg: 'bg-amber-500/10',
-        border: 'border-amber-500/20',
-        ideal: {
-            temperature: { min: 24, max: 27, ideal: 25.5, label: 'Warm (24-27°C)' },
-            humidity: { min: 90, max: 100, ideal: 95, label: 'High (90-95%)' },
-            co2: { min: 5000, max: 20000, ideal: 10000, label: 'High (>5k ppm)' }, // High CO2 is GOOD here
-        },
-        durationDays: 14 // Expected duration
+        border: 'border-amber-500/20'
     },
     fruiting: {
         id: 'fruiting',
-        label: 'Fruiting (Development)',
         icon: Leaf,
         color: 'text-emerald-500',
         bg: 'bg-emerald-500/10',
-        border: 'border-emerald-500/20',
-        ideal: {
-            temperature: { min: 20, max: 24, ideal: 22, label: 'Cool (20-24°C)' },
-            humidity: { min: 85, max: 95, ideal: 90, label: 'High (85-95%)' },
-            co2: { min: 400, max: 1000, ideal: 600, label: 'Low (<1000 ppm)' }, // Low CO2 is CRITICAL here
-        },
-        durationDays: 7
+        border: 'border-emerald-500/20'
     }
 };
 
-const GrowthAnalytics = ({ growthProfile }) => {
-    const [currentStage, setCurrentStage] = useState('fruiting'); // Keeping state for visual toggle, but data is from backend
+const buildTargetLabel = (range, metric) => {
+    if (!range || typeof range.min !== 'number' || typeof range.max !== 'number') return 'N/A';
+    const unit = metric === 'temperature' ? 'C' : metric === 'humidity' ? '%' : metric === 'co2' ? 'ppm' : '';
+    return `${range.min}-${range.max}${unit}`;
+};
+
+const GrowthAnalytics = ({ growthProfile, selectedStage = 'fruiting', onStageChange }) => {
     const [loadingAnalysis, setLoadingAnalysis] = useState(false);
     const [aiAnalysis, setAiAnalysis] = useState('');
-
-    const stageConfig = STAGES[currentStage];
 
     // --- AI Integration ---
     const handleAskAI = async (metrics, e) => {
         e.stopPropagation();
         if (aiAnalysis) return;
+        const stageLabel = metrics?.meta?.stageLabel || selectedStage;
 
         setLoadingAnalysis(true);
         try {
-            const prompt = `I am in the ${stageConfig.label} stage. My environmental compliance is ${metrics.complianceScore}%. 
+            const prompt = `I am in the ${stageLabel} stage. My environmental compliance is ${metrics.complianceScore}%. 
             Temperature Compliance: ${metrics.details.temperature.compliance}%.
             Humidity Compliance: ${metrics.details.humidity.compliance}%.
             CO2 Compliance: ${metrics.details.co2.compliance}%.
@@ -83,8 +66,11 @@ const GrowthAnalytics = ({ growthProfile }) => {
 
     if (!growthProfile) return null;
     const metrics = growthProfile;
-
     if (!metrics) return null;
+    const stageId = metrics?.meta?.stageId || selectedStage;
+    const stageLabel = metrics?.meta?.stageLabel || selectedStage;
+    const stageIdeal = metrics?.meta?.ideal || {};
+    const stageVisual = STAGE_VISUALS[stageId] || STAGE_VISUALS.fruiting;
 
     return (
         <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-3xl p-6 shadow-lg relative overflow-hidden transition-all duration-500">
@@ -92,26 +78,26 @@ const GrowthAnalytics = ({ growthProfile }) => {
             {/* Header with Stage Toggle */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
                 <h3 className="text-base font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stageConfig.bg}`}>
-                        <stageConfig.icon className={`w-5 h-5 ${stageConfig.color}`} />
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stageVisual.bg}`}>
+                        <stageVisual.icon className={`w-5 h-5 ${stageVisual.color}`} />
                     </div>
                     Growth Analytics
                 </h3>
 
                 <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-                    {Object.values(STAGES).map(stage => (
+                    {Object.values(STAGE_VISUALS).map(stage => (
                         <button
                             key={stage.id}
                             onClick={() => {
-                                setCurrentStage(stage.id);
+                                if (onStageChange) onStageChange(stage.id);
                                 setAiAnalysis(''); // Clear old analysis
                             }}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${currentStage === stage.id
+                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${selectedStage === stage.id
                                 ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white'
                                 : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                                 }`}
                         >
-                            {stage.label.split(' ')[0]} {/* Show short name */}
+                            {stage.id === 'spawnRun' ? 'Spawn' : 'Fruiting'}
                         </button>
                     ))}
                 </div>
@@ -121,15 +107,15 @@ const GrowthAnalytics = ({ growthProfile }) => {
             <div className="flex items-center justify-center py-6 mb-6 relative">
                 {/* Decorative background ring */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                    <div className={`w-48 h-48 rounded-full border-8 ${stageConfig.border}`} />
+                    <div className={`w-48 h-48 rounded-full border-8 ${stageVisual.border}`} />
                 </div>
 
                 <div className="text-center">
                     <div className="text-5xl font-black text-gray-900 dark:text-white mb-1">
                         {metrics.complianceScore}%
                     </div>
-                    <div className={`text-xs font-bold uppercase tracking-widest ${stageConfig.color} mb-2`}>
-                        {stageConfig.label} Compliance
+                    <div className={`text-xs font-bold uppercase tracking-widest ${stageVisual.color} mb-2`}>
+                        {stageLabel} Compliance
                     </div>
                     <div className="flex items-center justify-center gap-2 text-[10px] text-gray-400 font-medium uppercase tracking-wider">
                         <Target className="w-3 h-3" />
@@ -156,7 +142,7 @@ const GrowthAnalytics = ({ growthProfile }) => {
                             />
                         </div>
                         <div className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                            Target: {stageConfig.ideal[key].label}
+                            Target: {buildTargetLabel(stageIdeal[key], key)}
                         </div>
                     </div>
                 ))}
@@ -193,7 +179,7 @@ const GrowthAnalytics = ({ growthProfile }) => {
                                 onClick={() => {
                                     window.dispatchEvent(new CustomEvent('open-chatbot', {
                                         detail: {
-                                            prompt: `Regarding the ${stageConfig.label} stage analysis: ${aiAnalysis}. Can you elaborate on the specific steps?`
+                                            prompt: `Regarding the ${stageLabel} stage analysis: ${aiAnalysis}. Can you elaborate on the specific steps?`
                                         }
                                     }));
                                 }}
@@ -206,7 +192,7 @@ const GrowthAnalytics = ({ growthProfile }) => {
                     </div>
                 ) : (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Compare your current metrics against the strict biological requirements for {stageConfig.label} to optimize yield.
+                        Compare your current metrics against the strict biological requirements for {stageLabel} to optimize yield.
                     </p>
                 )}
             </div>

@@ -76,6 +76,7 @@ export const calculateGrowthProfile = async (chartData, selectedStageId = 'fruit
         meta: {
             stageId: stageConfig.id,
             stageLabel: stageConfig.label,
+            ideal: stageConfig.ideal,
             totalHours: evaluablePoints,
             inputRows: chartData.length,
             insufficientData: evaluablePoints === 0,

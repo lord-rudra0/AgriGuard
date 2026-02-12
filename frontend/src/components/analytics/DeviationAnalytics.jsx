@@ -1,17 +1,15 @@
 import React from 'react';
-import { TrendingUp, TrendingDown, Minus, Zap, Activity, Target, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Zap, Activity, Target } from 'lucide-react';
 import {
     ResponsiveContainer,
     AreaChart,
     Area,
-    XAxis,
-    YAxis,
     CartesianGrid,
     Tooltip,
     ReferenceLine
 } from 'recharts';
 
-const DeviationAnalytics = ({ stabilityProfiles, chartData, timeframe }) => {
+const DeviationAnalytics = ({ stabilityProfiles, chartData, idealByMetric = {} }) => {
     if (!stabilityProfiles || Object.keys(stabilityProfiles).length === 0) return null;
 
     // Safety check for chartData to prevent crashes if undefined
@@ -30,10 +28,11 @@ const DeviationAnalytics = ({ stabilityProfiles, chartData, timeframe }) => {
                 const isStable = !isDriftingUp && !isDriftingDown;
 
                 // Prepare chart data for envelope
+                const ideal = idealByMetric?.[type]?.ideal;
                 const typeChartData = safeChartData.map(d => ({
                     time: d.time || '',
                     val: d[type] ?? null,
-                    ideal: (type === 'temperature' ? 23 : type === 'humidity' ? 60 : type === 'co2' ? 450 : 50)
+                    ideal: typeof ideal === 'number' ? ideal : null
                 }));
 
                 return (
@@ -107,7 +106,9 @@ const DeviationAnalytics = ({ stabilityProfiles, chartData, timeframe }) => {
                                         itemStyle={{ color: '#fff', fontSize: '10px' }}
                                         labelStyle={{ color: '#888', marginBottom: '5px' }}
                                     />
-                                    <ReferenceLine y={typeChartData[0]?.ideal} stroke="#666" strokeDasharray="3 3" />
+                                    {typeof typeChartData[0]?.ideal === 'number' && (
+                                        <ReferenceLine y={typeChartData[0]?.ideal} stroke="#666" strokeDasharray="3 3" />
+                                    )}
                                     <Area
                                         type="monotone"
                                         dataKey="val"

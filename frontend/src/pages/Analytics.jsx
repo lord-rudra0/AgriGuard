@@ -20,6 +20,11 @@ const TIMEFRAMES = [
 	{ key: '30d', label: '30D' },
 ];
 
+const STAGES = [
+	{ key: 'spawnRun', label: 'Spawn Run' },
+	{ key: 'fruiting', label: 'Fruiting' },
+];
+
 
 
 const formatTimeLabel = (t) => {
@@ -41,6 +46,7 @@ const formatSensorName = (t) => {
 
 export default function Analytics() {
 	const [timeframe, setTimeframe] = useState('24h');
+	const [stage, setStage] = useState('fruiting');
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
 	const [rows, setRows] = useState([]);
@@ -52,7 +58,7 @@ export default function Analytics() {
 		setLoading(true);
 		setError('');
 		axios
-			.get('/api/sensors/analytics/full', { params: { timeframe } })
+			.get('/api/sensors/analytics/full', { params: { timeframe, stage } })
 			.then((res) => {
 				if (!active) return;
 				setFullData(res.data?.data || null);
@@ -64,7 +70,7 @@ export default function Analytics() {
 			})
 			.finally(() => active && setLoading(false));
 		return () => { active = false; };
-	}, [timeframe]);
+	}, [timeframe, stage]);
 
 	// --- Processed Data using Backend Response ---
 	const chartData = useMemo(() => {
@@ -130,6 +136,20 @@ export default function Analytics() {
 								</button>
 							))}
 						</div>
+						<div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-md p-1 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-sm flex items-center">
+							{STAGES.map((st) => (
+								<button
+									key={st.key}
+									onClick={() => setStage(st.key)}
+									className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${stage === st.key
+										? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
+										: 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
+										}`}
+								>
+									{st.label}
+								</button>
+							))}
+						</div>
 
 						<ExportButtons data={chartData} timeframe={timeframe} />
 					</div>
@@ -160,7 +180,11 @@ export default function Analytics() {
 
 					{/* Growth Stage Analysis */}
 					<div className="flex flex-col gap-6">
-						<GrowthAnalytics growthProfile={fullData?.growth} />
+						<GrowthAnalytics
+							growthProfile={fullData?.growth}
+							selectedStage={stage}
+							onStageChange={setStage}
+						/>
 					</div>
 
 					{/* Efficiency & Optimization */}
@@ -241,6 +265,7 @@ export default function Analytics() {
 						<DeviationAnalytics
 							stabilityProfiles={fullData?.stability || {}}
 							chartData={chartData}
+							idealByMetric={fullData?.growth?.meta?.ideal || {}}
 							timeframe={timeframe}
 						/>
 					</div>
