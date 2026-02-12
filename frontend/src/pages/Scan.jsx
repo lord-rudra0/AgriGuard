@@ -75,18 +75,6 @@ export default function Scan() {
     })();
   };
 
-  const pickFilenameFromUrl = (url, contentType = '') => {
-    try {
-      const parsed = new URL(url);
-      const rawName = (parsed.pathname.split('/').pop() || '').trim();
-      if (rawName) return decodeURIComponent(rawName);
-    } catch {
-      // Ignore parse errors and fallback to content type mapping.
-    }
-    const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : contentType.includes('gif') ? 'gif' : 'jpg';
-    return `scan-from-link.${ext}`;
-  };
-
   const handleImageUrlSubmit = async () => {
     const trimmed = imageUrl.trim();
     if (!trimmed) return;
@@ -117,34 +105,32 @@ export default function Scan() {
       return;
     }
 
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(trimmed);
-    } catch {
-      setUrlError('Please enter a valid image URL or data:image base64 string.');
-      return;
-    }
-
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      setUrlError('Only http/https image links are supported.');
-      return;
-    }
-
     try {
       setUrlLoading(true);
-      const resp = await fetch(parsedUrl.toString());
-      if (!resp.ok) {
-        throw new Error(`Image request failed (${resp.status})`);
-      }
-      const contentType = resp.headers.get('content-type') || '';
-      if (!contentType.startsWith('image/')) {
-        throw new Error('Link does not point to an image.');
-      }
-      const blob = await resp.blob();
-      const fileFromUrl = new File([blob], pickFilenameFromUrl(parsedUrl.toString(), contentType), { type: contentType || 'image/jpeg' });
+      const resp = await axios.post(
+        '/api/analyze/mushroom/fetch-image',
+        { url: trimmed },
+        { responseType: 'blob' }
+      );
+      const contentType = resp.headers?.['content-type'] || resp.data?.type || 'image/jpeg';
+      const rawFilename = resp.headers?.['x-image-filename'];
+      const filename = rawFilename ? decodeURIComponent(rawFilename) : 'scan-from-link.jpg';
+      const fileFromUrl = new File([resp.data], filename, { type: contentType });
       handleFile(fileFromUrl);
     } catch (err) {
-      const msg = err?.message || 'Unable to read image from URL. The site may block cross-origin access.';
+      let msg = err?.message || 'Unable to read image from URL.';
+      const errBlob = err?.response?.data;
+      if (errBlob instanceof Blob) {
+        try {
+          const text = await errBlob.text();
+          const parsed = JSON.parse(text);
+          if (parsed?.error) msg = parsed.error;
+        } catch {
+          // Keep fallback message.
+        }
+      } else if (err?.response?.data?.error) {
+        msg = err.response.data.error;
+      }
       setUrlError(msg);
     } finally {
       setUrlLoading(false);

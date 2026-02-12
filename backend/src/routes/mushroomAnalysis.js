@@ -7,6 +7,112 @@ dotenv.config();
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+const MAX_FETCH_IMAGE_BYTES = 10 * 1024 * 1024;
+
+const extractDirectImageUrl = (input) => {
+    const raw = String(input || '').trim();
+    if (!raw) return null;
+
+    let parsed;
+    try {
+        parsed = new URL(raw);
+    } catch {
+        return null;
+    }
+
+    const hostname = parsed.hostname.toLowerCase();
+    const preferredParams = ['imgurl', 'mediaurl', 'url', 'img_url', 'src', 'u', 'uddg'];
+
+    // Common search wrapper URLs (Google/Bing/DDG/Yandex etc.)
+    if (
+        hostname.includes('google.') ||
+        hostname.includes('bing.com') ||
+        hostname.includes('duckduckgo.com') ||
+        hostname.includes('yandex.')
+    ) {
+        for (const key of preferredParams) {
+            const value = parsed.searchParams.get(key);
+            if (!value) continue;
+            try {
+                const candidate = new URL(value);
+                if (candidate.protocol === 'http:' || candidate.protocol === 'https:') {
+                    return candidate.toString();
+                }
+            } catch {
+                // Ignore malformed nested URLs and continue searching.
+            }
+        }
+    }
+
+    return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? parsed.toString() : null;
+};
+
+const guessFilenameFromUrl = (rawUrl, mimeType = 'image/jpeg') => {
+    try {
+        const parsed = new URL(rawUrl);
+        const tail = parsed.pathname.split('/').pop();
+        if (tail && tail.trim()) {
+            const decoded = decodeURIComponent(tail.trim());
+            if (decoded) return decoded;
+        }
+    } catch {
+        // Fall through to extension-based fallback.
+    }
+    const ext = mimeType.includes('png')
+        ? 'png'
+        : mimeType.includes('webp')
+            ? 'webp'
+            : mimeType.includes('gif')
+                ? 'gif'
+                : mimeType.includes('bmp')
+                    ? 'bmp'
+                    : 'jpg';
+    return `scan-from-link.${ext}`;
+};
+
+router.post('/fetch-image', async (req, res) => {
+    try {
+        const sourceUrl = extractDirectImageUrl(req.body?.url);
+        if (!sourceUrl) {
+            return res.status(400).json({ error: 'Please provide a valid http/https image URL.' });
+        }
+
+        const upstream = await fetch(sourceUrl, {
+            redirect: 'follow',
+            headers: {
+                'Accept': 'image/*,*/*;q=0.8',
+                'User-Agent': 'AgriGuardImageFetcher/1.0'
+            }
+        });
+
+        if (!upstream.ok) {
+            return res.status(400).json({ error: `Image request failed (${upstream.status})` });
+        }
+
+        const contentType = (upstream.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.startsWith('image/')) {
+            return res.status(400).json({ error: 'Link does not point to an image.' });
+        }
+
+        const arrayBuffer = await upstream.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        if (buffer.length === 0) {
+            return res.status(400).json({ error: 'Fetched image is empty.' });
+        }
+        if (buffer.length > MAX_FETCH_IMAGE_BYTES) {
+            return res.status(413).json({ error: 'Image is too large. Please use an image under 10MB.' });
+        }
+
+        const filename = guessFilenameFromUrl(upstream.url || sourceUrl, contentType);
+        res.set('Content-Type', contentType);
+        res.set('Cache-Control', 'no-store');
+        res.set('X-Image-Filename', encodeURIComponent(filename));
+        res.send(buffer);
+    } catch (error) {
+        console.error('Image fetch proxy failed:', error);
+        res.status(500).json({ error: error?.message || 'Unable to fetch image from URL.' });
+    }
+});
 
 // Initialize lazily
 let genAI = null;
@@ -218,5 +324,3 @@ router.delete('/history/:id', async (req, res) => {
 });
 
 export default router;
-
-
