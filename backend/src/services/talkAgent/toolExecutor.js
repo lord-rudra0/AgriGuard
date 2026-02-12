@@ -188,36 +188,62 @@ const executeUpdateThreshold = async (args, userId, socket) => {
   }
 };
 
-const executeDeleteThreshold = async (args, userId, socket) => {
+const resolveSingleThreshold = async (args, userId) => {
   const thresholdId = normalizeOptionalText(args?.thresholdId);
   const name = normalizeOptionalText(args?.name);
   const metric = normalizeOptionalText(args?.metric);
   const roomId = normalizeOptionalText(args?.roomId);
 
-  let threshold = null;
-
   if (thresholdId) {
-    threshold = await Threshold.findOneAndDelete({ _id: thresholdId, userId });
-  } else {
-    if (!name) {
-      return { error: "Provide thresholdId, or provide name (optionally metric/roomId)" };
-    }
-    const query = { userId, name };
-    if (metric) query.metric = metric;
-    if (roomId) query.roomId = roomId;
-
-    const matches = await Threshold.find(query).sort({ updatedAt: -1 }).limit(5).lean();
-    if (matches.length === 0) return { error: "Threshold not found" };
-    if (matches.length > 1) {
-      return {
-        needsMoreInfo: true,
-        question: "I found multiple thresholds with that name. Please provide thresholdId (or include metric/roomId).",
-        matches: matches.map(toThresholdPayload)
-      };
-    }
-    threshold = await Threshold.findOneAndDelete({ _id: matches[0]._id, userId });
+    const threshold = await Threshold.findOne({ _id: thresholdId, userId });
+    return threshold ? { threshold } : { error: "Threshold not found" };
   }
 
+  if (!name) {
+    return { error: "Provide thresholdId, or provide name (optionally metric/roomId)" };
+  }
+
+  const query = { userId, name };
+  if (metric) query.metric = metric;
+  if (roomId) query.roomId = roomId;
+
+  const matches = await Threshold.find(query).sort({ updatedAt: -1 }).limit(5);
+  if (matches.length === 0) return { error: "Threshold not found" };
+  if (matches.length > 1) {
+    return {
+      needsMoreInfo: true,
+      question: "I found multiple thresholds with that name. Please provide thresholdId (or include metric/roomId).",
+      matches: matches.map(toThresholdPayload)
+    };
+  }
+  return { threshold: matches[0] };
+};
+
+const executeToggleThresholdEnabled = async (args, userId, socket) => {
+  if (typeof args?.enabled !== 'boolean') {
+    return { error: "enabled must be true or false" };
+  }
+
+  const resolved = await resolveSingleThreshold(args, userId);
+  if (resolved.error || resolved.needsMoreInfo) return resolved;
+
+  const threshold = await Threshold.findOneAndUpdate(
+    { _id: resolved.threshold._id, userId },
+    { $set: { enabled: args.enabled } },
+    { new: true }
+  );
+  if (!threshold) return { error: "Threshold not found" };
+
+  const serialized = toThresholdPayload(threshold);
+  emitThresholdAction(socket, 'threshold_updated', { threshold: serialized });
+  return { success: true, threshold: serialized };
+};
+
+const executeDeleteThreshold = async (args, userId, socket) => {
+  const resolved = await resolveSingleThreshold(args, userId);
+  if (resolved.error || resolved.needsMoreInfo) return resolved;
+
+  const threshold = await Threshold.findOneAndDelete({ _id: resolved.threshold._id, userId });
   if (!threshold) return { error: "Threshold not found" };
 
   const deletedId = String(threshold._id);
@@ -474,6 +500,7 @@ const executeTool = async (name, args, userId, socket) => {
   if (name === "list_thresholds") return executeListThresholds(args, userId);
   if (name === "create_threshold") return executeCreateThreshold(args, userId, socket);
   if (name === "update_threshold") return executeUpdateThreshold(args, userId, socket);
+  if (name === "toggle_threshold_enabled") return executeToggleThresholdEnabled(args, userId, socket);
   if (name === "delete_threshold") return executeDeleteThreshold(args, userId, socket);
 
   if (name === "create_calendar_event") return executeCalendarCreate(args, userId, socket);

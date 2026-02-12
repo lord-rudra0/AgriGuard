@@ -161,6 +161,25 @@ export const TALK_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: "toggle_threshold_enabled",
+    description: "Enable or disable a threshold by ID or by unique name.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        thresholdId: { type: "STRING", description: "Threshold ID" },
+        name: { type: "STRING", description: "Threshold name (alternative to thresholdId)" },
+        metric: {
+          type: "STRING",
+          enum: ["temperature", "humidity", "co2", "light", "soilMoisture"],
+          description: "Optional metric when resolving by name"
+        },
+        roomId: { type: "STRING", description: "Optional room when resolving by name" },
+        enabled: { type: "BOOLEAN", description: "Target enabled state: true to enable, false to disable" }
+      },
+      required: ["enabled"]
+    }
+  },
+  {
     name: "delete_threshold",
     description: "Delete a threshold by ID, or by unique name (optionally narrowed by metric/room).",
     parameters: {
