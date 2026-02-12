@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import { CalendarClock, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 
 const SeasonalStrategyAnalytics = () => {
@@ -11,6 +12,14 @@ const SeasonalStrategyAnalytics = () => {
   const [error, setError] = useState('');
   const [summary, setSummary] = useState('');
   const [strategy, setStrategy] = useState(null);
+  const [creatingTasks, setCreatingTasks] = useState(false);
+
+  const createWeeklyDate = (weekNumber) => {
+    const d = new Date();
+    d.setHours(9, 0, 0, 0);
+    d.setDate(d.getDate() + (Math.max(1, Number(weekNumber) || 1) - 1) * 7);
+    return d;
+  };
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -34,6 +43,45 @@ const SeasonalStrategyAnalytics = () => {
       setError(e.response?.data?.message || 'Failed to generate seasonal strategy');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateCalendarTasks = async () => {
+    if (!strategy?.weeklyPlan?.length) return;
+    setCreatingTasks(true);
+    try {
+      const token = localStorage.getItem('token');
+      const requests = strategy.weeklyPlan.map((weekItem) => {
+        const startAt = createWeeklyDate(weekItem.week);
+        const endAt = new Date(startAt.getTime() + 60 * 60 * 1000);
+        const title = `Week ${weekItem.week}: ${weekItem.theme} Strategy Check`;
+        const description = [
+          `Auto-generated from Seasonal Strategy Assistant.`,
+          ``,
+          `Planned actions:`,
+          ...weekItem.actions.map((a) => `- ${a}`)
+        ].join('\n');
+
+        return axios.post(
+          '/api/calendar/events',
+          {
+            title,
+            description,
+            roomId: strategy?.context?.roomId || undefined,
+            startAt: startAt.toISOString(),
+            endAt: endAt.toISOString(),
+            reminders: [{ minutesBefore: 60 }]
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      });
+
+      await Promise.all(requests);
+      toast.success(`Created ${strategy.weeklyPlan.length} calendar tasks`);
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to create calendar tasks');
+    } finally {
+      setCreatingTasks(false);
     }
   };
 
@@ -132,7 +180,17 @@ const SeasonalStrategyAnalytics = () => {
 
       {strategy?.weeklyPlan?.length ? (
         <div>
-          <h4 className="text-xs font-black uppercase tracking-[0.15em] text-gray-500 dark:text-gray-400 mb-2">Weekly Plan</h4>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-xs font-black uppercase tracking-[0.15em] text-gray-500 dark:text-gray-400">Weekly Plan</h4>
+            <button
+              onClick={handleCreateCalendarTasks}
+              disabled={creatingTasks}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider shadow-md shadow-emerald-500/20 disabled:opacity-60"
+            >
+              {creatingTasks ? <Loader2 className="w-3 h-3 animate-spin" /> : <CalendarClock className="w-3 h-3" />}
+              Create Calendar Tasks
+            </button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {strategy.weeklyPlan.map((w) => (
               <div key={w.week} className="rounded-xl border border-gray-200 dark:border-gray-800 p-3 bg-white/70 dark:bg-gray-900/50">
