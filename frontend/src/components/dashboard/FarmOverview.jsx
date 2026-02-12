@@ -3,10 +3,7 @@ import axios from 'axios';
 import {
     Activity,
     AlertTriangle,
-    CheckCircle2,
-    Database,
     ArrowRight,
-    TrendingUp,
     ShieldAlert,
     ScanLine,
     ShieldCheck
@@ -37,31 +34,54 @@ const FarmOverview = () => {
         return () => clearInterval(interval);
     }, []);
 
-    const metrics = useMemo(() => {
-        if (!analyticsData || analyticsData.length === 0) return null;
+    const hourlySeries = useMemo(() => {
+        if (!analyticsData || analyticsData.length === 0) return [];
 
-        const totalPoints = analyticsData.length;
-        const lastPoint = analyticsData[totalPoints - 1];
+        const buckets = {};
+        analyticsData.forEach((row) => {
+            const sensorType = row?._id?.sensorType;
+            const date = row?._id?.date;
+            const hour = row?._id?.hour;
+            const value = row?.avgValue;
+            if (!sensorType || !date || typeof hour !== 'number' || typeof value !== 'number') return;
+
+            const hourString = String(hour).padStart(2, '0');
+            const key = `${date}T${hourString}:00:00.000Z`;
+            if (!buckets[key]) buckets[key] = { time: key };
+            buckets[key][sensorType] = value;
+        });
+
+        return Object.values(buckets).sort((a, b) => new Date(a.time) - new Date(b.time));
+    }, [analyticsData]);
+
+    const metrics = useMemo(() => {
+        if (!hourlySeries || hourlySeries.length === 0) return null;
+
+        const totalPoints = hourlySeries.length;
+        const lastPoint = hourlySeries[totalPoints - 1];
 
         // 1. Stability Score
         // Count hours in "safe" range (generic mushroom range)
         // Temp: 18-28, Hum: 80-95 (Fruiting) or 90-100 (Spawn), CO2 < 1000 (Fruiting)
         // Let's use a blended safe range for "General Stability"
         let stableCount = 0;
-        analyticsData.forEach(d => {
+        let stableSamples = 0;
+        hourlySeries.forEach(d => {
+            if (typeof d.temperature !== 'number' || typeof d.humidity !== 'number') return;
+            stableSamples++;
             if (d.temperature >= 20 && d.temperature <= 26 &&
                 d.humidity >= 80 && d.humidity <= 99) {
                 stableCount++;
             }
         });
-        const stabilityScore = Math.round((stableCount / totalPoints) * 100);
+        const stabilityScore = stableSamples > 0 ? Math.round((stableCount / stableSamples) * 100) : 0;
 
         // 2. Ecosystem Risk Level
         // Based on latest reading
         let riskLevel = 'Low';
         let riskColor = 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20';
 
-        if (lastPoint) {
+        if (lastPoint && typeof lastPoint.temperature === 'number' && typeof lastPoint.humidity === 'number') {
             if (lastPoint.temperature > 28 || lastPoint.humidity < 70) {
                 riskLevel = 'High';
                 riskColor = 'text-rose-600 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20';
@@ -74,20 +94,28 @@ const FarmOverview = () => {
         // 3. Growth Compliance
         // Determine Stage by CO2: High (>2000) = Spawn Run, Low (<1500) = Fruiting
         // Default to Fruiting if unsure/mixed
-        const avgCo2 = analyticsData.reduce((acc, curr) => acc + (curr.co2 || 0), 0) / totalPoints;
+        const co2Values = hourlySeries.map((curr) => curr.co2).filter((v) => typeof v === 'number');
+        const avgCo2 = co2Values.length > 0
+            ? co2Values.reduce((acc, val) => acc + val, 0) / co2Values.length
+            : 0;
         const stage = avgCo2 > 2000 ? 'Spawn Run' : 'Fruiting';
 
         // Calculate compliance for inferred stage
         let compliantCount = 0;
-        analyticsData.forEach(d => {
+        let complianceSamples = 0;
+        hourlySeries.forEach(d => {
+            if (typeof d.temperature !== 'number' || typeof d.humidity !== 'number') return;
             if (stage === 'Spawn Run') {
+                complianceSamples++;
                 if (d.temperature >= 24 && d.temperature <= 27 && d.humidity >= 90) compliantCount++;
             } else {
                 // Fruiting
+                if (typeof d.co2 !== 'number') return;
+                complianceSamples++;
                 if (d.temperature >= 20 && d.temperature <= 24 && d.humidity >= 85 && d.co2 < 1000) compliantCount++;
             }
         });
-        const complianceScore = Math.round((compliantCount / totalPoints) * 100);
+        const complianceScore = complianceSamples > 0 ? Math.round((compliantCount / complianceSamples) * 100) : 0;
 
         // 4. System Confidence
         // Based on data density (expected 24 points for 24h)
@@ -105,7 +133,7 @@ const FarmOverview = () => {
             confidenceScore,
             systemStatus
         };
-    }, [analyticsData]);
+    }, [hourlySeries]);
 
 
     if (loading || !metrics) return (
