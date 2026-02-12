@@ -106,8 +106,12 @@ export const getFullAnalytics = async (sensorData, historyData, userId, stageId 
 
     // Improvement #7: Calculate Global Confidence
     const recencyCoverage = Math.min(100, Math.round((wideRecent.length / 3) * 100));
+    const riskConfidence = Number(risk?.confidence);
+    const healthConfidence = Number(health?.systemConfidence);
     const globalConfidence = Math.round(
-        (risk.confidence * 0.35) + (health.systemConfidence * 0.5) + (recencyCoverage * 0.15)
+        ((Number.isFinite(riskConfidence) ? riskConfidence : 0) * 0.35) +
+        ((Number.isFinite(healthConfidence) ? healthConfidence : 0) * 0.5) +
+        (recencyCoverage * 0.15)
     );
 
     return {
