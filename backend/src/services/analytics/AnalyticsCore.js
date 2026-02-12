@@ -40,17 +40,20 @@ export const normalizeRisk = (value, ideal, safeMin, safeMax) => {
 /**
  * Calculates Confidence Score based on data density and variance (Improvement #7)
  */
-export const calculateConfidence = (dataPoints, expectedPoints, variance) => {
+export const calculateConfidence = (dataPoints, expectedPoints, variance = 1) => {
     if (!expectedPoints) return 0;
 
     const densityScore = Math.min(100, (dataPoints / expectedPoints) * 100);
 
-    // Lower variance is better for confidence in some contexts (sensor stability)
-    // but high variance might be real.
-    // For now, we focus on Data DENSITY as the primary driver of confidence.
-    // If we have 5 points when we expect 24, confidence is low.
+    // Improvement #8: Hardware Confidence (Sensor Entropy)
+    // If variance is effectively 0, logically the sensor is stuck/frozen.
+    // We apply a penalty if variance < 0.001 (relative to typical fluctuations)
+    let entropyPenalty = 0;
+    if (variance < 0.001 && dataPoints > 5) {
+        entropyPenalty = 40; // Heavy penalty for flatline
+    }
 
-    return Math.round(densityScore);
+    return Math.max(0, Math.round(densityScore - entropyPenalty));
 };
 
 /**
@@ -110,4 +113,18 @@ export const calculateRSquared = (data) => {
     }
 
     return Math.max(0, 1 - (ssr / tss));
+};
+
+/**
+ * Calculates Vapor Pressure Deficit (VPD) (Improvement #3)
+ * VPD = VPsat - VPair
+ * VPsat = 0.61078 * exp((17.27 * T) / (T + 237.3))
+ * VPair = VPsat * (RH / 100)
+ * @param {number} T - Temperature in Celsius
+ * @param {number} RH - Relative Humidity in %
+ */
+export const calculateVPD = (T, RH) => {
+    const vpsat = 0.61078 * Math.exp((17.27 * T) / (T + 237.3));
+    const vpair = vpsat * (RH / 100);
+    return Number((vpsat - vpair).toFixed(3)); // returned in kPa
 };

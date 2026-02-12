@@ -28,13 +28,32 @@ const FALLBACK_STAGES = {
 };
 
 export const getStageConfig = async (stageId = 'fruiting') => {
+    let config;
     try {
-        const config = await GrowthStage.findOne({ id: stageId, isActive: true }).lean();
-        if (config) return config;
+        config = await GrowthStage.findOne({ id: stageId, isActive: true }).lean();
     } catch (error) {
         console.error('Error fetching growth stage from DB:', error);
     }
-    return FALLBACK_STAGES[stageId] || FALLBACK_STAGES.fruiting;
+
+    if (!config) {
+        config = JSON.parse(JSON.stringify(FALLBACK_STAGES[stageId] || FALLBACK_STAGES.fruiting));
+    }
+
+    // Improvement #1: Diurnal Shifting (Circadian Alignment)
+    // Only apply to Fruiting stage as colonization (spawnRun) requires constant high heat.
+    if (stageId === 'fruiting') {
+        const hour = new Date().getHours();
+        const isNight = hour >= 22 || hour < 6;
+        if (isNight) {
+            // Apply night shift: Lower temp, slightly higher humidity targets
+            config.ideal.temperature.ideal -= 2;
+            config.ideal.humidity.ideal = Math.min(100, config.ideal.humidity.ideal + 5);
+            config.label += ' (Night Mode)';
+            config.isNightMode = true;
+        }
+    }
+
+    return config;
 };
 
 export const getAllStages = async () => {

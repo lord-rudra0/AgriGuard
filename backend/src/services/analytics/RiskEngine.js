@@ -1,70 +1,65 @@
-
 import { getStageConfig } from './StageEngine.js'; // Item 12: Centralized Config
-import { normalizeRisk, calculateConfidence } from './AnalyticsCore.js'; // Item 2: Normalization, Item 7: Confidence
+import { normalizeRisk, calculateConfidence, calculateVPD } from './AnalyticsCore.js'; // Item 2, 7 & 3 (VPD)
 
 export const calculateRiskProfile = async (sensorData, stageId = 'fruiting') => {
     // 1. Get Configuration (Stage-Aware)
-    const stage = await getStageConfig(stageId); // Item 12: Centralized Config
+    const stage = await getStageConfig(stageId);
     const { ideal } = stage;
 
-    // 2. Aggregate Data (Latest snapshot strategy for Real-time Risk)
-    // For robust risk, we look at the last "valid" reading for each sensor
-    // We assume sensorData is an array of recent readings
-
-    // Sort slightly to be sure we have latest
+    // 2. Aggregate Data
     const latestMap = {};
     if (Array.isArray(sensorData)) {
         sensorData.forEach(d => {
-            // If d is Aggregated (has _id.sensorType)
             if (d._id && d._id.sensorType) {
-                // For aggregated history, we take the average of the last hour as "current"
                 latestMap[d._id.sensorType] = d.avgValue;
             } else if (d.metadata && d.metadata.sensorType) {
-                // Raw data
                 latestMap[d.metadata.sensorType] = d.value;
             }
         });
     }
 
-    const currentTemp = latestMap['temperature'] || 0;
-    const currentHum = latestMap['humidity'] || 0;
-    const currentCo2 = latestMap['co2'] || 0;
+    const currentTemp = latestMap['temperature'] || 22;
+    const currentHum = latestMap['humidity'] || 85;
+    const currentCo2 = latestMap['co2'] || 600;
 
-    // 3. Dynamic Normalization (Item 2)
-    // Calculate risk per factor based on stage-specific weights
-
-    // Temp Risk
+    // 3. Dynamic Normalization
     const tempRiskRaw = normalizeRisk(currentTemp, ideal.temperature.ideal, ideal.temperature.min, ideal.temperature.max);
-    // Hum Risk
     const humRiskRaw = normalizeRisk(currentHum, ideal.humidity.ideal, ideal.humidity.min, ideal.humidity.max);
-    // CO2 Risk
     const co2RiskRaw = normalizeRisk(currentCo2, ideal.co2.ideal, ideal.co2.min, ideal.co2.max);
 
-    // 4. Weighted Sum (Item 2)
+    // 4. VPD Calculation & Risk Fusion (Improvement #3)
+    const currentVPD = calculateVPD(currentTemp, currentHum);
+    // Biological Ideal VPD: 0.45 kPa. Safe range: 0.3 - 0.7
+    const vpdRiskRaw = normalizeRisk(currentVPD, 0.45, 0.3, 0.7);
+
+    // 5. Weighted Sum with VPD Fusion
     let weightedSum =
-        (tempRiskRaw * ideal.temperature.weight) +
-        (humRiskRaw * ideal.humidity.weight) +
-        (co2RiskRaw * ideal.co2.weight);
+        (tempRiskRaw * 0.25) +
+        (humRiskRaw * 0.25) +
+        (co2RiskRaw * 0.2) +
+        (vpdRiskRaw * 0.3); // High weight for fused VPD
 
-    // 5. Special Risk Patterns (Logic from old frontend, but formalized)
-    // Heat Stress Multiplier: If Temp AND Hum are high, risk explodes
-    if (currentTemp > 25 && currentHum > 70) {
-        weightedSum *= 1.5;
-    }
+    // Additional Multipliers for extreme extremes
+    if (currentVPD < 0.2) weightedSum *= 1.4; // Extreme blotch risk
+    if (currentVPD > 1.2) weightedSum *= 1.4; // Extreme dry risk
 
-    // Mold Risk: If Temp Mod-High AND Hum Very High
-    if (currentTemp > 22 && currentHum > 85) {
-        weightedSum *= 1.3;
-    }
-
-    // Clamp to 0-100
     const finalRiskScore = Math.min(100, Math.round(weightedSum));
 
-    // 6. Confidence Score (Item 7)
-    // Simple mock based on data availability
+    // 6. Confidence Score (Improved: Density + Entropy)
     const dataPoints = Object.keys(latestMap).length;
-    const expectedPoints = 3; // Temp, Hum, CO2
-    const confidence = calculateConfidence(dataPoints, expectedPoints);
+
+    // Calculate variance of temperature as a health proxy (entropy)
+    const tempValues = sensorData
+        .filter(d => (d.metadata?.sensorType || d._id?.sensorType) === 'temperature')
+        .map(d => d.value ?? d.avgValue);
+
+    let variance = 1;
+    if (tempValues.length > 5) {
+        const avg = tempValues.reduce((a, b) => a + b, 0) / tempValues.length;
+        variance = tempValues.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / tempValues.length;
+    }
+
+    const confidence = calculateConfidence(dataPoints, 3, variance);
 
     // 7. Risk Classification
     let level = 'Low';
@@ -80,15 +75,16 @@ export const calculateRiskProfile = async (sensorData, stageId = 'fruiting') => 
         factors: [
             { name: 'Temperature', value: Math.round(tempRiskRaw), color: '#fbbf24' },
             { name: 'Humidity', value: Math.round(humRiskRaw), color: '#38bdf8' },
+            { name: 'VPD Stress', value: Math.round(vpdRiskRaw), color: '#f43f5e' },
             { name: 'CO2', value: Math.round(co2RiskRaw), color: '#818cf8' }
         ],
         signals: [
-            { name: 'Heat Stress', value: (currentTemp > 25 && currentHum > 70) ? 'High' : 'Normal', type: 'thermal' },
-            { name: 'Mold Risk', value: (currentTemp > 22 && currentHum > 85) ? 'High' : 'Low', type: 'purity' }
+            { name: 'VPD Metric', value: `${currentVPD} kPa`, type: 'purity' },
+            { name: 'Transpiration', value: currentVPD < 0.3 ? 'Stalled' : currentVPD > 0.8 ? 'Excessive' : 'Optimal', type: 'thermal' }
         ],
         meta: {
             stage: stage.label,
-            idealTemp: ideal.temperature.ideal
+            vpd: currentVPD
         }
     };
 };

@@ -1,23 +1,20 @@
 
-// Improvement #3: Predictive Analytics with Smoothing & 30-Point Regression
-// Improvement #5: Statistical Significance Checks
-import { calculateMovingAverage, calculateSlope } from './AnalyticsCore.js';
+// Improvement #2: Dual-Window Smoothing
+// Improvement #5: Statistical Significance Checks (R-Squared)
+import { calculateMovingAverage, calculateSlope, calculateRSquared } from './AnalyticsCore.js';
+import { getStageConfig } from './StageEngine.js';
 
-const THRESHOLDS = {
-    temperature: { min: 18, max: 28, label: 'Temperature', unit: '°C' },
-    humidity: { min: 40, max: 80, label: 'Humidity', unit: '%' },
-    co2: { min: 300, max: 600, label: 'CO2', unit: 'ppm' },
-    soilMoisture: { min: 30, max: 70, label: 'Soil Moisture', unit: '%' }
-};
+export const calculatePredictiveForecasts = async (chartData, stageId = 'fruiting') => {
+    // 1. Get Biological Bounds
+    const stage = await getStageConfig(stageId);
+    const { ideal } = stage;
 
-export const calculatePredictiveForecasts = (chartData) => {
-    // Improvement #3: Use 30 points instead of 5
-    const MIN_POINTS = 10; // Minimum to attempt
+    const MIN_POINTS = 10;
     if (!chartData || chartData.length < MIN_POINTS) return [];
 
     const grouped = {};
     chartData.forEach(d => {
-        Object.keys(THRESHOLDS).forEach(key => {
+        ['temperature', 'humidity', 'co2'].forEach(key => {
             if (d[key] !== undefined) {
                 if (!grouped[key]) grouped[key] = [];
                 grouped[key].push(d[key]);
@@ -27,55 +24,54 @@ export const calculatePredictiveForecasts = (chartData) => {
 
     const results = [];
 
-    Object.keys(grouped).forEach(key => {
-        let values = grouped[key];
+    for (const key of Object.keys(grouped)) {
+        let rawValues = grouped[key];
 
-        // Improvement #3: Smooth data first (Window of 3)
-        values = calculateMovingAverage(values, 3);
+        // 2. Dual-Window Smoothing (Improvement #2)
+        // Fast window to denoise, Slow window to find trend
+        const fastSmoothed = calculateMovingAverage(rawValues, 3);
+        if (fastSmoothed.length < 5) continue;
 
-        // Improvement #3: Take last 30 points (or as many as available)
-        const recent = values.slice(-30);
-        if (recent.length < 5) return;
+        const recentSet = fastSmoothed.slice(-24); // Last 24 points (e.g., 24h if hourly)
 
-        const slope = calculateSlope(recent);
-        const currentVal = values[values.length - 1];
-        const threshold = THRESHOLDS[key];
+        // 3. Statistical Safety Gate (Improvement #5)
+        const rSquared = calculateRSquared(recentSet);
+        const slope = calculateSlope(recentSet);
+        const currentVal = fastSmoothed[fastSmoothed.length - 1];
 
-        // Improvement #5: Statistical Significance (Slope must be distinct from noise)
-        // For production, we'd calculate p-value, but here we use a normalized robustness threshold
-        const noiseFloor = key === 'co2' ? 5 : 0.1;
-        const isSignificant = Math.abs(slope) > noiseFloor;
+        const boundary = ideal[key];
+        if (!boundary) continue;
 
-        if (isSignificant) {
+        // Gate: Only forecast if R-Squared > 0.6 (Trend is coherent)
+        // gate co2 higher because it's naturally jumpy
+        const gate = key === 'co2' ? 0.5 : 0.6;
+
+        if (rSquared > gate && Math.abs(slope) > (key === 'co2' ? 5 : 0.05)) {
             let predictedEvent = null;
             let timeToEvent = null;
-            let targetBoundary = null;
 
-            if (slope > 0 && currentVal < threshold.max) {
-                const diff = threshold.max - currentVal;
-                timeToEvent = diff / slope;
+            if (slope > 0 && currentVal < boundary.max) {
+                timeToEvent = (boundary.max - currentVal) / slope;
                 predictedEvent = 'High Limit Breach';
-                targetBoundary = threshold.max;
-            } else if (slope < 0 && currentVal > threshold.min) {
-                const diff = currentVal - threshold.min;
-                timeToEvent = diff / Math.abs(slope);
+            } else if (slope < 0 && currentVal > boundary.min) {
+                timeToEvent = (currentVal - boundary.min) / Math.abs(slope);
                 predictedEvent = 'Low Limit Breach';
-                targetBoundary = threshold.min;
             }
 
-            if (predictedEvent && timeToEvent < 24) {
-                const predictedValue = Number((currentVal + (slope * 24)).toFixed(2));
+            if (predictedEvent && timeToEvent < 48) { // Up to 48h forecast
                 results.push({
-                    type: threshold.label,
+                    type: key.charAt(0).toUpperCase() + key.slice(1),
                     currentValue: Number(currentVal.toFixed(2)),
-                    predictedValue: predictedValue,
-                    unit: threshold.unit,
-                    insight: `${predictedEvent} expected in ${timeToEvent.toFixed(1)}h. Trend: ${slope > 0 ? '+' : ''}${slope.toFixed(2)}${threshold.unit}/h.`,
-                    severity: timeToEvent < 4 ? 'critical' : timeToEvent < 12 ? 'warning' : 'info'
+                    predictedValue: Number((currentVal + (slope * 24)).toFixed(2)),
+                    unit: key === 'co2' ? 'ppm' : key === 'temperature' ? '°C' : '%',
+                    insight: `${predictedEvent} expected in ${timeToEvent.toFixed(1)}h.`,
+                    timeToEvent: Number(timeToEvent.toFixed(1)),
+                    confidence: Math.round(rSquared * 100),
+                    severity: timeToEvent < 6 ? 'critical' : timeToEvent < 24 ? 'warning' : 'info'
                 });
             }
         }
-    });
+    }
 
-    return results.sort((a, b) => (a.hours || 99) - (b.hours || 99));
+    return results.sort((a, b) => a.timeToEvent - b.timeToEvent);
 };

@@ -47,15 +47,23 @@ export const calculateGrowthProfile = async (chartData, selectedStageId = 'fruit
     const complianceScore = Math.round((idealTime / totalPoints) * 100);
     const stressScore = Math.round((stressTime / totalPoints) * 100);
 
+    // Improvement #Stress: Bio-Cumulative Stress Hours (BCSH)
+    // A "Health Budget" logic. 20+ hours of stress is considered "Compromised"
+    const STRESS_BUDGET = 20;
+    const healthBudgetRemaining = Math.max(0, 100 - (stressTime / STRESS_BUDGET) * 100);
+
     return {
         complianceScore,
         stressScore,
         stressHours: stressTime,
+        healthBudgetRemaining: Math.round(healthBudgetRemaining),
+        stressStatus: stressTime > STRESS_BUDGET ? 'Compromised' : stressTime > 5 ? 'Warning' : 'Optimal',
         details,
         meta: {
             stageId: stageConfig.id,
             stageLabel: stageConfig.label,
-            totalHours: totalPoints
+            totalHours: totalPoints,
+            isNightMode: stageConfig.isNightMode || false
         }
     };
 };

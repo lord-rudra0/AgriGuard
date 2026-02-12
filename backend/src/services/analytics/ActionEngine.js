@@ -1,9 +1,13 @@
 
-// Improvement #9: Priority-Based Recommendation Engine
+// Improvement #9: Priority-Based Recommendation Engine (Time-to-Failure)
 // Improvement #1: Logic Moved to Backend
+import { getStageConfig } from './StageEngine.js';
 
-export const generateActionRecommendations = (chartData) => {
+export const generateActionRecommendations = async (chartData, predictions = [], stageId = 'fruiting') => {
     if (!chartData || chartData.length === 0) return [];
+
+    const stage = await getStageConfig(stageId);
+    const { ideal } = stage;
 
     const latest = chartData[chartData.length - 1];
     const actions = [];
@@ -11,12 +15,19 @@ export const generateActionRecommendations = (chartData) => {
 
     /**
      * Helper to score recommendations (Improvement #9)
-     * recommendationScore = severityWeight * riskLevel + durationWeight * exposureTime + trendWeight * slopeMagnitude
+     * score = basePriority + (24 - TTF) * weight
      */
     const addRecommendation = (props) => {
         const { type, title, action, description, iconName, riskReduction, stabilityGain, targetMetric } = props;
 
-        let severityValue = type === 'critical' ? 3 : type === 'high' ? 2 : type === 'medium' ? 1 : 0;
+        // Find relevant prediction for TTF logic
+        const prediction = predictions.find(p => p.type.toLowerCase().includes(targetMetric.toLowerCase()));
+        const ttf = prediction ? prediction.timeToEvent : null;
+
+        let baseScore = type === 'critical' ? 50 : type === 'high' ? 30 : 10;
+
+        // TTF Premium: Boost score if event is imminent (within 6h)
+        const ttfBoost = ttf && ttf < 6 ? (6 - ttf) * 10 : 0;
 
         actions.push({
             id: idCounter++,
@@ -24,8 +35,9 @@ export const generateActionRecommendations = (chartData) => {
             title,
             action,
             description,
-            iconName, // Replaced component with icon name for JSON transport
-            score: severityValue * 10, // Base priority
+            iconName,
+            ttf: ttf ? Number(ttf.toFixed(1)) : null,
+            score: baseScore + ttfBoost,
             impact: {
                 riskReduction,
                 stabilityGain,
@@ -34,55 +46,26 @@ export const generateActionRecommendations = (chartData) => {
         });
     };
 
-    // 1. Heat Stress
-    if (latest.temperature > 25 && latest.humidity > 70) {
-        addRecommendation({
-            type: 'critical',
-            title: 'Heat Stress Detected',
-            action: 'Increase Ventilation Immediately',
-            description: 'Temperature and humidity are critically high. Risk of bacterial blotch.',
-            iconName: 'Wind',
-            riskReduction: -25,
-            stabilityGain: 15,
-            targetMetric: 'Temp & Humidity'
-        });
-    }
+    // 1. Biological Threshold Checks (Using Stage-Aware Ideals)
 
-    // 2. High Humidity / Mold Risk
-    else if (latest.humidity > 85) {
+    // Temp Logic
+    if (latest.temperature > ideal.temperature.max) {
         addRecommendation({
             type: 'high',
-            title: 'Mold Risk High',
-            action: 'Dehumidify & Circulate Air',
-            description: 'Humidity > 85% promotes mold growth. Run dehumidifiers.',
-            iconName: 'Droplets',
-            riskReduction: -20,
-            stabilityGain: 10,
-            targetMetric: 'Humidity'
-        });
-    }
-
-    // 3. Dryness / Desiccation
-    else if (latest.humidity < 40) {
-        addRecommendation({
-            type: 'high',
-            title: 'Air Too Dry',
-            action: 'Activate Misting System',
-            description: 'Humidity < 40% will dry out mycelium. Increase moisture.',
-            iconName: 'Droplets',
+            title: 'Temperature Too High',
+            action: 'Increase Cooling/Ventilation',
+            description: `Temp is ${latest.temperature.toFixed(1)}°C. Ideal max for ${stage.label} is ${ideal.temperature.max}°C.`,
+            iconName: 'ThermometerSun',
             riskReduction: -15,
             stabilityGain: 10,
-            targetMetric: 'Humidity'
+            targetMetric: 'Temperature'
         });
-    }
-
-    // 4. Cold Stress
-    if (latest.temperature < 18) {
+    } else if (latest.temperature < ideal.temperature.min) {
         addRecommendation({
             type: 'medium',
-            title: 'Low Temperature',
-            action: 'Check Heating / Insulation',
-            description: 'Temp < 18°C slows growth significantly.',
+            title: 'Temperature Too Low',
+            action: 'Check Heating System',
+            description: `Temp is ${latest.temperature.toFixed(1)}°C. Ideal min is ${ideal.temperature.min}°C.`,
             iconName: 'ThermometerSnowflake',
             riskReduction: -10,
             stabilityGain: 5,
@@ -90,27 +73,65 @@ export const generateActionRecommendations = (chartData) => {
         });
     }
 
-    // 5. Poor Air Quality
-    if (latest.co2 > 800) {
+    // Humidity Logic
+    if (latest.humidity > ideal.humidity.max) {
+        addRecommendation({
+            type: 'high',
+            title: 'Humidity Too High',
+            action: 'Activate Dehumidifiers',
+            description: `Humidity is ${latest.humidity.toFixed(1)}%. Target max: ${ideal.humidity.max}%.`,
+            iconName: 'Droplets',
+            riskReduction: -20,
+            stabilityGain: 10,
+            targetMetric: 'Humidity'
+        });
+    } else if (latest.humidity < ideal.humidity.min) {
+        addRecommendation({
+            type: 'high',
+            title: 'Humidity Too Low',
+            action: 'Apply Misting / Wet Walls',
+            description: `Humidity is ${latest.humidity.toFixed(1)}%. Target min: ${ideal.humidity.min}%.`,
+            iconName: 'Droplets',
+            riskReduction: -20,
+            stabilityGain: 10,
+            targetMetric: 'Humidity'
+        });
+    }
+
+    // CO2 Logic
+    if (latest.co2 > ideal.co2.max) {
         addRecommendation({
             type: 'medium',
-            title: 'Poor Air Quality',
-            action: 'Increase Fresh Air Intake',
-            description: 'CO2 > 800ppm enables spindly growth.',
+            title: 'High CO2 Concentration',
+            action: 'Force Exhaust Fans',
+            description: `CO2 is ${Math.round(latest.co2)}ppm. Recommended max for ${stage.label} is ${ideal.co2.max}ppm.`,
             iconName: 'Wind',
-            riskReduction: -10,
-            stabilityGain: 5,
+            riskReduction: -12,
+            stabilityGain: 8,
             targetMetric: 'CO2'
         });
     }
 
-    // 6. Perfect Conditions
+    // 2. Pattern Matching Logic (Compound Risks)
+    if (latest.temperature > 25 && latest.humidity > 85) {
+        addRecommendation({
+            type: 'critical',
+            title: 'Mushroom Blotch Warning',
+            action: 'Full Ventilation Purge',
+            description: 'Combination of high heat and moisture leads to bacterial blotch. Priority 1.',
+            iconName: 'AlertTriangle',
+            riskReduction: -40,
+            stabilityGain: 20,
+            targetMetric: 'Overall Env'
+        });
+    }
+
     if (actions.length === 0) {
         addRecommendation({
             type: 'success',
-            title: 'Optimal Conditions',
-            action: 'Maintain Current Settings',
-            description: 'All metrics are within the Goldilocks zone. Great job!',
+            title: 'Perfect Maintenance',
+            action: 'Continue Current Flow',
+            description: `All systems nominal for ${stage.label}.`,
             iconName: 'CheckCircle2',
             riskReduction: 0,
             stabilityGain: 2,
@@ -118,6 +139,6 @@ export const generateActionRecommendations = (chartData) => {
         });
     }
 
-    // Sort by Score/Priority (Improvement #9)
+    // Sort by Score/Priority (Imminent & Critical First)
     return actions.sort((a, b) => b.score - a.score);
 };
