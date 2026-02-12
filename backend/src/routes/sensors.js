@@ -188,19 +188,28 @@ router.get('/analytics/full', authenticateToken, async (req, res) => {
   try {
     const { timeframe = '24h', stage = 'fruiting' } = req.query;
 
+    const timeframeMsMap = {
+      '1h': 60 * 60 * 1000,
+      '24h': 24 * 60 * 60 * 1000,
+      '7d': 7 * 24 * 60 * 60 * 1000,
+      '30d': 30 * 24 * 60 * 60 * 1000
+    };
+
+    const timeframeMs = timeframeMsMap[timeframe] || timeframeMsMap['24h'];
     let startDate;
-    switch (timeframe) {
-      case '1h': startDate = new Date(Date.now() - 60 * 60 * 1000); break;
-      case '24h': startDate = new Date(Date.now() - 24 * 60 * 60 * 1000); break;
-      case '7d': startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); break;
-      default: startDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    }
+    startDate = new Date(Date.now() - timeframeMs);
 
     // 1. Get recent raw data (for Risk/Predictive)
-    const recentData = await SensorData.find({
+    // Use timeframe-aligned window for consistency with selected analytics range.
+    // Cap point count to prevent very large payloads for long windows.
+    const MAX_RECENT_POINTS = 5000;
+    const recentData = (await SensorData.find({
       'metadata.userId': req.user._id,
-      timestamp: { $gte: new Date(Date.now() - 6 * 60 * 60 * 1000) } // Last 6 hours
-    }).sort({ timestamp: 1 });
+      timestamp: { $gte: startDate }
+    })
+      .sort({ timestamp: -1 })
+      .limit(MAX_RECENT_POINTS))
+      .reverse();
 
     // 2. Get Aggregated History (Hybrid Approach: Precomputed + Recent Raw)
     const { default: SensorHistory } = await import('../models/SensorHistory.js');
