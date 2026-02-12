@@ -273,7 +273,7 @@ export default function Scan() {
                 Upload image
               </button>
 
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <input
                   type="url"
                   value={imageUrl}
@@ -284,13 +284,13 @@ export default function Scan() {
                       handleImageUrlSubmit();
                     }
                   }}
-                  placeholder="Paste image URL..."
-                  className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/15 bg-white dark:bg-gray-900/60 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                  placeholder="Paste image URL or data:image base64..."
+                  className="min-w-0 flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/15 bg-white dark:bg-gray-900/60 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
                 />
                 <button
                   onClick={handleImageUrlSubmit}
                   disabled={urlLoading}
-                  className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition-colors disabled:opacity-60"
+                  className="shrink-0 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition-colors disabled:opacity-60 sm:min-w-[92px]"
                 >
                   {urlLoading ? 'Loading...' : 'Use Link'}
                 </button>
@@ -338,30 +338,30 @@ export default function Scan() {
 
                   {/* DETAILED Analysis Result (Priority View) */}
                   {!predicting && !detailedLoading && detailedAnalysis && (
-                    <div className="h-full p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-800 dark:to-gray-900 shadow-sm relative overflow-hidden flex flex-col">
+                    <div className="h-full p-4 sm:p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-800 dark:to-gray-900 shadow-sm relative overflow-hidden flex flex-col">
                       {/* Decorative */}
                       <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
 
-                      <div className="flex justify-between items-start mb-6">
+                      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <div className="text-xs font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase mb-1">Detected Object</div>
-                          <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white leading-tight mb-2">
+                          <h3 className="mb-2 break-words text-2xl font-extrabold leading-tight text-gray-900 dark:text-white sm:text-3xl">
                             {detailedAnalysis.type || 'Unknown Object'}
                           </h3>
                           {/* Overall Confidence Bar */}
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                               <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${detailedAnalysis.typeConfidence || detailedAnalysis.confidence}%` }}></div>
                             </div>
                             <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{detailedAnalysis.typeConfidence || detailedAnalysis.confidence}% Confidence</span>
                           </div>
                         </div>
-                        <div className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-800">
+                        <div className="w-fit self-start px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-800">
                           ADVANCED MODEL
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className={`p-4 rounded-xl border ${detailedAnalysis.edible ? 'bg-white dark:bg-gray-800 border-emerald-100 dark:border-gray-700' : 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'}`}>
                           <div className="flex justify-between items-center mb-2">
                             <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Edibility</div>
@@ -369,7 +369,7 @@ export default function Scan() {
                               <span className="text-xs font-mono text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">{detailedAnalysis.edibleConfidence}%</span>
                             )}
                           </div>
-                          <div className={`text-lg font-bold flex items-center gap-2 ${detailedAnalysis.edible ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                          <div className={`text-base sm:text-lg font-bold flex items-center gap-2 ${detailedAnalysis.edible ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                             {detailedAnalysis.edible ? (
                               <><span>✅</span> <span>Edible</span></>
                             ) : (
@@ -385,15 +385,15 @@ export default function Scan() {
                               <span className="text-xs font-mono text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">{detailedAnalysis.diseaseConfidence}%</span>
                             )}
                           </div>
-                          <div className="text-lg font-bold flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                          <div className="text-base sm:text-lg font-bold flex items-start gap-2 text-gray-800 dark:text-gray-200">
                             {detailedAnalysis.disease ? (
-                              <span className="text-amber-500">⚠️ {detailedAnalysis.diseaseType || 'Diseased'}</span>
+                              <span className="break-words text-amber-500 leading-snug">⚠️ {detailedAnalysis.diseaseType || 'Diseased'}</span>
                             ) : (
                               <span className="text-blue-500">Healthy</span>
                             )}
                           </div>
                           {detailedAnalysis.disease && detailedAnalysis.diseaseTypeConfidence && (
-                            <div className="mt-1 text-xs text-gray-400 text-right">
+                            <div className="mt-1 text-xs text-gray-400 text-left sm:text-right">
                               Diagnosis Confidence: {detailedAnalysis.diseaseTypeConfidence}%
                             </div>
                           )}
