@@ -7,6 +7,7 @@ dotenv.config();
 import SensorData from '../models/SensorData.js';
 import ScanHistory from '../models/ScanHistory.js';
 import Alert from '../models/Alert.js';
+import CalendarEvent from '../models/CalendarEvent.js';
 
 const router = express.Router();
 
@@ -107,6 +108,99 @@ export const registerTalkSocket = (io) => {
                                                     description: "Minimum severity level to include."
                                                 }
                                             }
+                                        }
+                                    },
+                                    {
+                                        name: "create_calendar_event",
+                                        description: "Create a calendar event for the user.",
+                                        parameters: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                title: {
+                                                    type: "STRING",
+                                                    description: "Event title"
+                                                },
+                                                startAt: {
+                                                    type: "STRING",
+                                                    description: "Start datetime in ISO format"
+                                                },
+                                                endAt: {
+                                                    type: "STRING",
+                                                    description: "Optional end datetime in ISO format"
+                                                },
+                                                description: {
+                                                    type: "STRING",
+                                                    description: "Optional event description"
+                                                },
+                                                roomId: {
+                                                    type: "STRING",
+                                                    description: "Optional room identifier"
+                                                },
+                                                reminderMinutes: {
+                                                    type: "ARRAY",
+                                                    items: { type: "NUMBER" },
+                                                    description: "Optional reminders in minutes before event, e.g. [15, 60]"
+                                                }
+                                            },
+                                            required: ["title", "startAt"]
+                                        }
+                                    },
+                                    {
+                                        name: "list_calendar_events",
+                                        description: "List calendar events in a date range.",
+                                        parameters: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                start: {
+                                                    type: "STRING",
+                                                    description: "Range start datetime in ISO format"
+                                                },
+                                                end: {
+                                                    type: "STRING",
+                                                    description: "Range end datetime in ISO format"
+                                                },
+                                                limit: {
+                                                    type: "NUMBER",
+                                                    description: "Maximum number of events to return"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    {
+                                        name: "update_calendar_event",
+                                        description: "Update an existing calendar event by ID.",
+                                        parameters: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                eventId: {
+                                                    type: "STRING",
+                                                    description: "Calendar event ID"
+                                                },
+                                                title: { type: "STRING" },
+                                                startAt: { type: "STRING" },
+                                                endAt: { type: "STRING" },
+                                                description: { type: "STRING" },
+                                                roomId: { type: "STRING" },
+                                                reminderMinutes: {
+                                                    type: "ARRAY",
+                                                    items: { type: "NUMBER" }
+                                                }
+                                            },
+                                            required: ["eventId"]
+                                        }
+                                    },
+                                    {
+                                        name: "delete_calendar_event",
+                                        description: "Delete a calendar event by ID.",
+                                        parameters: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                eventId: {
+                                                    type: "STRING",
+                                                    description: "Calendar event ID"
+                                                }
+                                            },
+                                            required: ["eventId"]
                                         }
                                     }
                                 ]
@@ -239,10 +333,10 @@ async function handleToolCall(geminiWs, toolCall, socket) {
             }
             else if (name === "get_latest_sensor_data") {
                 const data = await SensorData.findOne({
-                    userId,
-                    sensorType: args.sensorType
-                }).sort({ createdAt: -1 });
-                result = data ? { value: data.value, unit: data.unit, timestamp: data.createdAt } : { message: "No data found for this sensor type." };
+                    'metadata.userId': userId,
+                    'metadata.sensorType': args.sensorType
+                }).sort({ timestamp: -1 });
+                result = data ? { value: data.value, unit: data.unit, timestamp: data.timestamp } : { message: "No data found for this sensor type." };
             }
             else if (name === "get_recent_scans") {
                 const scans = await ScanHistory.find({ userId })
@@ -260,6 +354,134 @@ async function handleToolCall(geminiWs, toolCall, socket) {
                 }
                 const alerts = await Alert.find(query).sort({ createdAt: -1 }).limit(10);
                 result = { alerts: alerts.map(a => ({ title: a.title, severity: a.severity, message: a.message })) };
+            }
+            else if (name === "create_calendar_event") {
+                const startAt = args?.startAt ? new Date(args.startAt) : null;
+                const endAt = args?.endAt ? new Date(args.endAt) : null;
+                if (!args?.title || !startAt || Number.isNaN(startAt.getTime())) {
+                    result = { error: "title and valid startAt are required" };
+                } else if (endAt && Number.isNaN(endAt.getTime())) {
+                    result = { error: "endAt must be a valid datetime" };
+                } else {
+                    const reminderMinutes = Array.isArray(args.reminderMinutes)
+                        ? args.reminderMinutes.filter((m) => Number.isFinite(Number(m))).map((m) => Number(m))
+                        : [];
+                    const event = await CalendarEvent.create({
+                        userId,
+                        title: String(args.title),
+                        description: args?.description ? String(args.description) : '',
+                        roomId: args?.roomId ? String(args.roomId) : null,
+                        startAt,
+                        endAt: endAt && !Number.isNaN(endAt.getTime()) ? endAt : undefined,
+                        reminders: reminderMinutes.map((m) => ({ minutesBefore: m }))
+                    });
+                    result = {
+                        success: true,
+                        event: {
+                            id: String(event._id),
+                            title: event.title,
+                            startAt: event.startAt,
+                            endAt: event.endAt || null
+                        }
+                    };
+                }
+            }
+            else if (name === "list_calendar_events") {
+                const startAt = args?.start ? new Date(args.start) : new Date();
+                const endAt = args?.end ? new Date(args.end) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                const limitRaw = Number(args?.limit);
+                const limit = Math.min(Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 20, 100);
+
+                if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
+                    result = { error: "start/end must be valid datetimes" };
+                } else {
+                    const events = await CalendarEvent.find({
+                        userId,
+                        startAt: { $gte: startAt, $lte: endAt }
+                    })
+                        .sort({ startAt: 1 })
+                        .limit(limit)
+                        .lean();
+                    result = {
+                        events: events.map((e) => ({
+                            id: String(e._id),
+                            title: e.title,
+                            startAt: e.startAt,
+                            endAt: e.endAt || null,
+                            description: e.description || ''
+                        }))
+                    };
+                }
+            }
+            else if (name === "update_calendar_event") {
+                const eventId = args?.eventId ? String(args.eventId) : null;
+                if (!eventId) {
+                    result = { error: "eventId is required" };
+                } else {
+                    const updates = {};
+                    if (args?.title != null) updates.title = String(args.title);
+                    if (args?.description != null) updates.description = String(args.description);
+                    if (args?.roomId !== undefined) updates.roomId = args.roomId ? String(args.roomId) : null;
+
+                    if (args?.startAt) {
+                        const startAt = new Date(args.startAt);
+                        if (Number.isNaN(startAt.getTime())) {
+                            result = { error: "startAt must be a valid datetime" };
+                        } else {
+                            updates.startAt = startAt;
+                        }
+                    }
+                    if (!result.error && args?.endAt !== undefined) {
+                        if (!args.endAt) {
+                            updates.endAt = undefined;
+                        } else {
+                            const endAt = new Date(args.endAt);
+                            if (Number.isNaN(endAt.getTime())) {
+                                result = { error: "endAt must be a valid datetime" };
+                            } else {
+                                updates.endAt = endAt;
+                            }
+                        }
+                    }
+                    if (!result.error && Array.isArray(args?.reminderMinutes)) {
+                        const reminderMinutes = args.reminderMinutes
+                            .filter((m) => Number.isFinite(Number(m)))
+                            .map((m) => Number(m));
+                        updates.reminders = reminderMinutes.map((m) => ({ minutesBefore: m }));
+                    }
+
+                    if (!result.error) {
+                        const event = await CalendarEvent.findOneAndUpdate(
+                            { _id: eventId, userId },
+                            updates,
+                            { new: true }
+                        );
+                        if (!event) {
+                            result = { error: "Event not found" };
+                        } else {
+                            result = {
+                                success: true,
+                                event: {
+                                    id: String(event._id),
+                                    title: event.title,
+                                    startAt: event.startAt,
+                                    endAt: event.endAt || null
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+            else if (name === "delete_calendar_event") {
+                const eventId = args?.eventId ? String(args.eventId) : null;
+                if (!eventId) {
+                    result = { error: "eventId is required" };
+                } else {
+                    const deleted = await CalendarEvent.deleteOne({ _id: eventId, userId });
+                    result = deleted.deletedCount > 0
+                        ? { success: true, message: "Event deleted" }
+                        : { error: "Event not found" };
+                }
             }
         } catch (err) {
             console.error(`[TalkAgent] Tool error (${name}):`, err);
