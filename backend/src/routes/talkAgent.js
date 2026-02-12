@@ -37,6 +37,23 @@ const attachSocketHandlers = (socket) => {
     console.log(`[TalkAgent] User ${socket.user?.id} requested Live API connection with voice: ${requestedVoice}`);
 
     const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      socket.emit('talk:status', {
+        status: 'error',
+        error: 'Missing GEMINI_API_KEY on server'
+      });
+      return;
+    }
+
+    if (geminiWs) {
+      try {
+        geminiWs.close();
+      } catch {
+        // ignore close errors and continue with a fresh connection
+      }
+      geminiWs = null;
+    }
+
     const url = `${GEMINI_API_URL}?key=${apiKey}`;
 
     try {
