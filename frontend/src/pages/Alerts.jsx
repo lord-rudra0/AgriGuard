@@ -21,7 +21,7 @@ const severityGlows = {
 const severityOrder = { low: 0, medium: 1, high: 2, critical: 3 };
 
 const Alerts = () => {
-  const { alerts: liveAlerts } = useSocket();
+  const { alerts: liveAlerts, socket } = useSocket();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
