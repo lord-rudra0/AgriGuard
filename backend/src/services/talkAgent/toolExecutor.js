@@ -8,6 +8,7 @@ import DeviceCommand from '../../models/DeviceCommand.js';
 import AutomationRule from '../../models/AutomationRule.js';
 import ReportSchedule from '../../models/ReportSchedule.js';
 import NotificationToken from '../../models/NotificationToken.js';
+import TalkActionLog from '../../models/TalkActionLog.js';
 
 const NEXT_FIELD_QUESTION = {
   title: "What should the event title be?",
@@ -34,6 +35,13 @@ const REPORT_QUESTION = {
 const NOTIFICATION_QUESTION = {
   confirm: "Please confirm: should I send this push notification now?"
 };
+
+const EXPERT_RESTRICTED_TOOLS = new Set([
+  'control_device',
+  'create_automation_rule',
+  'toggle_automation_rule',
+  'delete_automation_rule'
+]);
 const HIGH_RISK_ACTUATORS = new Set(['pump', 'irrigation']);
 const HIGH_RISK_DURATION_MINUTES = 15;
 
@@ -194,6 +202,48 @@ const normalizeOptionalText = (value) => {
   if (!str) return null;
   if (str.toLowerCase() === 'none') return null;
   return str;
+};
+
+const checkToolPermission = (role, name) => {
+  const r = String(role || '').toLowerCase();
+  if (r === 'admin') return { allowed: true };
+  if (r === 'farmer') return { allowed: true };
+  if (r === 'expert' && EXPERT_RESTRICTED_TOOLS.has(name)) {
+    return {
+      allowed: false,
+      reason: "Your role does not allow physical-control or automation-write commands."
+    };
+  }
+  if (r === 'expert') return { allowed: true };
+  return { allowed: false, reason: "Unknown role; action denied." };
+};
+
+const writeTalkActionLog = async ({
+  userId,
+  role,
+  toolName,
+  callId,
+  args,
+  status,
+  errorMessage,
+  durationMs,
+  response
+}) => {
+  try {
+    await TalkActionLog.create({
+      userId: userId || undefined,
+      role: role || 'unknown',
+      toolName,
+      callId,
+      args,
+      status,
+      errorMessage: errorMessage || '',
+      durationMs: Number(durationMs || 0),
+      response: response ?? null
+    });
+  } catch (e) {
+    console.warn('[TalkAgent] Failed to write action log:', e?.message || e);
+  }
 };
 
 const normalizeOptionalNumber = (value) => {
@@ -1103,10 +1153,30 @@ const executeTool = async (name, args, userId, socket) => {
 export const handleToolCall = async (geminiWs, toolCall, socket) => {
   const responses = [];
   const userId = socket.user?._id || socket.user?.id;
+  const role = socket.user?.role || 'unknown';
 
   for (const call of toolCall.functionCalls) {
     const { name, args, id } = call;
     console.log(`[TalkAgent] Executing tool: ${name}`, args);
+    const startedAt = Date.now();
+
+    const permission = checkToolPermission(role, name);
+    if (!permission.allowed) {
+      const result = { error: permission.reason || 'Permission denied' };
+      responses.push({ name, id, response: result });
+      await writeTalkActionLog({
+        userId,
+        role,
+        toolName: name,
+        callId: id,
+        args,
+        status: 'denied',
+        errorMessage: result.error,
+        durationMs: Date.now() - startedAt,
+        response: result
+      });
+      continue;
+    }
 
     let result;
     try {
@@ -1115,6 +1185,18 @@ export const handleToolCall = async (geminiWs, toolCall, socket) => {
       console.error(`[TalkAgent] Tool error (${name}):`, err);
       result = { error: err.message };
     }
+
+    await writeTalkActionLog({
+      userId,
+      role,
+      toolName: name,
+      callId: id,
+      args,
+      status: result?.error ? 'error' : 'success',
+      errorMessage: result?.error || '',
+      durationMs: Date.now() - startedAt,
+      response: result
+    });
 
     responses.push({ name, id, response: result });
   }

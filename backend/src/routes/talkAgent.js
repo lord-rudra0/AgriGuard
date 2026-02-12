@@ -3,6 +3,8 @@ import { WebSocket } from 'ws';
 import dotenv from 'dotenv';
 import { getGeminiSetupPayload } from '../services/talkAgent/setupPayload.js';
 import { handleToolCall } from '../services/talkAgent/toolExecutor.js';
+import { authenticateToken } from '../middleware/auth.js';
+import TalkActionLog from '../models/TalkActionLog.js';
 
 dotenv.config();
 
@@ -130,6 +132,29 @@ export const registerTalkSocket = (io) => {
 
 router.get('/status', (req, res) => {
   res.json({ success: true, message: 'TalkAgent WebSocket Relay is active' });
+});
+
+router.get('/actions', authenticateToken, async (req, res) => {
+  try {
+    const limitRaw = Number(req.query.limit);
+    const limit = Math.min(Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 50, 200);
+    const toolName = req.query.toolName ? String(req.query.toolName) : null;
+    const status = req.query.status ? String(req.query.status) : null;
+
+    const query = { userId: req.user._id };
+    if (toolName) query.toolName = toolName;
+    if (status) query.status = status;
+
+    const logs = await TalkActionLog.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    res.json({ success: true, actions: logs });
+  } catch (error) {
+    console.error('Talk actions fetch error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
 });
 
 export default router;
