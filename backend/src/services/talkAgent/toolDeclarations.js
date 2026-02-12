@@ -30,6 +30,44 @@ export const TALK_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: "list_devices",
+    description: "List user's registered IoT devices and their online status.",
+    parameters: {
+      type: "OBJECT",
+      properties: {}
+    }
+  },
+  {
+    name: "control_device",
+    description: "Send an actuator command to a device (pump/fan/light/irrigation). Requires confirm=true.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        deviceId: { type: "STRING", description: "Target device ID (recommended)" },
+        deviceName: { type: "STRING", description: "Target device name (alternative to deviceId)" },
+        actuator: {
+          type: "STRING",
+          enum: ["pump", "fan", "light", "irrigation"],
+          description: "Actuator to control"
+        },
+        state: {
+          type: "STRING",
+          enum: ["on", "off"],
+          description: "Desired state"
+        },
+        durationMinutes: {
+          type: "NUMBER",
+          description: "Optional auto-off duration in minutes (mainly for ON commands)"
+        },
+        confirm: {
+          type: "BOOLEAN",
+          description: "Must be true only after explicit user confirmation."
+        }
+      },
+      required: ["actuator", "state"]
+    }
+  },
+  {
     name: "get_recent_scans",
     description: "Get the last 5 mushroom/crop analysis results from history.",
     parameters: { type: "OBJECT", properties: {} }

@@ -3,6 +3,8 @@ import ScanHistory from '../../models/ScanHistory.js';
 import Alert from '../../models/Alert.js';
 import CalendarEvent from '../../models/CalendarEvent.js';
 import Threshold from '../../models/Threshold.js';
+import Device from '../../models/Device.js';
+import DeviceCommand from '../../models/DeviceCommand.js';
 
 const NEXT_FIELD_QUESTION = {
   title: "What should the event title be?",
@@ -12,6 +14,11 @@ const NEXT_FIELD_QUESTION = {
   roomId: "Do you want to assign this to a room? You can say 'none'.",
   reminderMinutes: "Any reminders in minutes before the event? Example: 15, 60. You can say 'none'.",
   confirm: "Please confirm: should I create this calendar event now?"
+};
+
+const DEVICE_CONTROL_QUESTION = {
+  device: "Which device should I control? Please provide device ID or name.",
+  confirm: "Please confirm: should I send this device command now?"
 };
 
 const normalizeConfirm = (value) => {
@@ -69,6 +76,14 @@ const toThresholdPayload = (threshold) => ({
   updatedAt: threshold.updatedAt || null
 });
 
+const toDevicePayload = (device) => ({
+  id: String(device._id),
+  name: device.name,
+  deviceId: device.deviceId,
+  active: !!device.active,
+  lastSeenAt: device.lastSeenAt || null
+});
+
 const emitThresholdAction = (socket, action, payload) => {
   socket.emit('talk:action', { action, ...payload });
 };
@@ -85,6 +100,119 @@ const normalizeOptionalNumber = (value) => {
   if (value === undefined || value === null || value === '') return null;
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : NaN;
+};
+
+const resolveTargetDevice = async (args, userId) => {
+  const requestedDeviceId = normalizeOptionalText(args?.deviceId);
+  const requestedDeviceName = normalizeOptionalText(args?.deviceName);
+
+  if (requestedDeviceId) {
+    const device = await Device.findOne({ userId, deviceId: requestedDeviceId, active: true });
+    return device ? { device } : { error: "Device not found or inactive" };
+  }
+
+  if (requestedDeviceName) {
+    const matches = await Device.find({
+      userId,
+      active: true,
+      name: { $regex: `^${requestedDeviceName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' }
+    })
+      .sort({ updatedAt: -1 })
+      .limit(5);
+
+    if (matches.length === 0) return { error: "No active device found with that name" };
+    if (matches.length > 1) {
+      return {
+        needsMoreInfo: true,
+        question: "I found multiple devices with that name. Please provide deviceId.",
+        devices: matches.map(toDevicePayload)
+      };
+    }
+    return { device: matches[0] };
+  }
+
+  const devices = await Device.find({ userId, active: true }).sort({ updatedAt: -1 }).limit(5);
+  if (devices.length === 1) return { device: devices[0] };
+  if (devices.length === 0) return { error: "No active devices found for your account" };
+
+  return {
+    needsMoreInfo: true,
+    question: DEVICE_CONTROL_QUESTION.device,
+    devices: devices.map(toDevicePayload)
+  };
+};
+
+const executeListDevices = async (userId) => {
+  const now = Date.now();
+  const ONLINE_WINDOW_MS = 2 * 60 * 1000;
+
+  const devices = await Device.find({ userId })
+    .select('name deviceId active lastSeenAt createdAt updatedAt')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return {
+    devices: devices.map((d) => ({
+      ...toDevicePayload(d),
+      online: !!d.lastSeenAt && (now - new Date(d.lastSeenAt).getTime()) <= ONLINE_WINDOW_MS
+    }))
+  };
+};
+
+const executeControlDevice = async (args, userId, socket) => {
+  const actuator = normalizeOptionalText(args?.actuator);
+  const state = normalizeOptionalText(args?.state);
+  if (!actuator || !['pump', 'fan', 'light', 'irrigation'].includes(actuator)) {
+    return { error: "actuator must be one of: pump, fan, light, irrigation" };
+  }
+  if (!state || !['on', 'off'].includes(state)) {
+    return { error: "state must be 'on' or 'off'" };
+  }
+
+  if (!normalizeConfirm(args?.confirm)) {
+    return { needsMoreInfo: true, nextField: 'confirm', question: DEVICE_CONTROL_QUESTION.confirm };
+  }
+
+  const resolved = await resolveTargetDevice(args, userId);
+  if (resolved.error || resolved.needsMoreInfo) return resolved;
+  const device = resolved.device;
+
+  const durationRaw = args?.durationMinutes;
+  const durationMinutes = durationRaw === undefined || durationRaw === null || durationRaw === ''
+    ? null
+    : Number(durationRaw);
+  if (durationMinutes !== null && (!Number.isFinite(durationMinutes) || durationMinutes <= 0)) {
+    return { error: "durationMinutes must be a positive number when provided" };
+  }
+
+  const durationSeconds = durationMinutes ? Math.round(durationMinutes * 60) : null;
+  const issuedAt = new Date();
+  const expiresAt = new Date(issuedAt.getTime() + 10 * 60 * 1000);
+
+  const command = await DeviceCommand.create({
+    userId,
+    deviceId: device.deviceId,
+    actuator,
+    state,
+    durationSeconds: state === 'on' ? durationSeconds : null,
+    source: 'talk_ai',
+    status: 'pending',
+    issuedAt,
+    expiresAt,
+    metadata: { requestedBy: userId }
+  });
+
+  const payload = {
+    id: String(command._id),
+    deviceId: command.deviceId,
+    actuator: command.actuator,
+    state: command.state,
+    durationSeconds: command.durationSeconds,
+    status: command.status,
+    issuedAt: command.issuedAt
+  };
+  socket.emit('talk:action', { action: 'device_command_created', command: payload });
+  return { success: true, command: payload };
 };
 
 const executeListThresholds = async (args, userId) => {
@@ -475,6 +603,9 @@ const executeTool = async (name, args, userId, socket) => {
       ? { value: data.value, unit: data.unit, timestamp: data.timestamp }
       : { message: "No data found for this sensor type." };
   }
+
+  if (name === "list_devices") return executeListDevices(userId);
+  if (name === "control_device") return executeControlDevice(args, userId, socket);
 
   if (name === "get_recent_scans") {
     const scans = await ScanHistory.find({ userId })
