@@ -12,6 +12,7 @@ import { predictImage } from './onnx/mushroomModel.js';
 import { loadRoutes } from './server/routeLoader.js';
 import { registerModelEndpoints } from './server/modelEndpoints.js';
 import { setupGracefulShutdown, startBackgroundJobs } from './server/schedulers.js';
+import { registerTalkSocket } from './routes/talkAgent.js';
 
 // Load environment variables
 dotenv.config();
@@ -102,6 +103,8 @@ io.on('connection', (socket) => {
     console.log(`User ${userId} disconnected`);
   });
 });
+
+registerTalkSocket(io);
 
 const connectWithRetry = async (attempt = 1) => {
   try {

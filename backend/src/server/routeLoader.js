@@ -45,6 +45,7 @@ export const loadRoutes = async (app) => {
   let calendarRoutes;
   let iotRoutes;
   let notificationsRoutes;
+  let talkAgentRoutes;
 
   try {
     console.log('🚀 Starting route loading...');
@@ -65,6 +66,7 @@ export const loadRoutes = async (app) => {
       notificationsRoutes = routesIndex.notificationsRoutes;
       mushroomAnalysisRoutes = routesIndex.mushroomAnalysisRoutes;
       iotRoutes = routesIndex.iotRoutes;
+      talkAgentRoutes = routesIndex.talkAgentRoutes;
       console.log('✅ All routes loaded from index');
     } catch (indexError) {
       console.log('⚠️ Routes index failed, trying individual imports...');
@@ -85,6 +87,7 @@ export const loadRoutes = async (app) => {
       calendarRoutes = await importRoute('../routes/calendar.js', 'Calendar');
       notificationsRoutes = await importRoute('../routes/notifications.js', 'Notifications');
       iotRoutes = await importRoute('../routes/iot.js', 'IoT');
+      talkAgentRoutes = await importRoute('../routes/talkAgent.js', 'TalkAgent');
     }
 
     mountIfExists(app, '/api/sensors', sensorRoutes);
@@ -103,6 +106,7 @@ export const loadRoutes = async (app) => {
     mountIfExists(app, '/api/notifications', notificationsRoutes);
     mountIfExists(app, '/api/analyze/mushroom', mushroomAnalysisRoutes);
     mountIfExists(app, '/api/iot', iotRoutes);
+    mountIfExists(app, '/api/talk', talkAgentRoutes);
 
     console.log('✅ All routes configured');
   } catch (error) {
