@@ -18,8 +18,11 @@ const NEXT_FIELD_QUESTION = {
 
 const DEVICE_CONTROL_QUESTION = {
   device: "Which device should I control? Please provide device ID or name.",
-  confirm: "Please confirm: should I send this device command now?"
+  confirm: "Please confirm: should I send this device command now?",
+  safetyConfirm: "Safety check: this is a high-risk command. Please explicitly confirm again to proceed."
 };
+const HIGH_RISK_ACTUATORS = new Set(['pump', 'irrigation']);
+const HIGH_RISK_DURATION_MINUTES = 15;
 
 const normalizeConfirm = (value) => {
   if (value === true) return true;
@@ -183,6 +186,17 @@ const executeControlDevice = async (args, userId, socket) => {
     : Number(durationRaw);
   if (durationMinutes !== null && (!Number.isFinite(durationMinutes) || durationMinutes <= 0)) {
     return { error: "durationMinutes must be a positive number when provided" };
+  }
+
+  const isHighRiskCommand = state === 'on'
+    && HIGH_RISK_ACTUATORS.has(actuator)
+    && (durationMinutes === null || durationMinutes > HIGH_RISK_DURATION_MINUTES);
+  if (isHighRiskCommand && !normalizeConfirm(args?.safetyConfirm)) {
+    return {
+      needsMoreInfo: true,
+      nextField: 'safetyConfirm',
+      question: `${DEVICE_CONTROL_QUESTION.safetyConfirm} Actuator: ${actuator}, duration: ${durationMinutes ?? 'no auto-off set'}.`
+    };
   }
 
   const durationSeconds = durationMinutes ? Math.round(durationMinutes * 60) : null;

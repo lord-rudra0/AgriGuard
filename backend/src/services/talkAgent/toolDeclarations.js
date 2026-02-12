@@ -62,6 +62,10 @@ export const TALK_FUNCTION_DECLARATIONS = [
         confirm: {
           type: "BOOLEAN",
           description: "Must be true only after explicit user confirmation."
+        },
+        safetyConfirm: {
+          type: "BOOLEAN",
+          description: "Second explicit confirmation for high-risk commands."
         }
       },
       required: ["actuator", "state"]
