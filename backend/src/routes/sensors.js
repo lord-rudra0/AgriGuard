@@ -4,6 +4,7 @@ import Alert from '../models/Alert.js';
 import UserSettings from '../models/UserSettings.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { getFullAnalytics } from '../services/analytics/AnalyticsService.js';
+import { evaluateAutomationsForReadings } from '../services/automation/AutomationEngine.js';
 
 
 const router = express.Router();
@@ -134,6 +135,16 @@ router.post('/data', authenticateToken, async (req, res) => {
 
     // Emit live updates via Socket.IO
     const io = req.app.get('io');
+    const automation = await evaluateAutomationsForReadings({
+      userId: req.user._id,
+      deviceId,
+      readings: savedData.map((d) => ({
+        type: d?.metadata?.sensorType,
+        value: d?.value,
+        timestamp: d?.timestamp
+      })),
+      io
+    });
     if (io) {
       // Create a combined sensor data object for the dashboard
       const dashboardData = {};
@@ -155,7 +166,8 @@ router.post('/data', authenticateToken, async (req, res) => {
       message: 'Sensor data saved successfully',
       count: savedData.length,
       duplicatesIgnored: sensorDataArray.length - toInsert.length,
-      alerts: alerts.length
+      alerts: alerts.length,
+      automationsTriggered: automation.triggered.length
     });
   } catch (error) {
     console.error('Save sensor data error:', error);

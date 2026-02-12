@@ -5,6 +5,7 @@ import Alert from '../models/Alert.js';
 import Device from '../models/Device.js';
 import DeviceCommand from '../models/DeviceCommand.js';
 import UserSettings from '../models/UserSettings.js';
+import { evaluateAutomationsForReadings } from '../services/automation/AutomationEngine.js';
 
 const router = express.Router();
 
@@ -395,6 +396,16 @@ router.post('/ingest', async (req, res) => {
     );
 
     const io = req.app.get('io');
+    const automation = await evaluateAutomationsForReadings({
+      userId: resolvedUserId,
+      deviceId: resolvedDeviceId,
+      readings: savedData.map((d) => ({
+        type: d?.metadata?.sensorType,
+        value: d?.value,
+        timestamp: d?.timestamp
+      })),
+      io
+    });
     if (io) {
       const dashboardData = {};
       normalized.forEach(r => {
@@ -414,7 +425,8 @@ router.post('/ingest', async (req, res) => {
       message: 'IoT data ingested',
       count: savedData.length,
       duplicatesIgnored: sensorDataArray.length - toInsert.length,
-      alerts: alerts.length
+      alerts: alerts.length,
+      automationsTriggered: automation.triggered.length
     });
   } catch (error) {
     console.error('IoT ingest error:', error);

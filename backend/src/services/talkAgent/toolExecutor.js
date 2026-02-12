@@ -5,6 +5,7 @@ import CalendarEvent from '../../models/CalendarEvent.js';
 import Threshold from '../../models/Threshold.js';
 import Device from '../../models/Device.js';
 import DeviceCommand from '../../models/DeviceCommand.js';
+import AutomationRule from '../../models/AutomationRule.js';
 
 const NEXT_FIELD_QUESTION = {
   title: "What should the event title be?",
@@ -20,6 +21,9 @@ const DEVICE_CONTROL_QUESTION = {
   device: "Which device should I control? Please provide device ID or name.",
   confirm: "Please confirm: should I send this device command now?",
   safetyConfirm: "Safety check: this is a high-risk command. Please explicitly confirm again to proceed."
+};
+const AUTOMATION_RULE_QUESTION = {
+  confirm: "Please confirm: should I create this automation rule now?"
 };
 const HIGH_RISK_ACTUATORS = new Set(['pump', 'irrigation']);
 const HIGH_RISK_DURATION_MINUTES = 15;
@@ -87,7 +91,31 @@ const toDevicePayload = (device) => ({
   lastSeenAt: device.lastSeenAt || null
 });
 
+const toAutomationRulePayload = (rule) => ({
+  id: String(rule._id),
+  name: rule.name,
+  metric: rule.metric,
+  operator: rule.operator,
+  value: rule.value ?? null,
+  min: rule.min ?? null,
+  max: rule.max ?? null,
+  durationMinutes: Number(rule.durationMinutes || 0),
+  cooldownMinutes: Number(rule.cooldownMinutes || 0),
+  deviceId: rule.deviceId ?? null,
+  action: {
+    actuator: rule?.action?.actuator,
+    state: rule?.action?.state,
+    durationSeconds: rule?.action?.durationSeconds ?? null
+  },
+  enabled: !!rule.enabled,
+  lastTriggeredAt: rule.lastTriggeredAt || null,
+  notes: rule.notes || ''
+});
+
 const emitThresholdAction = (socket, action, payload) => {
+  socket.emit('talk:action', { action, ...payload });
+};
+const emitAutomationAction = (socket, action, payload) => {
   socket.emit('talk:action', { action, ...payload });
 };
 
@@ -236,6 +264,118 @@ const executeListThresholds = async (args, userId) => {
 
   const thresholds = await Threshold.find(query).sort({ updatedAt: -1 }).limit(100).lean();
   return { thresholds: thresholds.map(toThresholdPayload) };
+};
+
+const validateAutomationCondition = (operator, value, min, max) => {
+  if (['gt', 'gte', 'lt', 'lte'].includes(operator)) {
+    if (!Number.isFinite(value)) return "value is required for operator gt/gte/lt/lte";
+  } else if (['between', 'outside'].includes(operator)) {
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return "min and max are required for operator between/outside";
+    if (min >= max) return "min must be less than max";
+  } else {
+    return "operator must be one of: gt, gte, lt, lte, between, outside";
+  }
+  return null;
+};
+
+const executeListAutomationRules = async (args, userId) => {
+  const query = { userId };
+  if (args?.metric) query.metric = String(args.metric);
+  if (args?.deviceId) query.deviceId = String(args.deviceId);
+
+  const rules = await AutomationRule.find(query).sort({ updatedAt: -1 }).limit(100).lean();
+  return { rules: rules.map(toAutomationRulePayload) };
+};
+
+const executeCreateAutomationRule = async (args, userId, socket) => {
+  if (!normalizeConfirm(args?.confirm)) {
+    return { needsMoreInfo: true, nextField: 'confirm', question: AUTOMATION_RULE_QUESTION.confirm };
+  }
+
+  const name = normalizeOptionalText(args?.name);
+  const metric = normalizeOptionalText(args?.metric);
+  const operator = normalizeOptionalText(args?.operator);
+  const actuator = normalizeOptionalText(args?.actuator);
+  const state = normalizeOptionalText(args?.state);
+  if (!name || !metric || !operator || !actuator || !state) {
+    return { error: "name, metric, operator, actuator, and state are required" };
+  }
+
+  const value = args?.value === undefined ? NaN : Number(args.value);
+  const min = args?.min === undefined ? NaN : Number(args.min);
+  const max = args?.max === undefined ? NaN : Number(args.max);
+  const conditionError = validateAutomationCondition(operator, value, min, max);
+  if (conditionError) return { error: conditionError };
+
+  const durationMinutesRaw = args?.durationMinutes;
+  const durationMinutes = durationMinutesRaw === undefined ? 0 : Number(durationMinutesRaw);
+  if (!Number.isFinite(durationMinutes) || durationMinutes < 0) {
+    return { error: "durationMinutes must be a non-negative number" };
+  }
+
+  const cooldownMinutesRaw = args?.cooldownMinutes;
+  const cooldownMinutes = cooldownMinutesRaw === undefined ? 10 : Number(cooldownMinutesRaw);
+  if (!Number.isFinite(cooldownMinutes) || cooldownMinutes < 0) {
+    return { error: "cooldownMinutes must be a non-negative number" };
+  }
+
+  const actionDurationMinutesRaw = args?.actionDurationMinutes;
+  const actionDurationMinutes = actionDurationMinutesRaw === undefined || actionDurationMinutesRaw === null || actionDurationMinutesRaw === ''
+    ? null
+    : Number(actionDurationMinutesRaw);
+  if (actionDurationMinutes !== null && (!Number.isFinite(actionDurationMinutes) || actionDurationMinutes <= 0)) {
+    return { error: "actionDurationMinutes must be a positive number when provided" };
+  }
+
+  const rule = await AutomationRule.create({
+    userId,
+    name,
+    metric,
+    operator,
+    value: ['gt', 'gte', 'lt', 'lte'].includes(operator) ? value : null,
+    min: ['between', 'outside'].includes(operator) ? min : null,
+    max: ['between', 'outside'].includes(operator) ? max : null,
+    durationMinutes,
+    cooldownMinutes,
+    deviceId: normalizeOptionalText(args?.deviceId),
+    action: {
+      actuator,
+      state,
+      durationSeconds: actionDurationMinutes ? Math.round(actionDurationMinutes * 60) : null
+    },
+    enabled: args?.enabled === undefined ? true : Boolean(args.enabled),
+    notes: normalizeOptionalText(args?.notes) || ''
+  });
+
+  const serialized = toAutomationRulePayload(rule);
+  emitAutomationAction(socket, 'automation_rule_created', { rule: serialized });
+  return { success: true, rule: serialized };
+};
+
+const executeToggleAutomationRule = async (args, userId, socket) => {
+  const ruleId = normalizeOptionalText(args?.ruleId);
+  if (!ruleId) return { error: "ruleId is required" };
+  if (typeof args?.enabled !== 'boolean') return { error: "enabled must be true or false" };
+
+  const rule = await AutomationRule.findOneAndUpdate(
+    { _id: ruleId, userId },
+    { $set: { enabled: args.enabled } },
+    { new: true }
+  );
+  if (!rule) return { error: "Automation rule not found" };
+  const serialized = toAutomationRulePayload(rule);
+  emitAutomationAction(socket, 'automation_rule_updated', { rule: serialized });
+  return { success: true, rule: serialized };
+};
+
+const executeDeleteAutomationRule = async (args, userId, socket) => {
+  const ruleId = normalizeOptionalText(args?.ruleId);
+  if (!ruleId) return { error: "ruleId is required" };
+
+  const rule = await AutomationRule.findOneAndDelete({ _id: ruleId, userId });
+  if (!rule) return { error: "Automation rule not found" };
+  emitAutomationAction(socket, 'automation_rule_deleted', { ruleId });
+  return { success: true, message: "Automation rule deleted", ruleId };
 };
 
 const executeCreateThreshold = async (args, userId, socket) => {
@@ -742,6 +882,10 @@ const executeTool = async (name, args, userId, socket) => {
   if (name === "escalate_alert") return executeEscalateAlert(args, userId, socket);
   if (name === "create_alert_followup_event") return executeCreateAlertFollowupEvent(args, userId, socket);
   if (name === "triage_alert") return executeTriageAlert(args, userId, socket);
+  if (name === "list_automation_rules") return executeListAutomationRules(args, userId);
+  if (name === "create_automation_rule") return executeCreateAutomationRule(args, userId, socket);
+  if (name === "toggle_automation_rule") return executeToggleAutomationRule(args, userId, socket);
+  if (name === "delete_automation_rule") return executeDeleteAutomationRule(args, userId, socket);
   if (name === "list_thresholds") return executeListThresholds(args, userId);
   if (name === "create_threshold") return executeCreateThreshold(args, userId, socket);
   if (name === "update_threshold") return executeUpdateThreshold(args, userId, socket);

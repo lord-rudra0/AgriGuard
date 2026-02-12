@@ -167,6 +167,81 @@ export const TALK_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: "list_automation_rules",
+    description: "List automation rules (if-this-then-that), optionally filtered by metric/device.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        metric: {
+          type: "STRING",
+          enum: ["temperature", "humidity", "co2", "light", "soilMoisture"],
+          description: "Optional metric filter"
+        },
+        deviceId: { type: "STRING", description: "Optional device filter" }
+      }
+    }
+  },
+  {
+    name: "create_automation_rule",
+    description: "Create an automation rule. Executes only when confirm=true.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        name: { type: "STRING", description: "Rule name" },
+        metric: {
+          type: "STRING",
+          enum: ["temperature", "humidity", "co2", "light", "soilMoisture"]
+        },
+        operator: {
+          type: "STRING",
+          enum: ["gt", "gte", "lt", "lte", "between", "outside"]
+        },
+        value: { type: "NUMBER", description: "Condition value for gt/gte/lt/lte" },
+        min: { type: "NUMBER", description: "Lower bound for between/outside" },
+        max: { type: "NUMBER", description: "Upper bound for between/outside" },
+        durationMinutes: { type: "NUMBER", description: "How long condition should persist before firing" },
+        cooldownMinutes: { type: "NUMBER", description: "Minimum gap between triggers" },
+        deviceId: { type: "STRING", description: "Optional device scope; if omitted applies to any device" },
+        actuator: {
+          type: "STRING",
+          enum: ["pump", "fan", "light", "irrigation"]
+        },
+        state: {
+          type: "STRING",
+          enum: ["on", "off"]
+        },
+        actionDurationMinutes: { type: "NUMBER", description: "Optional duration for ON action" },
+        enabled: { type: "BOOLEAN" },
+        notes: { type: "STRING" },
+        confirm: { type: "BOOLEAN", description: "Must be true only after explicit user confirmation." }
+      },
+      required: ["name", "metric", "operator", "actuator", "state"]
+    }
+  },
+  {
+    name: "toggle_automation_rule",
+    description: "Enable/disable automation rule by ID.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        ruleId: { type: "STRING", description: "Automation rule ID" },
+        enabled: { type: "BOOLEAN" }
+      },
+      required: ["ruleId", "enabled"]
+    }
+  },
+  {
+    name: "delete_automation_rule",
+    description: "Delete automation rule by ID.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        ruleId: { type: "STRING", description: "Automation rule ID" }
+      },
+      required: ["ruleId"]
+    }
+  },
+  {
     name: "list_thresholds",
     description: "List user thresholds, optionally filtered by metric and room.",
     parameters: {
