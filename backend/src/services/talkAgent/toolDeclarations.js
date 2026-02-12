@@ -330,6 +330,30 @@ export const TALK_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: "list_talk_actions",
+    description: "List recent Talk AI action audit logs for the current user.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        limit: { type: "NUMBER", description: "Max number of items to return (default 20, max 100)" },
+        toolName: { type: "STRING", description: "Optional tool name filter" },
+        status: {
+          type: "STRING",
+          enum: ["success", "error", "denied"],
+          description: "Optional status filter"
+        }
+      }
+    }
+  },
+  {
+    name: "get_role_permissions",
+    description: "Get what Talk AI actions are restricted for your current role.",
+    parameters: {
+      type: "OBJECT",
+      properties: {}
+    }
+  },
+  {
     name: "list_thresholds",
     description: "List user thresholds, optionally filtered by metric and room.",
     parameters: {

@@ -234,6 +234,23 @@ const checkToolPermission = (role, name) => {
   return { allowed: true };
 };
 
+const getRolePermissionSummary = (role) => {
+  const r = String(role || '').toLowerCase();
+  const policy = ROLE_POLICY[r];
+  if (!policy) {
+    return { role: r || 'unknown', allowAll: false, deniedTools: [], message: 'Unknown role' };
+  }
+  if (policy.allow === '*') {
+    return { role: r, allowAll: true, deniedTools: [], message: 'All tools allowed' };
+  }
+  return {
+    role: r,
+    allowAll: false,
+    deniedTools: [...(policy.deny || [])],
+    message: 'Restricted tool set applies'
+  };
+};
+
 const writeTalkActionLog = async ({
   userId,
   role,
@@ -260,6 +277,35 @@ const writeTalkActionLog = async ({
   } catch (e) {
     console.warn('[TalkAgent] Failed to write action log:', e?.message || e);
   }
+};
+
+const executeListTalkActions = async (args, userId) => {
+  const limitRaw = Number(args?.limit);
+  const limit = Math.min(Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 20, 100);
+  const query = { userId };
+  if (args?.toolName) query.toolName = String(args.toolName);
+  if (args?.status) query.status = String(args.status);
+
+  const actions = await TalkActionLog.find(query)
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
+
+  return {
+    actions: actions.map((a) => ({
+      id: String(a._id),
+      toolName: a.toolName,
+      status: a.status,
+      role: a.role,
+      durationMs: a.durationMs,
+      errorMessage: a.errorMessage || '',
+      createdAt: a.createdAt
+    }))
+  };
+};
+
+const executeGetRolePermissions = async (role) => {
+  return getRolePermissionSummary(role);
 };
 
 const normalizeOptionalNumber = (value) => {
@@ -1196,7 +1242,13 @@ export const handleToolCall = async (geminiWs, toolCall, socket) => {
 
     let result;
     try {
+      if (name === "list_talk_actions") {
+        result = await executeListTalkActions(args, userId);
+      } else if (name === "get_role_permissions") {
+        result = await executeGetRolePermissions(role);
+      } else {
       result = await executeTool(name, args, userId, socket);
+      }
     } catch (err) {
       console.error(`[TalkAgent] Tool error (${name}):`, err);
       result = { error: err.message };
