@@ -83,6 +83,11 @@ export default function Analytics() {
 
 	const summary = fullData?.summary || {};
 	const types = Object.keys(summary);
+	const hasRecommendations = Array.isArray(fullData?.recommendations) && fullData.recommendations.length > 0;
+	const hasGrowth = !!fullData?.growth;
+	const hasEfficiency = !!fullData?.efficiency;
+	const hasHealth = !!fullData?.health;
+	const hasPredictions = Array.isArray(fullData?.predictions) && fullData.predictions.length > 0;
 
 	if (loading && !fullData) {
 		return (
@@ -175,38 +180,30 @@ export default function Analytics() {
 
 				<div id="analytics-print-area" className="flex flex-col gap-6">
 					{/* Action & Decision Section - Moved to Top */}
-					<div className="flex flex-col gap-6">
+					{hasRecommendations ? (
 						<ActionAnalytics recommendations={fullData?.recommendations || []} />
-					</div>
+					) : null}
 
 					{/* Growth Stage Analysis */}
-					<div className="flex flex-col gap-6">
+					{hasGrowth ? (
 						<GrowthAnalytics
 							growthProfile={fullData?.growth}
 							selectedStage={stage}
 							onStageChange={setStage}
 						/>
-					</div>
+					) : null}
 
 					{/* Efficiency & Optimization */}
-					<div className="flex flex-col gap-6">
-						<EfficiencyAnalytics efficiencyProfile={fullData?.efficiency} />
-					</div>
+					{hasEfficiency ? <EfficiencyAnalytics efficiencyProfile={fullData?.efficiency} /> : null}
 
 					{/* System Intelligence */}
-					<div className="flex flex-col gap-6">
-						<SystemHealthAnalytics healthProfile={fullData?.health} />
-					</div>
+					{hasHealth ? <SystemHealthAnalytics healthProfile={fullData?.health} /> : null}
 
 					{/* Seasonal Strategy */}
-					<div className="flex flex-col gap-6">
-						<SeasonalStrategyAnalytics />
-					</div>
+					<SeasonalStrategyAnalytics />
 
 					{/* Predictive Analytics Section */}
-					<div className="flex flex-col gap-6">
-						<PredictiveAnalytics predictions={fullData?.predictions || []} />
-					</div>
+					{hasPredictions ? <PredictiveAnalytics predictions={fullData?.predictions || []} /> : null}
 
 					{/* Summary Cards */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
