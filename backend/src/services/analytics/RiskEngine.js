@@ -59,7 +59,19 @@ export const calculateRiskProfile = async (sensorData, stageId = 'fruiting') => 
         variance = tempValues.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / tempValues.length;
     }
 
-    const confidence = calculateConfidence(dataPoints, 3, variance);
+    const latestTimestampMs = sensorData.reduce((maxTs, d) => {
+        const ts = new Date(d.timestamp).getTime();
+        return Number.isFinite(ts) ? Math.max(maxTs, ts) : maxTs;
+    }, 0);
+    const freshnessMinutes = latestTimestampMs > 0
+        ? (Date.now() - latestTimestampMs) / (60 * 1000)
+        : null;
+
+    const confidence = calculateConfidence(dataPoints, 3, variance, {
+        sampleCount: tempValues.length,
+        freshnessMinutes,
+        staleAfterMinutes: 30
+    });
 
     // 7. Risk Classification
     let level = 'Low';

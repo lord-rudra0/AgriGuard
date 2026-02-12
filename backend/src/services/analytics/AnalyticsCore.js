@@ -40,20 +40,36 @@ export const normalizeRisk = (value, ideal, safeMin, safeMax) => {
 /**
  * Calculates Confidence Score based on data density and variance (Improvement #7)
  */
-export const calculateConfidence = (dataPoints, expectedPoints, variance = 1) => {
+export const calculateConfidence = (dataPoints, expectedPoints, variance = 1, options = {}) => {
     if (!expectedPoints) return 0;
 
     const densityScore = Math.min(100, (dataPoints / expectedPoints) * 100);
+    const {
+        sampleCount = 0,
+        freshnessMinutes = null,
+        staleAfterMinutes = 30
+    } = options;
 
     // Improvement #8: Hardware Confidence (Sensor Entropy)
     // If variance is effectively 0, logically the sensor is stuck/frozen.
     // We apply a penalty if variance < 0.001 (relative to typical fluctuations)
     let entropyPenalty = 0;
-    if (variance < 0.001 && dataPoints > 5) {
+    if (variance < 0.001 && sampleCount >= 6) {
         entropyPenalty = 40; // Heavy penalty for flatline
     }
 
-    return Math.max(0, Math.round(densityScore - entropyPenalty));
+    // Missing critical sensor channels reduce confidence beyond pure density.
+    const missingPenalty = Math.max(0, expectedPoints - dataPoints) * 15;
+
+    // Freshness penalty for stale streams.
+    let freshnessPenalty = 0;
+    if (typeof freshnessMinutes === 'number' && Number.isFinite(freshnessMinutes)) {
+        if (freshnessMinutes > staleAfterMinutes * 12) freshnessPenalty = 60;
+        else if (freshnessMinutes > staleAfterMinutes * 3) freshnessPenalty = 40;
+        else if (freshnessMinutes > staleAfterMinutes) freshnessPenalty = 20;
+    }
+
+    return Math.max(0, Math.round(densityScore - entropyPenalty - missingPenalty - freshnessPenalty));
 };
 
 /**
