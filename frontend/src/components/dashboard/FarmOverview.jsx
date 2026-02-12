@@ -20,7 +20,7 @@ const FarmOverview = () => {
             try {
                 // Assuming standard analytics endpoint returns hourly data
                 const res = await axios.get('/api/sensors/analytics', { params: { timeframe: '24h' } });
-                setAnalyticsData(res.data?.analytics || []);
+                setAnalyticsData((res.data?.series && res.data.series.length > 0) ? res.data.series : (res.data?.analytics || []));
             } catch (err) {
                 console.error("Failed to fetch farm overview analytics", err);
             } finally {
@@ -37,6 +37,12 @@ const FarmOverview = () => {
     const hourlySeries = useMemo(() => {
         if (!analyticsData || analyticsData.length === 0) return [];
 
+        // Preferred server-side shape: [{ time, temperature?, humidity?, co2?, ... }]
+        if (analyticsData.every((row) => typeof row?.time === 'string')) {
+            return [...analyticsData].sort((a, b) => new Date(a.time) - new Date(b.time));
+        }
+
+        // Backward-compatible fallback for grouped rows.
         const buckets = {};
         analyticsData.forEach((row) => {
             const sensorType = row?._id?.sensorType;

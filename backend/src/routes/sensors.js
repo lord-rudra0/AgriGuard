@@ -174,7 +174,23 @@ router.get('/analytics', authenticateToken, async (req, res) => {
       }
     ]);
 
-    res.json({ analytics, timeframe, startDate });
+    const buckets = {};
+    analytics.forEach((row) => {
+      const sensorType = row?._id?.sensorType;
+      const date = row?._id?.date;
+      const hour = row?._id?.hour;
+      const value = row?.avgValue;
+      if (!sensorType || !date || typeof hour !== 'number' || typeof value !== 'number') return;
+
+      const hourString = String(hour).padStart(2, '0');
+      const key = `${date}T${hourString}:00:00.000Z`;
+      if (!buckets[key]) buckets[key] = { time: key };
+      buckets[key][sensorType] = value;
+    });
+
+    const series = Object.values(buckets).sort((a, b) => new Date(a.time) - new Date(b.time));
+
+    res.json({ analytics, series, timeframe, startDate });
   } catch (error) {
     console.error('Get analytics error:', error);
     res.status(500).json({ message: 'Internal server error' });
