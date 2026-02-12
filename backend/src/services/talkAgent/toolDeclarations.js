@@ -49,6 +49,53 @@ export const TALK_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: "resolve_alert",
+    description: "Resolve an alert by ID and optionally record action taken.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        alertId: { type: "STRING", description: "Alert ID to resolve" },
+        actionTaken: { type: "STRING", description: "Optional action notes" }
+      },
+      required: ["alertId"]
+    }
+  },
+  {
+    name: "escalate_alert",
+    description: "Escalate alert severity by ID.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        alertId: { type: "STRING", description: "Alert ID to escalate" },
+        severity: {
+          type: "STRING",
+          enum: ["medium", "high", "critical"],
+          description: "Target severity level"
+        }
+      },
+      required: ["alertId", "severity"]
+    }
+  },
+  {
+    name: "create_alert_followup_event",
+    description: "Create a calendar follow-up task from an alert.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        alertId: { type: "STRING", description: "Alert ID" },
+        startAt: { type: "STRING", description: "Follow-up start datetime in ISO format (optional)" },
+        minutesFromNow: { type: "NUMBER", description: "If startAt not provided, schedule N minutes from now" },
+        title: { type: "STRING", description: "Optional custom title" },
+        reminderMinutes: {
+          type: "ARRAY",
+          items: { type: "NUMBER" },
+          description: "Optional reminders in minutes before event"
+        }
+      },
+      required: ["alertId"]
+    }
+  },
+  {
     name: "create_calendar_event",
     description: "Create a calendar event for the user.",
     parameters: {
@@ -115,4 +162,3 @@ export const TALK_FUNCTION_DECLARATIONS = [
     }
   }
 ];
-

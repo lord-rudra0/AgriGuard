@@ -42,6 +42,101 @@ const emitCalendarAction = (socket, action, payload) => {
   socket.emit('talk:action', { action, ...payload });
 };
 
+const emitAlertAction = (socket, action, payload) => {
+  socket.emit('talk:action', { action, ...payload });
+};
+
+const toAlertPayload = (alert) => ({
+  id: String(alert._id),
+  title: alert.title,
+  severity: alert.severity,
+  message: alert.message,
+  isResolved: !!alert.isResolved,
+  isRead: !!alert.isRead
+});
+
+const executeResolveAlert = async (args, userId, socket) => {
+  const alertId = args?.alertId ? String(args.alertId) : null;
+  if (!alertId) return { error: "alertId is required" };
+
+  const update = {
+    isResolved: true,
+    resolvedAt: new Date(),
+    resolvedBy: userId
+  };
+  if (args?.actionTaken) update.actionTaken = String(args.actionTaken);
+
+  const alert = await Alert.findOneAndUpdate(
+    { _id: alertId, userId },
+    update,
+    { new: true }
+  );
+  if (!alert) return { error: "Alert not found" };
+
+  const serialized = toAlertPayload(alert);
+  emitAlertAction(socket, 'alert_resolved', { alert: serialized });
+  return { success: true, alert: serialized };
+};
+
+const executeEscalateAlert = async (args, userId, socket) => {
+  const alertId = args?.alertId ? String(args.alertId) : null;
+  const targetSeverity = args?.severity ? String(args.severity) : null;
+  const allowed = ['medium', 'high', 'critical'];
+  if (!alertId) return { error: "alertId is required" };
+  if (!targetSeverity || !allowed.includes(targetSeverity)) {
+    return { error: "severity must be one of: medium, high, critical" };
+  }
+
+  const alert = await Alert.findOneAndUpdate(
+    { _id: alertId, userId },
+    { severity: targetSeverity },
+    { new: true }
+  );
+  if (!alert) return { error: "Alert not found" };
+
+  const serialized = toAlertPayload(alert);
+  emitAlertAction(socket, 'alert_escalated', { alert: serialized });
+  return { success: true, alert: serialized };
+};
+
+const executeCreateAlertFollowupEvent = async (args, userId, socket) => {
+  const alertId = args?.alertId ? String(args.alertId) : null;
+  if (!alertId) return { error: "alertId is required" };
+
+  const alert = await Alert.findOne({ _id: alertId, userId }).lean();
+  if (!alert) return { error: "Alert not found" };
+
+  let startAt = null;
+  if (args?.startAt) {
+    const parsed = new Date(args.startAt);
+    if (Number.isNaN(parsed.getTime())) return { error: "startAt must be a valid datetime" };
+    startAt = parsed;
+  } else {
+    const minutes = Number(args?.minutesFromNow);
+    const delayMin = Number.isFinite(minutes) && minutes >= 0 ? minutes : 30;
+    startAt = new Date(Date.now() + delayMin * 60 * 1000);
+  }
+
+  const reminderMinutes = normalizeReminderMinutes(args?.reminderMinutes);
+  const title = args?.title
+    ? String(args.title)
+    : `Follow up: ${alert.title}`;
+  const description = `Alert follow-up task\nSeverity: ${alert.severity}\nMessage: ${alert.message || ''}`;
+
+  const event = await CalendarEvent.create({
+    userId,
+    title,
+    description,
+    roomId: alert.deviceId || null,
+    startAt,
+    reminders: reminderMinutes.map((m) => ({ minutesBefore: m }))
+  });
+
+  const serialized = toCalendarEventPayload(event);
+  emitCalendarAction(socket, 'calendar_event_created', { event: serialized });
+  return { success: true, event: serialized, sourceAlertId: alertId };
+};
+
 const executeCalendarCreate = async (args, userId, socket) => {
   const collectionOrder = ['title', 'startAt', 'endAt', 'description', 'roomId', 'reminderMinutes'];
   const isConfirmed = normalizeConfirm(args?.confirm);
@@ -203,6 +298,9 @@ const executeTool = async (name, args, userId, socket) => {
     const alerts = await Alert.find(query).sort({ createdAt: -1 }).limit(10);
     return { alerts: alerts.map((a) => ({ title: a.title, severity: a.severity, message: a.message })) };
   }
+  if (name === "resolve_alert") return executeResolveAlert(args, userId, socket);
+  if (name === "escalate_alert") return executeEscalateAlert(args, userId, socket);
+  if (name === "create_alert_followup_event") return executeCreateAlertFollowupEvent(args, userId, socket);
 
   if (name === "create_calendar_event") return executeCalendarCreate(args, userId, socket);
   if (name === "list_calendar_events") return executeCalendarList(args, userId);
@@ -238,4 +336,3 @@ export const handleToolCall = async (geminiWs, toolCall, socket) => {
     console.log(`[TalkAgent] Sent tool responses for ${responses.length} calls`);
   }
 };
-
