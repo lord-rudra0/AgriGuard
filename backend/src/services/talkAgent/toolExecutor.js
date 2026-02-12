@@ -7,6 +7,7 @@ import Device from '../../models/Device.js';
 import DeviceCommand from '../../models/DeviceCommand.js';
 import AutomationRule from '../../models/AutomationRule.js';
 import ReportSchedule from '../../models/ReportSchedule.js';
+import NotificationToken from '../../models/NotificationToken.js';
 
 const NEXT_FIELD_QUESTION = {
   title: "What should the event title be?",
@@ -29,6 +30,9 @@ const AUTOMATION_RULE_QUESTION = {
 const REPORT_QUESTION = {
   confirmCreate: "Please confirm: should I create this report schedule now?",
   confirmRunNow: "Please confirm: should I send this report now?"
+};
+const NOTIFICATION_QUESTION = {
+  confirm: "Please confirm: should I send this push notification now?"
 };
 const HIGH_RISK_ACTUATORS = new Set(['pump', 'irrigation']);
 const HIGH_RISK_DURATION_MINUTES = 15;
@@ -135,6 +139,53 @@ const emitAutomationAction = (socket, action, payload) => {
 };
 const emitReportAction = (socket, action, payload) => {
   socket.emit('talk:action', { action, ...payload });
+};
+
+let webpushModulePromise = null;
+const getWebpush = async () => {
+  if (!webpushModulePromise) {
+    webpushModulePromise = import('web-push').catch(() => null);
+  }
+  return webpushModulePromise;
+};
+
+const sendPushToUser = async (userId, payload) => {
+  const tokens = await NotificationToken.find({ userId }).lean();
+  if (!tokens || tokens.length === 0) {
+    return { sent: 0, failed: 0, message: "No push subscriptions found for this user" };
+  }
+
+  const webpush = await getWebpush();
+  if (!webpush) {
+    return { sent: 0, failed: tokens.length, message: "web-push not installed on server" };
+  }
+
+  const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } = process.env;
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    return { sent: 0, failed: tokens.length, message: "VAPID keys not configured on server" };
+  }
+
+  webpush.setVapidDetails(VAPID_SUBJECT || 'mailto:admin@example.com', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  const serializedPayload = JSON.stringify(payload);
+
+  let sent = 0;
+  let failed = 0;
+  for (const t of tokens) {
+    const sub = {
+      endpoint: t.endpoint,
+      keys: { p256dh: t.keys?.p256dh, auth: t.keys?.auth }
+    };
+    try {
+      await webpush.sendNotification(sub, serializedPayload);
+      sent += 1;
+    } catch (err) {
+      failed += 1;
+      if (err?.statusCode === 410) {
+        await NotificationToken.deleteOne({ _id: t._id });
+      }
+    }
+  }
+  return { sent, failed };
 };
 
 const normalizeOptionalText = (value) => {
@@ -487,6 +538,38 @@ const executeRunReportNow = async (args, userId, socket) => {
       timeframe: schedule.timeframe
     }
   };
+};
+
+const executeSendPushNotification = async (args, userId, socket) => {
+  if (!normalizeConfirm(args?.confirm)) {
+    return { needsMoreInfo: true, nextField: 'confirm', question: NOTIFICATION_QUESTION.confirm };
+  }
+
+  const title = normalizeOptionalText(args?.title);
+  const body = normalizeOptionalText(args?.body);
+  if (!title || !body) return { error: "title and body are required" };
+
+  const result = await sendPushToUser(userId, { title, body });
+  socket.emit('talk:action', { action: 'push_notification_sent', title, body, ...result });
+  return { success: true, title, body, ...result };
+};
+
+const executeNotifyAlert = async (args, userId, socket) => {
+  if (!normalizeConfirm(args?.confirm)) {
+    return { needsMoreInfo: true, nextField: 'confirm', question: NOTIFICATION_QUESTION.confirm };
+  }
+
+  const alertId = normalizeOptionalText(args?.alertId);
+  if (!alertId) return { error: "alertId is required" };
+
+  const alert = await Alert.findOne({ _id: alertId, userId });
+  if (!alert) return { error: "Alert not found" };
+
+  const title = `[${String(alert.severity || '').toUpperCase()}] ${alert.title}`;
+  const body = alert.message || 'Alert triggered';
+  const result = await sendPushToUser(userId, { title, body, alertId: String(alert._id) });
+  socket.emit('talk:action', { action: 'alert_notification_sent', alertId: String(alert._id), ...result });
+  return { success: true, alert: toAlertPayload(alert), ...result };
 };
 
 const executeCreateThreshold = async (args, userId, socket) => {
@@ -1001,6 +1084,8 @@ const executeTool = async (name, args, userId, socket) => {
   if (name === "create_report_schedule") return executeCreateReportSchedule(args, userId, socket);
   if (name === "delete_report_schedule") return executeDeleteReportSchedule(args, userId, socket);
   if (name === "run_report_now") return executeRunReportNow(args, userId, socket);
+  if (name === "send_push_notification") return executeSendPushNotification(args, userId, socket);
+  if (name === "notify_alert") return executeNotifyAlert(args, userId, socket);
   if (name === "list_thresholds") return executeListThresholds(args, userId);
   if (name === "create_threshold") return executeCreateThreshold(args, userId, socket);
   if (name === "update_threshold") return executeUpdateThreshold(args, userId, socket);

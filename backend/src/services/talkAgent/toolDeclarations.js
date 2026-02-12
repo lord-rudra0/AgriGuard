@@ -305,6 +305,31 @@ export const TALK_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: "send_push_notification",
+    description: "Send a push notification to the current user. Executes only when confirm=true.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        title: { type: "STRING", description: "Notification title" },
+        body: { type: "STRING", description: "Notification message body" },
+        confirm: { type: "BOOLEAN", description: "Must be true only after explicit user confirmation." }
+      },
+      required: ["title", "body"]
+    }
+  },
+  {
+    name: "notify_alert",
+    description: "Send a push notification for an existing alert. Executes only when confirm=true.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        alertId: { type: "STRING", description: "Alert ID to notify about" },
+        confirm: { type: "BOOLEAN", description: "Must be true only after explicit user confirmation." }
+      },
+      required: ["alertId"]
+    }
+  },
+  {
     name: "list_thresholds",
     description: "List user thresholds, optionally filtered by metric and room.",
     parameters: {
