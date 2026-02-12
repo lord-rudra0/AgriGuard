@@ -57,7 +57,7 @@ export const registerTalkSocket = (io) => {
                                 }
                             },
                             system_instruction: {
-                                parts: [{ text: "You are the AgriGuard Intelligence System, a professional mycology and farm automation assistant. Never mention your underlying model or technologies like Gemini or Google. If asked who you are, say 'I am the AgriGuard AI.' You have full control over the web interface using tools. Use 'navigate_to' to help the user move between pages (e.g., Dashboard, Scan, History, Alerts, Devices). Use other tools to fetch data. Be concise, expert, and professional." }]
+                                parts: [{ text: "You are the AgriGuard Intelligence System, a professional mycology and farm automation assistant. Never mention your underlying model or technologies like Gemini or Google. If asked who you are, say 'I am the AgriGuard AI.' You have full control over the web interface using tools. Use 'navigate_to' to help the user move between pages (e.g., Dashboard, Scan, History, Alerts, Devices). Use other tools to fetch data. Be concise, expert, and professional. For calendar creation, always collect details one by one (single question per turn) in this order: title, start date/time, end date/time (or 'none'), description (or 'none'), room (or 'none'), reminders in minutes (or 'none'). After collecting all fields, summarize and ask explicit confirmation. Call create_calendar_event only after the user confirms." }]
                             },
                             tools: [{
                                 function_declarations: [
@@ -140,9 +140,13 @@ export const registerTalkSocket = (io) => {
                                                     type: "ARRAY",
                                                     items: { type: "NUMBER" },
                                                     description: "Optional reminders in minutes before event, e.g. [15, 60]"
+                                                },
+                                                confirm: {
+                                                    type: "BOOLEAN",
+                                                    description: "Must be true only after user explicitly confirms all event details."
                                                 }
                                             },
-                                            required: ["title", "startAt"]
+                                            required: ["title", "startAt", "endAt", "description", "roomId", "reminderMinutes", "confirm"]
                                         }
                                     },
                                     {
@@ -314,6 +318,15 @@ export const registerTalkSocket = (io) => {
 async function handleToolCall(geminiWs, toolCall, socket) {
     const responses = [];
     const userId = socket.user?.id;
+    const nextFieldQuestion = {
+        title: "What should the event title be?",
+        startAt: "What is the start date and time?",
+        endAt: "What is the end date and time? You can say 'none'.",
+        description: "Do you want to add a description? You can say 'none'.",
+        roomId: "Do you want to assign this to a room? You can say 'none'.",
+        reminderMinutes: "Any reminders in minutes before the event? Example: 15, 60. You can say 'none'.",
+        confirm: "Please confirm: should I create this calendar event now?"
+    };
 
     for (const call of toolCall.functionCalls) {
         let result = { error: "Function not found" };
@@ -356,34 +369,61 @@ async function handleToolCall(geminiWs, toolCall, socket) {
                 result = { alerts: alerts.map(a => ({ title: a.title, severity: a.severity, message: a.message })) };
             }
             else if (name === "create_calendar_event") {
-                const startAt = args?.startAt ? new Date(args.startAt) : null;
-                const endAt = args?.endAt ? new Date(args.endAt) : null;
-                if (!args?.title || !startAt || Number.isNaN(startAt.getTime())) {
-                    result = { error: "title and valid startAt are required" };
-                } else if (endAt && Number.isNaN(endAt.getTime())) {
-                    result = { error: "endAt must be a valid datetime" };
-                } else {
-                    const reminderMinutes = Array.isArray(args.reminderMinutes)
-                        ? args.reminderMinutes.filter((m) => Number.isFinite(Number(m))).map((m) => Number(m))
-                        : [];
-                    const event = await CalendarEvent.create({
-                        userId,
-                        title: String(args.title),
-                        description: args?.description ? String(args.description) : '',
-                        roomId: args?.roomId ? String(args.roomId) : null,
-                        startAt,
-                        endAt: endAt && !Number.isNaN(endAt.getTime()) ? endAt : undefined,
-                        reminders: reminderMinutes.map((m) => ({ minutesBefore: m }))
-                    });
+                const requiredOrder = ['title', 'startAt', 'endAt', 'description', 'roomId', 'reminderMinutes', 'confirm'];
+                const firstMissing = requiredOrder.find((field) => args?.[field] === undefined);
+
+                if (firstMissing) {
                     result = {
-                        success: true,
-                        event: {
-                            id: String(event._id),
-                            title: event.title,
-                            startAt: event.startAt,
-                            endAt: event.endAt || null
-                        }
+                        needsMoreInfo: true,
+                        nextField: firstMissing,
+                        question: nextFieldQuestion[firstMissing]
                     };
+                } else if (args.confirm !== true) {
+                    result = {
+                        needsMoreInfo: true,
+                        nextField: 'confirm',
+                        question: nextFieldQuestion.confirm
+                    };
+                } else {
+                    const startAt = args?.startAt ? new Date(args.startAt) : null;
+                    const noEndAt = args?.endAt === null || String(args?.endAt || '').trim().toLowerCase() === 'none' || String(args?.endAt || '').trim() === '';
+                    const endAt = noEndAt ? null : new Date(args.endAt);
+                    if (!args?.title || !startAt || Number.isNaN(startAt.getTime())) {
+                        result = { error: "title and valid startAt are required" };
+                    } else if (endAt && Number.isNaN(endAt.getTime())) {
+                        result = { error: "endAt must be a valid datetime" };
+                    } else if (!Array.isArray(args.reminderMinutes)) {
+                        result = { error: "reminderMinutes must be an array (use [] if none)." };
+                    } else {
+                        const reminderMinutes = args.reminderMinutes
+                            .filter((m) => Number.isFinite(Number(m)))
+                            .map((m) => Number(m));
+                        const description = args?.description && String(args.description).trim().toLowerCase() !== 'none'
+                            ? String(args.description)
+                            : '';
+                        const roomId = args?.roomId && String(args.roomId).trim().toLowerCase() !== 'none'
+                            ? String(args.roomId)
+                            : null;
+
+                        const event = await CalendarEvent.create({
+                            userId,
+                            title: String(args.title),
+                            description,
+                            roomId,
+                            startAt,
+                            endAt: endAt && !Number.isNaN(endAt.getTime()) ? endAt : undefined,
+                            reminders: reminderMinutes.map((m) => ({ minutesBefore: m }))
+                        });
+                        result = {
+                            success: true,
+                            event: {
+                                id: String(event._id),
+                                title: event.title,
+                                startAt: event.startAt,
+                                endAt: event.endAt || null
+                            }
+                        };
+                    }
                 }
             }
             else if (name === "list_calendar_events") {
