@@ -1,0 +1,231 @@
+import Alert from '../../../models/Alert.js';
+import CalendarEvent from '../../../models/CalendarEvent.js';
+import {
+  NEXT_FIELD_QUESTION,
+  normalizeConfirm,
+  normalizeOptionalText,
+  normalizeReminderMinutes,
+  toAlertPayload,
+  toCalendarEventPayload,
+  emitTalkAction
+} from './shared.js';
+
+const ALERT_SEVERITY_ORDER = ['low', 'medium', 'high', 'critical'];
+
+const getNextSeverity = (current = 'low') => {
+  const idx = ALERT_SEVERITY_ORDER.indexOf(String(current));
+  if (idx < 0 || idx >= ALERT_SEVERITY_ORDER.length - 1) return 'critical';
+  return ALERT_SEVERITY_ORDER[idx + 1];
+};
+
+const buildAlertPlaybook = (alert) => {
+  const recommendations = [];
+  const severity = String(alert?.severity || 'low');
+  if (severity === 'critical' || severity === 'high') {
+    recommendations.push({ action: 'followup', reason: 'High-severity alerts should have a tracked follow-up task.' });
+    recommendations.push({
+      action: 'escalate',
+      reason: severity === 'critical' ? 'Already critical; escalation not applicable.' : `Escalate to ${getNextSeverity(severity)} if issue persists.`
+    });
+    recommendations.push({ action: 'resolve', reason: 'Resolve only after mitigation is confirmed.' });
+  } else {
+    recommendations.push({ action: 'resolve', reason: 'If condition has normalized, resolve to clear active queue.' });
+    recommendations.push({ action: 'followup', reason: 'Create follow-up task to verify stability.' });
+    recommendations.push({ action: 'escalate', reason: `Escalate to ${getNextSeverity(severity)} if repeated or worsening.` });
+  }
+  return { recommendedAction: recommendations[0]?.action || 'followup', recommendations };
+};
+
+const executeResolveAlert = async (args, userId, socket) => {
+  const alertId = args?.alertId ? String(args.alertId) : null;
+  if (!alertId) return { error: "alertId is required" };
+  const update = { isResolved: true, resolvedAt: new Date(), resolvedBy: userId };
+  if (args?.actionTaken) update.actionTaken = String(args.actionTaken);
+  const alert = await Alert.findOneAndUpdate({ _id: alertId, userId }, update, { new: true });
+  if (!alert) return { error: "Alert not found" };
+  const serialized = toAlertPayload(alert);
+  emitTalkAction(socket, 'alert_resolved', { alert: serialized });
+  return { success: true, alert: serialized };
+};
+
+const executeEscalateAlert = async (args, userId, socket) => {
+  const alertId = args?.alertId ? String(args.alertId) : null;
+  const targetSeverity = args?.severity ? String(args.severity) : null;
+  if (!alertId) return { error: "alertId is required" };
+  if (!targetSeverity || !['medium', 'high', 'critical'].includes(targetSeverity)) {
+    return { error: "severity must be one of: medium, high, critical" };
+  }
+  const alert = await Alert.findOneAndUpdate({ _id: alertId, userId }, { severity: targetSeverity }, { new: true });
+  if (!alert) return { error: "Alert not found" };
+  const serialized = toAlertPayload(alert);
+  emitTalkAction(socket, 'alert_escalated', { alert: serialized });
+  return { success: true, alert: serialized };
+};
+
+const executeCreateAlertFollowupEvent = async (args, userId, socket) => {
+  const alertId = args?.alertId ? String(args.alertId) : null;
+  if (!alertId) return { error: "alertId is required" };
+  const alert = await Alert.findOne({ _id: alertId, userId }).lean();
+  if (!alert) return { error: "Alert not found" };
+
+  let startAt = null;
+  if (args?.startAt) {
+    const parsed = new Date(args.startAt);
+    if (Number.isNaN(parsed.getTime())) return { error: "startAt must be a valid datetime" };
+    startAt = parsed;
+  } else {
+    const minutes = Number(args?.minutesFromNow);
+    const delayMin = Number.isFinite(minutes) && minutes >= 0 ? minutes : 30;
+    startAt = new Date(Date.now() + delayMin * 60 * 1000);
+  }
+
+  const reminderMinutes = normalizeReminderMinutes(args?.reminderMinutes);
+  const title = args?.title ? String(args.title) : `Follow up: ${alert.title}`;
+  const description = `Alert follow-up task\nSeverity: ${alert.severity}\nMessage: ${alert.message || ''}`;
+  const event = await CalendarEvent.create({
+    userId,
+    title,
+    description,
+    roomId: alert.deviceId || null,
+    startAt,
+    reminders: reminderMinutes.map((m) => ({ minutesBefore: m }))
+  });
+  const serialized = toCalendarEventPayload(event);
+  emitTalkAction(socket, 'calendar_event_created', { event: serialized });
+  return { success: true, event: serialized, sourceAlertId: alertId };
+};
+
+const executeTriageAlert = async (args, userId, socket) => {
+  const alertId = normalizeOptionalText(args?.alertId);
+  if (!alertId) return { error: "alertId is required" };
+  const alert = await Alert.findOne({ _id: alertId, userId });
+  if (!alert) return { error: "Alert not found" };
+
+  const playbook = buildAlertPlaybook(alert);
+  const action = normalizeOptionalText(args?.action) || playbook.recommendedAction;
+  if (!normalizeConfirm(args?.confirm)) {
+    return {
+      needsMoreInfo: true,
+      nextField: 'confirm',
+      question: `Recommended action is '${playbook.recommendedAction}'. Confirm to execute '${action}'?`,
+      playbook: { alert: toAlertPayload(alert), ...playbook }
+    };
+  }
+
+  if (action === 'resolve') return executeResolveAlert({ alertId, actionTaken: 'Resolved via Talk AI triage playbook' }, userId, socket);
+  if (action === 'escalate') {
+    const target = normalizeOptionalText(args?.escalateSeverity) || getNextSeverity(alert.severity);
+    if (target === alert.severity) return { success: true, message: `Alert is already at ${target} severity`, alert: toAlertPayload(alert) };
+    return executeEscalateAlert({ alertId, severity: target }, userId, socket);
+  }
+  if (action === 'followup') {
+    const minsRaw = Number(args?.followupMinutes);
+    const minutesFromNow = Number.isFinite(minsRaw) && minsRaw >= 0 ? minsRaw : 30;
+    return executeCreateAlertFollowupEvent({ alertId, minutesFromNow, title: `Follow up: ${alert.title}` }, userId, socket);
+  }
+  if (action === 'ignore') return { success: true, message: 'No action executed for this alert.', alert: toAlertPayload(alert) };
+  return { error: "action must be one of: resolve, escalate, followup, ignore" };
+};
+
+const executeCalendarCreate = async (args, userId, socket) => {
+  const collectionOrder = ['title', 'startAt', 'endAt', 'description', 'roomId', 'reminderMinutes'];
+  if (!normalizeConfirm(args?.confirm)) {
+    const firstMissing = collectionOrder.find((field) => args?.[field] === undefined);
+    if (firstMissing) return { needsMoreInfo: true, nextField: firstMissing, question: NEXT_FIELD_QUESTION[firstMissing] };
+    return { needsMoreInfo: true, nextField: 'confirm', question: NEXT_FIELD_QUESTION.confirm };
+  }
+
+  const startAt = args?.startAt ? new Date(args.startAt) : null;
+  const noEndAt = args?.endAt === null || String(args?.endAt || '').trim().toLowerCase() === 'none' || String(args?.endAt || '').trim() === '';
+  const endAt = noEndAt ? null : new Date(args.endAt);
+  if (!args?.title || !startAt || Number.isNaN(startAt.getTime())) return { error: "title and valid startAt are required" };
+  if (endAt && Number.isNaN(endAt.getTime())) return { error: "endAt must be a valid datetime" };
+
+  const reminderMinutes = normalizeReminderMinutes(args.reminderMinutes);
+  const description = args?.description && String(args.description).trim().toLowerCase() !== 'none' ? String(args.description) : '';
+  const roomId = args?.roomId && String(args.roomId).trim().toLowerCase() !== 'none' ? String(args.roomId) : null;
+  const event = await CalendarEvent.create({
+    userId,
+    title: String(args.title),
+    description,
+    roomId,
+    startAt,
+    endAt: endAt && !Number.isNaN(endAt.getTime()) ? endAt : undefined,
+    reminders: reminderMinutes.map((m) => ({ minutesBefore: m }))
+  });
+  const serialized = toCalendarEventPayload(event);
+  emitTalkAction(socket, 'calendar_event_created', { event: serialized });
+  return { success: true, event: serialized };
+};
+
+const executeCalendarList = async (args, userId) => {
+  const startAt = args?.start ? new Date(args.start) : new Date();
+  const endAt = args?.end ? new Date(args.end) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const limitRaw = Number(args?.limit);
+  const limit = Math.min(Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 20, 100);
+  if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) return { error: "start/end must be valid datetimes" };
+  const events = await CalendarEvent.find({ userId, startAt: { $gte: startAt, $lte: endAt } }).sort({ startAt: 1 }).limit(limit).lean();
+  return {
+    events: events.map((e) => ({
+      id: String(e._id),
+      title: e.title,
+      startAt: e.startAt,
+      endAt: e.endAt || null,
+      description: e.description || ''
+    }))
+  };
+};
+
+const executeCalendarUpdate = async (args, userId, socket) => {
+  const eventId = args?.eventId ? String(args.eventId) : null;
+  if (!eventId) return { error: "eventId is required" };
+  const updates = {};
+  if (args?.title != null) updates.title = String(args.title);
+  if (args?.description != null) updates.description = String(args.description);
+  if (args?.roomId !== undefined) updates.roomId = args.roomId ? String(args.roomId) : null;
+  if (args?.startAt) {
+    const startAt = new Date(args.startAt);
+    if (Number.isNaN(startAt.getTime())) return { error: "startAt must be a valid datetime" };
+    updates.startAt = startAt;
+  }
+  if (args?.endAt !== undefined) {
+    if (!args.endAt) updates.endAt = undefined;
+    else {
+      const endAt = new Date(args.endAt);
+      if (Number.isNaN(endAt.getTime())) return { error: "endAt must be a valid datetime" };
+      updates.endAt = endAt;
+    }
+  }
+  if (Array.isArray(args?.reminderMinutes)) {
+    const reminderMinutes = normalizeReminderMinutes(args.reminderMinutes);
+    updates.reminders = reminderMinutes.map((m) => ({ minutesBefore: m }));
+  }
+  const event = await CalendarEvent.findOneAndUpdate({ _id: eventId, userId }, updates, { new: true });
+  if (!event) return { error: "Event not found" };
+  const serialized = toCalendarEventPayload(event);
+  emitTalkAction(socket, 'calendar_event_updated', { event: serialized });
+  return { success: true, event: serialized };
+};
+
+const executeCalendarDelete = async (args, userId, socket) => {
+  const eventId = args?.eventId ? String(args.eventId) : null;
+  if (!eventId) return { error: "eventId is required" };
+  const deleted = await CalendarEvent.deleteOne({ _id: eventId, userId });
+  if (deleted.deletedCount > 0) {
+    emitTalkAction(socket, 'calendar_event_deleted', { eventId });
+    return { success: true, message: "Event deleted" };
+  }
+  return { error: "Event not found" };
+};
+
+export const executeAlertCalendarTool = async (name, args, userId, socket) => {
+  if (name === "resolve_alert") return executeResolveAlert(args, userId, socket);
+  if (name === "escalate_alert") return executeEscalateAlert(args, userId, socket);
+  if (name === "create_alert_followup_event") return executeCreateAlertFollowupEvent(args, userId, socket);
+  if (name === "triage_alert") return executeTriageAlert(args, userId, socket);
+  if (name === "create_calendar_event") return executeCalendarCreate(args, userId, socket);
+  if (name === "list_calendar_events") return executeCalendarList(args, userId);
+  if (name === "update_calendar_event") return executeCalendarUpdate(args, userId, socket);
+  if (name === "delete_calendar_event") return executeCalendarDelete(args, userId, socket);
+  return null;
+};
