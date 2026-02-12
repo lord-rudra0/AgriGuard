@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { getApiUrl } from '../config/api';
 import {
     ArrowLeft, Search, Calendar, AlertTriangle, CheckCircle, Trash2, Filter, X,
     History as HistoryIcon, ShieldCheck, Microscope, Layers, Maximize2, MoreVertical
@@ -24,7 +25,7 @@ const History = () => {
     const fetchHistory = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analyze/mushroom/history`, {
+            const response = await axios.get(getApiUrl('/api/analyze/mushroom/history'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.success) {
@@ -92,7 +93,7 @@ const History = () => {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analyze/mushroom/history/${id}`, {
+            const response = await axios.delete(getApiUrl(`/api/analyze/mushroom/history/${id}`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

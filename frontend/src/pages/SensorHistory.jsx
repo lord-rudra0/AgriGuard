@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { getApiUrl } from '../config/api';
 
 const SENSOR_TYPES = [
     { key: 'temperature', label: 'Temperature', unit: '°C' },
@@ -71,7 +72,7 @@ const SensorHistory = () => {
         setError(null);
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/sensors/history`, {
+            const response = await axios.get(getApiUrl('/api/sensors/history'), {
                 params: {
                     sensorType: selectedSensor.key,
                     interval
