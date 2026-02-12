@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { CalendarClock, Trash2, Send } from 'lucide-react';
+import { useSocket } from '../../context/SocketContext';
 
 export default function ReportScheduler() {
+  const { socket } = useSocket();
   const [items, setItems] = useState([]);
   const [name, setName] = useState('Daily Report');
   const [email, setEmail] = useState('');
@@ -17,6 +19,21 @@ export default function ReportScheduler() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+    const onTalkAction = (payload = {}) => {
+      if (
+        payload.action === 'report_schedule_created'
+        || payload.action === 'report_schedule_deleted'
+        || payload.action === 'report_sent'
+      ) {
+        load();
+      }
+    };
+    socket.on('talk:action', onTalkAction);
+    return () => socket.off('talk:action', onTalkAction);
+  }, [socket]);
 
   const create = async () => {
     if (!email) return;

@@ -145,6 +145,54 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on('talk:action', (payload = {}) => {
       const action = payload?.action;
+      if (action === 'device_command_created') {
+        const command = payload?.command || {};
+        const alert = {
+          type: 'system',
+          title: 'Device command queued',
+          message: `${command?.actuator || 'Actuator'} ${command?.state || ''} on ${command?.deviceId || 'device'} was queued.`,
+          severity: 'info',
+          timestamp: new Date()
+        };
+        setAlerts(prev => [alert, ...prev]);
+      }
+      if (action === 'automation_rule_created' || action === 'automation_rule_updated' || action === 'automation_rule_deleted') {
+        const actionLabel = action === 'automation_rule_created'
+          ? 'created'
+          : action === 'automation_rule_updated'
+            ? 'updated'
+            : 'deleted';
+        const ruleName = payload?.rule?.name || payload?.ruleId || 'rule';
+        const alert = {
+          type: 'system',
+          title: `Automation rule ${actionLabel}`,
+          message: `Automation ${actionLabel}: ${ruleName}.`,
+          severity: 'info',
+          timestamp: new Date()
+        };
+        setAlerts(prev => [alert, ...prev]);
+      }
+      if (action === 'report_schedule_created') {
+        const schedule = payload?.schedule || {};
+        const alert = {
+          type: 'system',
+          title: 'Report schedule created',
+          message: `${schedule?.name || 'Report'} scheduled for ${schedule?.email || 'recipient'}.`,
+          severity: 'info',
+          timestamp: new Date()
+        };
+        setAlerts(prev => [alert, ...prev]);
+      }
+      if (action === 'report_schedule_deleted') {
+        const alert = {
+          type: 'system',
+          title: 'Report schedule deleted',
+          message: `Schedule ${payload?.scheduleId || ''} was removed.`,
+          severity: 'info',
+          timestamp: new Date()
+        };
+        setAlerts(prev => [alert, ...prev]);
+      }
       if (action === 'report_sent') {
         const alert = {
           type: 'system',

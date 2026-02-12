@@ -5,8 +5,10 @@ import {
   Trash2, Terminal, QrCode, Smartphone, Settings2, CheckCircle2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useSocket } from '../context/SocketContext';
 
 const Devices = () => {
+  const { socket } = useSocket();
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [claiming, setClaiming] = useState(false);
@@ -36,6 +38,22 @@ const Devices = () => {
   useEffect(() => {
     fetchDevices();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+    const onTalkAction = (payload = {}) => {
+      if (
+        payload.action === 'device_command_created'
+        || payload.action === 'automation_rule_created'
+        || payload.action === 'automation_rule_updated'
+        || payload.action === 'automation_rule_deleted'
+      ) {
+        fetchDevices();
+      }
+    };
+    socket.on('talk:action', onTalkAction);
+    return () => socket.off('talk:action', onTalkAction);
+  }, [socket]);
 
   const handleClaim = async (e) => {
     e.preventDefault();
