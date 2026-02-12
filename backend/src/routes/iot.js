@@ -23,6 +23,12 @@ const normalizeType = (type) => {
   return null;
 };
 
+const parseIngestionTimestamp = (raw, fallbackRaw = null) => {
+  const base = raw ?? fallbackRaw ?? Date.now();
+  const dt = new Date(base);
+  return Number.isNaN(dt.getTime()) ? new Date() : dt;
+};
+
 const normalizeReading = (reading) => {
   if (!reading) return null;
   const type = normalizeType(reading.type);
@@ -55,6 +61,7 @@ const normalizeReading = (reading) => {
     type,
     value,
     unit,
+    timestamp: reading.timestamp ?? reading.ts ?? reading.metadata?.timestamp ?? null,
     location: reading.location,
     metadata: reading.metadata || {}
   };
@@ -114,7 +121,9 @@ const checkAndCreateAlerts = async (userId, sensorDataArray, debounceMs) => {
   };
 
   for (const data of sensorDataArray) {
-    const threshold = thresholds[data.sensorType];
+    const sType = data.metadata?.sensorType || data.sensorType;
+    const dId = data.metadata?.deviceId || data.deviceId;
+    const threshold = thresholds[sType];
     if (!threshold) continue;
 
     const { min, max } = threshold;
@@ -124,8 +133,8 @@ const checkAndCreateAlerts = async (userId, sensorDataArray, debounceMs) => {
       // Debounce: skip if a recent alert for same sensor/device exists
       const recent = await Alert.findOne({
         userId,
-        type: data.sensorType,
-        deviceId: data.deviceId,
+        type: sType,
+        deviceId: dId,
         createdAt: { $gte: new Date(Date.now() - effectiveDebounceMs) }
       }).sort({ createdAt: -1 });
       if (recent) continue;
@@ -134,13 +143,13 @@ const checkAndCreateAlerts = async (userId, sensorDataArray, debounceMs) => {
 
       const alert = new Alert({
         userId,
-        type: data.sensorType,
+        type: sType,
         severity,
-        title: `${data.sensorType} Alert`,
-        message: `${data.sensorType} is ${value < min ? 'too low' : 'too high'}: ${value} ${data.unit}`,
+        title: `${sType} Alert`,
+        message: `${sType} is ${value < min ? 'too low' : 'too high'}: ${value} ${data.unit}`,
         value,
         threshold,
-        deviceId: data.deviceId
+        deviceId: dId
       });
 
       const savedAlert = await alert.save();
@@ -188,7 +197,8 @@ router.post('/ingest', async (req, res) => {
       resolvedDeviceId = deviceId;
     }
 
-    const { readings, line } = req.body || {};
+    const { readings, line, timestamp: batchTimestamp } = req.body || {};
+    const fallbackBatchTimestamp = batchTimestamp ?? Date.now();
 
     let incomingReadings = Array.isArray(readings) ? readings : null;
     if (!incomingReadings && typeof line === 'string') {
@@ -208,17 +218,54 @@ router.post('/ingest', async (req, res) => {
     }
 
     const sensorDataArray = normalized.map(reading => ({
-      userId: resolvedUserId,
-      deviceId: resolvedDeviceId,
-      sensorType: reading.type,
+      timestamp: parseIngestionTimestamp(reading.timestamp, fallbackBatchTimestamp),
+      metadata: {
+        userId: resolvedUserId,
+        deviceId: resolvedDeviceId,
+        sensorType: reading.type,
+        location: reading.location || 'Greenhouse 1'
+      },
       value: reading.value,
       unit: reading.unit,
-      location: reading.location,
       status: determineStatus(reading.type, reading.value),
-      metadata: reading.metadata || {}
+      extra: {
+        batteryLevel: reading.metadata?.batteryLevel,
+        signalStrength: reading.metadata?.signalStrength
+      }
     }));
 
-    const savedData = await SensorData.insertMany(sensorDataArray);
+    // De-duplicate within request by (sensorType, timestamp)
+    const requestDedupedMap = new Map();
+    sensorDataArray.forEach((doc) => {
+      const key = `${doc.metadata.sensorType}|${doc.timestamp.getTime()}`;
+      if (!requestDedupedMap.has(key)) requestDedupedMap.set(key, doc);
+    });
+    const requestDeduped = [...requestDedupedMap.values()];
+
+    const uniqueTimestamps = [...new Set(requestDeduped.map((d) => d.timestamp.getTime()))].map((ms) => new Date(ms));
+    const uniqueSensorTypes = [...new Set(requestDeduped.map((d) => d.metadata.sensorType))];
+
+    const existing = uniqueTimestamps.length > 0
+      ? await SensorData.find(
+        {
+          'metadata.userId': resolvedUserId,
+          'metadata.deviceId': resolvedDeviceId,
+          'metadata.sensorType': { $in: uniqueSensorTypes },
+          timestamp: { $in: uniqueTimestamps }
+        },
+        { 'metadata.sensorType': 1, timestamp: 1 }
+      ).lean()
+      : [];
+
+    const existingKeys = new Set(
+      existing.map((d) => `${d.metadata?.sensorType}|${new Date(d.timestamp).getTime()}`)
+    );
+
+    const toInsert = requestDeduped.filter(
+      (d) => !existingKeys.has(`${d.metadata.sensorType}|${d.timestamp.getTime()}`)
+    );
+
+    const savedData = toInsert.length > 0 ? await SensorData.insertMany(toInsert) : [];
 
     // Log device connection when first seen or after offline window
     const now = Date.now();
@@ -253,6 +300,7 @@ router.post('/ingest', async (req, res) => {
     return res.status(201).json({
       message: 'IoT data ingested',
       count: savedData.length,
+      duplicatesIgnored: sensorDataArray.length - toInsert.length,
       alerts: alerts.length
     });
   } catch (error) {

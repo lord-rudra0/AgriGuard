@@ -8,6 +8,12 @@ import { getFullAnalytics } from '../services/analytics/AnalyticsService.js';
 
 const router = express.Router();
 
+const parseIngestionTimestamp = (reading, fallbackRaw = null) => {
+  const raw = reading?.timestamp ?? reading?.ts ?? reading?.metadata?.timestamp ?? fallbackRaw ?? Date.now();
+  const dt = new Date(raw);
+  return Number.isNaN(dt.getTime()) ? new Date() : dt;
+};
+
 // @route   GET /api/sensors/data
 // @desc    Get sensor data for user
 // @access  Private
@@ -61,14 +67,15 @@ router.get('/data', authenticateToken, async (req, res) => {
 // @access  Private
 router.post('/data', authenticateToken, async (req, res) => {
   try {
-    const { deviceId, readings } = req.body;
+    const { deviceId, readings, timestamp: batchTimestamp } = req.body;
+    const fallbackBatchTimestamp = batchTimestamp ?? Date.now();
 
     if (!deviceId || !readings || !Array.isArray(readings)) {
       return res.status(400).json({ message: 'Device ID and readings array are required' });
     }
 
     const sensorDataArray = readings.map(reading => ({
-      timestamp: new Date(),
+      timestamp: parseIngestionTimestamp(reading, fallbackBatchTimestamp),
       metadata: {
         userId: req.user._id,
         deviceId: deviceId,
@@ -84,7 +91,38 @@ router.post('/data', authenticateToken, async (req, res) => {
       }
     }));
 
-    const savedData = await SensorData.insertMany(sensorDataArray);
+    // De-duplicate within the same request by (sensorType, timestamp)
+    const requestDedupedMap = new Map();
+    sensorDataArray.forEach((doc) => {
+      const key = `${doc.metadata.sensorType}|${doc.timestamp.getTime()}`;
+      if (!requestDedupedMap.has(key)) requestDedupedMap.set(key, doc);
+    });
+    const requestDeduped = [...requestDedupedMap.values()];
+
+    const uniqueTimestamps = [...new Set(requestDeduped.map((d) => d.timestamp.getTime()))].map((ms) => new Date(ms));
+    const uniqueSensorTypes = [...new Set(requestDeduped.map((d) => d.metadata.sensorType))];
+
+    const existing = uniqueTimestamps.length > 0
+      ? await SensorData.find(
+        {
+          'metadata.userId': req.user._id,
+          'metadata.deviceId': deviceId,
+          'metadata.sensorType': { $in: uniqueSensorTypes },
+          timestamp: { $in: uniqueTimestamps }
+        },
+        { 'metadata.sensorType': 1, timestamp: 1 }
+      ).lean()
+      : [];
+
+    const existingKeys = new Set(
+      existing.map((d) => `${d.metadata?.sensorType}|${new Date(d.timestamp).getTime()}`)
+    );
+
+    const toInsert = requestDeduped.filter(
+      (d) => !existingKeys.has(`${d.metadata.sensorType}|${d.timestamp.getTime()}`)
+    );
+
+    const savedData = toInsert.length > 0 ? await SensorData.insertMany(toInsert) : [];
 
     // Check for alerts (respect per-user debounce)
     const settings = await UserSettings.findOne({ userId: req.user._id }).lean();
@@ -113,9 +151,10 @@ router.post('/data', authenticateToken, async (req, res) => {
       });
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Sensor data saved successfully',
       count: savedData.length,
+      duplicatesIgnored: sensorDataArray.length - toInsert.length,
       alerts: alerts.length
     });
   } catch (error) {
