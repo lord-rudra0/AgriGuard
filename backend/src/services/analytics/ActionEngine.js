@@ -62,7 +62,7 @@ export const generateActionRecommendations = async (chartData, predictions = [],
     // 1. Biological Threshold Checks (Using Stage-Aware Ideals)
 
     // Temp Logic
-    if (latest.temperature > ideal.temperature.max) {
+    if (typeof latest.temperature === 'number' && latest.temperature > ideal.temperature.max) {
         addRecommendation({
             type: 'high',
             title: 'Temperature Too High',
@@ -73,7 +73,8 @@ export const generateActionRecommendations = async (chartData, predictions = [],
             stabilityGain: 10,
             targetMetric: 'Temperature'
         });
-    } else if (latest.temperature < ideal.temperature.min) {
+    }
+    if (typeof latest.temperature === 'number' && latest.temperature < ideal.temperature.min) {
         addRecommendation({
             type: 'medium',
             title: 'Temperature Too Low',
@@ -87,7 +88,7 @@ export const generateActionRecommendations = async (chartData, predictions = [],
     }
 
     // Humidity Logic
-    if (latest.humidity > ideal.humidity.max) {
+    if (typeof latest.humidity === 'number' && latest.humidity > ideal.humidity.max) {
         addRecommendation({
             type: 'high',
             title: 'Humidity Too High',
@@ -98,7 +99,8 @@ export const generateActionRecommendations = async (chartData, predictions = [],
             stabilityGain: 10,
             targetMetric: 'Humidity'
         });
-    } else if (latest.humidity < ideal.humidity.min) {
+    }
+    if (typeof latest.humidity === 'number' && latest.humidity < ideal.humidity.min) {
         addRecommendation({
             type: 'high',
             title: 'Humidity Too Low',
@@ -112,7 +114,7 @@ export const generateActionRecommendations = async (chartData, predictions = [],
     }
 
     // CO2 Logic
-    if (latest.co2 > ideal.co2.max) {
+    if (typeof latest.co2 === 'number' && latest.co2 > ideal.co2.max) {
         addRecommendation({
             type: 'medium',
             title: 'High CO2 Concentration',
@@ -124,14 +126,33 @@ export const generateActionRecommendations = async (chartData, predictions = [],
             targetMetric: 'CO2'
         });
     }
+    if (typeof latest.co2 === 'number' && latest.co2 < ideal.co2.min) {
+        addRecommendation({
+            type: 'medium',
+            title: 'CO2 Too Low',
+            action: 'Reduce Exhaust / Stabilize Air Exchange',
+            description: `CO2 is ${Math.round(latest.co2)}ppm. Target min for ${stage.label} is ${ideal.co2.min}ppm.`,
+            iconName: 'Wind',
+            riskReduction: -8,
+            stabilityGain: 6,
+            targetMetric: 'CO2'
+        });
+    }
 
     // 2. Pattern Matching Logic (Compound Risks)
-    if (latest.temperature > 25 && latest.humidity > 85) {
+    const heatStressTemp = ideal.temperature.max + 1;
+    const heatStressHumidity = ideal.humidity.max;
+    if (
+        typeof latest.temperature === 'number' &&
+        typeof latest.humidity === 'number' &&
+        latest.temperature > heatStressTemp &&
+        latest.humidity > heatStressHumidity
+    ) {
         addRecommendation({
             type: 'critical',
             title: 'Mushroom Blotch Warning',
             action: 'Full Ventilation Purge',
-            description: 'Combination of high heat and moisture leads to bacterial blotch. Priority 1.',
+            description: `Heat/moisture spike detected (${latest.temperature.toFixed(1)}°C, ${latest.humidity.toFixed(1)}%). Immediate purge recommended.`,
             iconName: 'AlertTriangle',
             riskReduction: -40,
             stabilityGain: 20,

@@ -162,48 +162,54 @@ const Header = () => {
           {/* Right Action Stack */}
           <div className="flex items-center gap-2 md:gap-3">
 
-            {/* Notification Center */}
-            {user && (
-              <div className="relative">
-                <button
-                  onClick={() => setIsBellOpen(!isBellOpen)}
-                  className={`relative p-2.5 rounded-xl border border-transparent transition-all ${isBellOpen ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 border-indigo-200/50' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }`}
-                >
-                  <Bell className="w-5 h-5" />
-                  {alerts?.length > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900">
-                      {Math.min(alerts.length, 9)}
-                    </span>
-                  )}
-                </button>
-
-                {isBellOpen && (
-                  <>
-                    <div className="fixed inset-0 z-0" onClick={() => setIsBellOpen(false)} />
-                    <div className="absolute top-full right-0 mt-3 w-80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden z-10 animate-fade-in-up">
-                      <div className="p-4 bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-widest text-gray-900 dark:text-white">Active Alerts</span>
-                        <div className="flex gap-2">
-                          <button onClick={() => clearAlerts()} className="text-[10px] font-black text-red-500 hover:brightness-110 uppercase">Clear</button>
-                        </div>
-                      </div>
-                      <div className="max-h-[300px] overflow-y-auto p-2 space-y-1">
-                        {alerts?.length > 0 ? alerts.slice(0, 5).map((a, idx) => (
-                          <div key={idx} className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                            <h4 className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-tight">{a.title}</h4>
-                            <p className="text-[10px] font-medium text-gray-500 line-clamp-2 mt-0.5 tracking-tight">{a.message}</p>
-                          </div>
-                        )) : (
-                          <div className="py-8 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">No Active Alerts</div>
-                        )}
-                      </div>
-                      <Link to="/alerts" onClick={() => setIsBellOpen(false)} className="block p-3 text-center text-[10px] font-black uppercase text-emerald-500 border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 transition-colors">View All Logs</Link>
-                    </div>
-                  </>
-                )}
+            {/* Voice AI Agent & Notification Center */}
+            <div className="flex items-center gap-1 md:gap-2">
+              <div className="hidden md:block">
+                <TalkAgent variant="header" />
               </div>
-            )}
+
+              {user && (
+                <div className="relative">
+                  <button
+                    onClick={() => setIsBellOpen(!isBellOpen)}
+                    className={`relative p-2.5 rounded-xl border border-transparent transition-all ${isBellOpen ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 border-indigo-200/50' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }`}
+                  >
+                    <Bell className="w-5 h-5" />
+                    {alerts?.length > 0 && (
+                      <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900">
+                        {Math.min(alerts.length, 9)}
+                      </span>
+                    )}
+                  </button>
+
+                  {isBellOpen && (
+                    <>
+                      <div className="fixed inset-0 z-0" onClick={() => setIsBellOpen(false)} />
+                      <div className="absolute top-full right-0 mt-3 w-80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden z-10 animate-fade-in-up">
+                        <div className="p-4 bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                          <span className="text-xs font-black uppercase tracking-widest text-gray-900 dark:text-white">Active Alerts</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => clearAlerts()} className="text-[10px] font-black text-red-500 hover:brightness-110 uppercase">Clear</button>
+                          </div>
+                        </div>
+                        <div className="max-h-[300px] overflow-y-auto p-2 space-y-1">
+                          {alerts?.length > 0 ? alerts.slice(0, 5).map((a, idx) => (
+                            <div key={idx} className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                              <h4 className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-tight">{a.title}</h4>
+                              <p className="text-[10px] font-medium text-gray-500 line-clamp-2 mt-0.5 tracking-tight">{a.message}</p>
+                            </div>
+                          )) : (
+                            <div className="py-8 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">No Active Alerts</div>
+                          )}
+                        </div>
+                        <Link to="/alerts" onClick={() => setIsBellOpen(false)} className="block p-3 text-center text-[10px] font-black uppercase text-emerald-500 border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 transition-colors">View All Logs</Link>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Theme & User Profile */}
             <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-900/60 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-800">
