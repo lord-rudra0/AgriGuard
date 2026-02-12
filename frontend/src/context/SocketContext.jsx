@@ -127,6 +127,60 @@ export const SocketProvider = ({ children }) => {
       setAlerts(prev => [alert, ...prev]);
     });
 
+    newSocket.on('deviceCommandUpdate', (update) => {
+      const status = String(update?.status || '').toLowerCase();
+      const severity = status === 'failed' ? 'high' : 'info';
+      const title = `Device command ${status || 'updated'}`;
+      const message = `${update?.actuator || 'Actuator'} ${update?.state || ''} on ${update?.deviceId || 'device'}${update?.resultMessage ? `: ${update.resultMessage}` : ''}`;
+      const alert = { type: 'system', title, message, severity, timestamp: new Date() };
+      setAlerts(prev => [alert, ...prev]);
+    });
+
+    newSocket.on('automation:triggered', (data) => {
+      const title = `Automation triggered: ${data?.ruleName || 'Rule'}`;
+      const message = `${data?.metric || 'metric'} condition met on ${data?.deviceId || 'device'}; command queued (${data?.command?.actuator || 'actuator'} ${data?.command?.state || ''}).`;
+      const alert = { type: 'system', title, message, severity: 'medium', timestamp: new Date() };
+      setAlerts(prev => [alert, ...prev]);
+    });
+
+    newSocket.on('talk:action', (payload = {}) => {
+      const action = payload?.action;
+      if (action === 'report_sent') {
+        const alert = {
+          type: 'system',
+          title: 'Report sent',
+          message: `Report dispatched to ${payload?.email || 'recipient'} (${payload?.timeframe || '24h'}).`,
+          severity: 'info',
+          timestamp: new Date()
+        };
+        setAlerts(prev => [alert, ...prev]);
+      }
+      if (action === 'push_notification_sent') {
+        const sent = Number(payload?.sent || 0);
+        const failed = Number(payload?.failed || 0);
+        const alert = {
+          type: 'system',
+          title: 'Push notification sent',
+          message: `Delivery attempted. Sent: ${sent}, failed: ${failed}.`,
+          severity: failed > 0 ? 'medium' : 'info',
+          timestamp: new Date()
+        };
+        setAlerts(prev => [alert, ...prev]);
+      }
+      if (action === 'alert_notification_sent') {
+        const sent = Number(payload?.sent || 0);
+        const failed = Number(payload?.failed || 0);
+        const alert = {
+          type: 'system',
+          title: 'Alert notification sent',
+          message: `Alert push attempted. Sent: ${sent}, failed: ${failed}.`,
+          severity: failed > 0 ? 'medium' : 'info',
+          timestamp: new Date()
+        };
+        setAlerts(prev => [alert, ...prev]);
+      }
+    });
+
     newSocket.on('presence:update', ({ userId, online }) => {
       setPresence(prev => {
         const next = new Map(prev);
