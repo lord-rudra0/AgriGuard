@@ -2,6 +2,7 @@ import express from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { authenticateToken } from '../middleware/auth.js';
 import { buildWindowComparison } from '../services/analytics/windowComparison.js';
+import { buildSeasonalStrategy } from '../services/analytics/seasonalStrategy.js';
 
 const router = express.Router();
 
@@ -288,6 +289,61 @@ Keep it concise and actionable.
   } catch (error) {
     logError(error, 'what-changed');
     return res.status(500).json({ message: 'Failed to compute what-changed summary. Please try again.' });
+  }
+});
+
+// @route   POST /api/chat/seasonal-strategy
+// @desc    Build a multi-week seasonal strategy plan
+// @access  Private
+router.post('/seasonal-strategy', authenticateToken, async (req, res) => {
+  try {
+    const {
+      weeksAhead = 4,
+      roomId = null,
+      cropType = null,
+      phaseName = null,
+      includeAiSummary = true
+    } = req.body || {};
+
+    const strategy = await buildSeasonalStrategy({
+      userId: req.user._id,
+      weeksAhead,
+      roomId,
+      cropType,
+      phaseName
+    });
+
+    let summary = strategy.summaryText;
+    let aiSummaryUsed = false;
+    if (includeAiSummary) {
+      const model = getModel();
+      if (model) {
+        const prompt = `
+You are AgriGuard AI. Convert this seasonal strategy data into an actionable plan:
+${JSON.stringify(strategy, null, 2)}
+
+Respond with:
+1) Weekly headline strategy
+2) Top risks and why they matter
+3) Priority actions for next 7 days
+Keep concise and practical.
+`;
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        summary = response.text() || summary;
+        aiSummaryUsed = true;
+      }
+    }
+
+    return res.json({
+      success: true,
+      summary,
+      aiSummaryUsed,
+      strategy
+    });
+  } catch (error) {
+    logError(error, 'seasonal-strategy');
+    return res.status(500).json({ message: 'Failed to generate seasonal strategy. Please try again.' });
   }
 });
 

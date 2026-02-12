@@ -3,6 +3,7 @@ import ScanHistory from '../../../models/ScanHistory.js';
 import Alert from '../../../models/Alert.js';
 import { emitTalkAction } from './shared.js';
 import { buildWindowComparison } from '../../analytics/windowComparison.js';
+import { buildSeasonalStrategy } from '../../analytics/seasonalStrategy.js';
 
 export const executeBaseTool = async (name, args, userId, socket) => {
   if (name === "navigate_to") {
@@ -55,6 +56,23 @@ export const executeBaseTool = async (name, args, userId, socket) => {
       windows: result.windows,
       topChanges: result.topChanges,
       metrics: result.metrics
+    };
+  }
+
+  if (name === "get_seasonal_strategy") {
+    const strategy = await buildSeasonalStrategy({
+      userId,
+      weeksAhead: args?.weeksAhead,
+      roomId: args?.roomId || null,
+      cropType: args?.cropType || null,
+      phaseName: args?.phaseName || null
+    });
+    return {
+      summary: strategy.summaryText,
+      horizonWeeks: strategy.horizonWeeks,
+      risks: strategy.risks,
+      weeklyPlan: strategy.weeklyPlan,
+      context: strategy.context
     };
   }
 

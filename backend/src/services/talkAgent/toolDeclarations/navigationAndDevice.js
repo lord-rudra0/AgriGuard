@@ -111,5 +111,18 @@ export const NAVIGATION_AND_DEVICE_DECLARATIONS = [
       },
       required: ["baselineStart", "baselineEnd", "compareStart", "compareEnd"]
     }
+  },
+  {
+    name: "get_seasonal_strategy",
+    description: "Generate a seasonal multi-week strategy plan with crop/phase-aware recommendations.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        weeksAhead: { type: "NUMBER", description: "Planning horizon in weeks (1-12, default 4)" },
+        roomId: { type: "STRING", description: "Optional room scope" },
+        cropType: { type: "STRING", description: "Optional crop type context" },
+        phaseName: { type: "STRING", description: "Optional growth phase focus" }
+      }
+    }
   }
 ];
