@@ -3,6 +3,7 @@ import { authenticateToken } from '../middleware/auth.js';
 import ReportSchedule from '../models/ReportSchedule.js';
 import SensorData from '../models/SensorData.js';
 import nodemailer from 'nodemailer';
+import { getNotificationPreferences, evaluateReportDelivery } from '../services/notificationPreferences.js';
 
 const router = express.Router();
 
@@ -92,7 +93,7 @@ export async function sendEmailCSV(to, subject, text, csvString, filename) {
   // Check if SMTP is configured
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn('[reports] SMTP not configured, skipping email send');
-    return;
+    return { sent: false, reason: 'SMTP is not configured on server' };
   }
 
   try {
@@ -112,18 +113,34 @@ export async function sendEmailCSV(to, subject, text, csvString, filename) {
     });
     
     console.log(`[reports] Email sent to ${to}`);
+    return { sent: true };
   } catch (error) {
     console.error('[reports] Failed to send email:', error.message);
+    return { sent: false, reason: error.message || 'Email send failed' };
   }
 }
 
 // Helper to run one schedule (used by scheduler in server.js)
-export async function runScheduleAndEmail(schedule) {
+export async function runScheduleAndEmail(schedule, options = {}) {
+  const { respectQuietHours = true } = options;
+  const prefs = await getNotificationPreferences(schedule.userId);
+  const delivery = evaluateReportDelivery({ prefs });
+  if (!delivery.allowed) {
+    if (delivery.deferred && respectQuietHours) {
+      return { sent: false, deferred: true, reason: delivery.reason || 'Deferred by quiet hours' };
+    }
+    return { sent: false, deferred: false, reason: delivery.reason || 'Blocked by notification preferences' };
+  }
+
   const { analytics } = await aggregateAnalytics(schedule.userId, schedule.timeframe);
   const csv = toCSV(analytics);
   const subject = `AgroNex Analytics Report - ${schedule.name}`;
   const text = `Attached is your ${schedule.frequency} analytics report for timeframe ${schedule.timeframe}.`;
-  await sendEmailCSV(schedule.email, subject, text, csv, `analytics_${schedule.timeframe}.csv`);
+  const emailResult = await sendEmailCSV(schedule.email, subject, text, csv, `analytics_${schedule.timeframe}.csv`);
+  if (!emailResult?.sent) {
+    return { sent: false, deferred: false, reason: emailResult?.reason || 'Email send failed' };
+  }
+  return { sent: true, deferred: false };
 }
 
 export default router;

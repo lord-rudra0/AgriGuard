@@ -70,6 +70,11 @@ export const REPORTING_NOTIFICATIONS_DECLARATIONS = [
       properties: {
         title: { type: "STRING", description: "Notification title" },
         body: { type: "STRING", description: "Notification message body" },
+        severity: {
+          type: "STRING",
+          enum: ["low", "medium", "high", "critical"],
+          description: "Optional severity used for notification preference filtering"
+        },
         confirm: { type: "BOOLEAN", description: "Must be true only after explicit user confirmation." }
       },
       required: ["title", "body"]

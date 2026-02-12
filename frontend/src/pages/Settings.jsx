@@ -47,6 +47,7 @@ const Settings = () => {
       <NotificationsTab
         notificationData={state.notificationData}
         handleToggleNotification={state.handleToggleNotification}
+        updateNotificationField={state.updateNotificationField}
         handleSubscribePush={state.handleSubscribePush}
         handleUnsubscribePush={state.handleUnsubscribePush}
         handleSendTestPush={state.handleSendTestPush}

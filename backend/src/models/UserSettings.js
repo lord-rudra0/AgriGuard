@@ -31,6 +31,40 @@ const userSettingsSchema = new mongoose.Schema({
     marketingEmails: {
       type: Boolean,
       default: false
+    },
+    minPushSeverity: {
+      type: String,
+      enum: ['low', 'medium', 'high', 'critical'],
+      default: 'low'
+    },
+    minReportSeverity: {
+      type: String,
+      enum: ['low', 'medium', 'high', 'critical'],
+      default: 'low'
+    },
+    pushQuietHoursEnabled: {
+      type: Boolean,
+      default: true
+    },
+    pushQuietHoursStart: {
+      type: String,
+      default: '22:00'
+    },
+    pushQuietHoursEnd: {
+      type: String,
+      default: '07:00'
+    },
+    reportQuietHoursEnabled: {
+      type: Boolean,
+      default: true
+    },
+    reportQuietHoursStart: {
+      type: String,
+      default: '22:00'
+    },
+    reportQuietHoursEnd: {
+      type: String,
+      default: '07:00'
     }
   },
   security: {

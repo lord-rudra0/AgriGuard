@@ -11,6 +11,34 @@ let calTimer = null;
 let pruneTimer = null;
 let historyAggTimer = null;
 
+const isSameLocalDate = (a, b) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
+const getWeekStart = (date) => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + diff);
+  return d;
+};
+
+const shouldRunScheduleNow = (schedule, now) => {
+  const last = schedule.lastRunAt ? new Date(schedule.lastRunAt) : null;
+  const runHour = Number.isFinite(Number(schedule.hourLocal)) ? Number(schedule.hourLocal) : 8;
+  if (now.getHours() < runHour) return false;
+
+  if (schedule.frequency === 'weekly') {
+    if (now.getDay() === 0) return false;
+    const currentWeekStart = getWeekStart(now);
+    return !last || last < currentWeekStart;
+  }
+
+  return !last || !isSameLocalDate(last, now);
+};
+
 const startScheduler = async () => {
   if (schedulerTimer) return;
   try {
@@ -19,16 +47,11 @@ const startScheduler = async () => {
     schedulerTimer = setInterval(async () => {
       try {
         const now = new Date();
-        const currentHour = now.getHours();
         const items = await ReportSchedule.find({ enabled: true }).lean();
         for (const s of items) {
-          const last = s.lastRunAt ? new Date(s.lastRunAt) : null;
-          const shouldRunHour = s.hourLocal ?? 8;
-          const isCorrectHour = currentHour === shouldRunHour;
-          const notRunThisHour = !last || last.getHours() !== currentHour || (now - last) > 60 * 60 * 1000;
-          const freqOk = s.frequency === 'daily' || (s.frequency === 'weekly' && now.getDay() === 1);
-          if (isCorrectHour && notRunThisHour && freqOk) {
-            await runScheduleAndEmail(s);
+          if (shouldRunScheduleNow(s, now)) {
+            const result = await runScheduleAndEmail(s, { respectQuietHours: true });
+            if (!result?.sent) continue;
             await ReportSchedule.updateOne({ _id: s._id }, { $set: { lastRunAt: new Date() } });
           }
         }

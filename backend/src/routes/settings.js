@@ -5,6 +5,9 @@ import User from '../models/User.js';
 import UserSettings from '../models/UserSettings.js';
 
 const router = express.Router();
+const VALID_SEVERITIES = new Set(['low', 'medium', 'high', 'critical']);
+
+const isValidHHMM = (value) => /^([01]?\d|2[0-3]):([0-5]\d)$/.test(String(value || '').trim());
 
 // Middleware to verify JWT token
 const authenticateToken = (req, res, next) => {
@@ -52,7 +55,15 @@ router.get('/', authenticateToken, async (req, res) => {
           smsNotifications: false,
           weatherAlerts: true,
           systemUpdates: true,
-          marketingEmails: false
+          marketingEmails: false,
+          minPushSeverity: 'low',
+          minReportSeverity: 'low',
+          pushQuietHoursEnabled: true,
+          pushQuietHoursStart: '22:00',
+          pushQuietHoursEnd: '07:00',
+          reportQuietHoursEnabled: true,
+          reportQuietHoursStart: '22:00',
+          reportQuietHoursEnd: '07:00'
         },
         security: {
           twoFactorEnabled: false
@@ -198,6 +209,29 @@ router.put('/notifications', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
     const notificationSettings = req.body;
+    const next = { ...notificationSettings };
+
+    if (next.minPushSeverity !== undefined) {
+      const value = String(next.minPushSeverity).toLowerCase();
+      if (!VALID_SEVERITIES.has(value)) {
+        return res.status(400).json({ success: false, message: 'minPushSeverity must be one of: low, medium, high, critical' });
+      }
+      next.minPushSeverity = value;
+    }
+
+    if (next.minReportSeverity !== undefined) {
+      const value = String(next.minReportSeverity).toLowerCase();
+      if (!VALID_SEVERITIES.has(value)) {
+        return res.status(400).json({ success: false, message: 'minReportSeverity must be one of: low, medium, high, critical' });
+      }
+      next.minReportSeverity = value;
+    }
+
+    for (const field of ['pushQuietHoursStart', 'pushQuietHoursEnd', 'reportQuietHoursStart', 'reportQuietHoursEnd']) {
+      if (next[field] !== undefined && !isValidHHMM(next[field])) {
+        return res.status(400).json({ success: false, message: `${field} must be in HH:MM (24h) format` });
+      }
+    }
 
     let userSettings = await UserSettings.findOne({ userId });
     if (!userSettings) {
@@ -206,7 +240,7 @@ router.put('/notifications', authenticateToken, async (req, res) => {
 
     userSettings.notifications = {
       ...userSettings.notifications,
-      ...notificationSettings
+      ...next
     };
 
     await userSettings.save();

@@ -1,6 +1,7 @@
 import express from 'express';
 import NotificationToken from '../models/NotificationToken.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { getNotificationPreferences, evaluatePushDelivery } from '../services/notificationPreferences.js';
 
 let webpush;
 try {
@@ -51,6 +52,17 @@ router.post('/unsubscribe', authenticateToken, async (req, res) => {
 // Send a test notification to all tokens for the user
 router.post('/send-test', authenticateToken, async (req, res) => {
   try {
+    const prefs = await getNotificationPreferences(req.user._id);
+    const delivery = evaluatePushDelivery({ prefs, severity: 'medium' });
+    if (!delivery.allowed) {
+      return res.status(200).json({
+        success: true,
+        skipped: true,
+        deferred: !!delivery.deferred,
+        message: delivery.reason || 'Test notification blocked by preferences'
+      });
+    }
+
     const tokens = await NotificationToken.find({ userId: req.user._id });
 
     if (!tokens || tokens.length === 0) {

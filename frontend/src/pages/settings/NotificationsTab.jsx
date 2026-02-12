@@ -4,6 +4,7 @@ import { NOTIFICATION_OPTIONS } from './constants';
 const NotificationsTab = ({
   notificationData,
   handleToggleNotification,
+  updateNotificationField,
   handleSubscribePush,
   handleUnsubscribePush,
   handleSendTestPush,
@@ -32,6 +33,104 @@ const NotificationsTab = ({
             </label>
           </div>
         ))}
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Push Policy</h4>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Minimum Severity</label>
+              <select
+                value={notificationData.minPushSeverity}
+                onChange={(e) => updateNotificationField('minPushSeverity', e.target.value)}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm px-3 py-2"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-600 dark:text-gray-300">Quiet Hours</span>
+              <input
+                type="checkbox"
+                checked={notificationData.pushQuietHoursEnabled}
+                onChange={(e) => updateNotificationField('pushQuietHoursEnabled', e.target.checked)}
+                className="h-4 w-4"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Start</label>
+                <input
+                  type="time"
+                  value={notificationData.pushQuietHoursStart}
+                  onChange={(e) => updateNotificationField('pushQuietHoursStart', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">End</label>
+                <input
+                  type="time"
+                  value={notificationData.pushQuietHoursEnd}
+                  onChange={(e) => updateNotificationField('pushQuietHoursEnd', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm px-3 py-2"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Report Email Policy</h4>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Minimum Severity</label>
+              <select
+                value={notificationData.minReportSeverity}
+                onChange={(e) => updateNotificationField('minReportSeverity', e.target.value)}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm px-3 py-2"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-600 dark:text-gray-300">Quiet Hours</span>
+              <input
+                type="checkbox"
+                checked={notificationData.reportQuietHoursEnabled}
+                onChange={(e) => updateNotificationField('reportQuietHoursEnabled', e.target.checked)}
+                className="h-4 w-4"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Start</label>
+                <input
+                  type="time"
+                  value={notificationData.reportQuietHoursStart}
+                  onChange={(e) => updateNotificationField('reportQuietHoursStart', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">End</label>
+                <input
+                  type="time"
+                  value={notificationData.reportQuietHoursEnd}
+                  onChange={(e) => updateNotificationField('reportQuietHoursEnd', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm px-3 py-2"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="mt-10 flex justify-end">

@@ -21,7 +21,15 @@ export const DEFAULT_NOTIFICATION_DATA = {
   smsNotifications: false,
   weatherAlerts: true,
   systemUpdates: true,
-  marketingEmails: false
+  marketingEmails: false,
+  minPushSeverity: 'low',
+  minReportSeverity: 'low',
+  pushQuietHoursEnabled: true,
+  pushQuietHoursStart: '22:00',
+  pushQuietHoursEnd: '07:00',
+  reportQuietHoursEnabled: true,
+  reportQuietHoursStart: '22:00',
+  reportQuietHoursEnd: '07:00'
 };
 
 export const DEFAULT_SYSTEM_DATA = {

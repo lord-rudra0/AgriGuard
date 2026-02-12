@@ -37,6 +37,10 @@ export const useSettingsPage = ({ user, updateUser }) => {
     setSystemData((prev) => ({ ...prev, [key]: value }));
   };
 
+  const updateNotificationField = (key, value) => {
+    setNotificationData((prev) => ({ ...prev, [key]: value }));
+  };
+
   const fetchUserSettings = async () => {
     try {
       const response = await axios.get('/api/settings', getAuthConfig());
@@ -276,6 +280,7 @@ export const useSettingsPage = ({ user, updateUser }) => {
     updateProfileField,
     updateSecurityField,
     updateSystemField,
+    updateNotificationField,
     handleProfileUpdate,
     handleSecurityUpdate,
     handleToggleNotification,

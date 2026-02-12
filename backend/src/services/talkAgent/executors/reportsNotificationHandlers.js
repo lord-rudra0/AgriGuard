@@ -1,6 +1,7 @@
 import ReportSchedule from '../../../models/ReportSchedule.js';
 import NotificationToken from '../../../models/NotificationToken.js';
 import Alert from '../../../models/Alert.js';
+import { getNotificationPreferences, evaluatePushDelivery } from '../../notificationPreferences.js';
 import {
   REPORT_QUESTION,
   NOTIFICATION_QUESTION,
@@ -19,7 +20,20 @@ const getWebpush = async () => {
   return webpushModulePromise;
 };
 
-const sendPushToUser = async (userId, payload) => {
+const sendPushToUser = async (userId, payload, options = {}) => {
+  const severity = options.severity || payload?.severity || 'medium';
+  const prefs = await getNotificationPreferences(userId);
+  const delivery = evaluatePushDelivery({ prefs, severity });
+  if (!delivery.allowed) {
+    return {
+      sent: 0,
+      failed: 0,
+      deferred: !!delivery.deferred,
+      skipped: true,
+      message: delivery.reason || 'Push notification was blocked by user preferences'
+    };
+  }
+
   const tokens = await NotificationToken.find({ userId }).lean();
   if (!tokens || tokens.length === 0) return { sent: 0, failed: 0, message: "No push subscriptions found for this user" };
   const webpush = await getWebpush();
@@ -108,7 +122,14 @@ const executeRunReportNow = async (args, userId, socket) => {
   }
 
   const { runScheduleAndEmail } = await import('../../../routes/reports.js');
-  await runScheduleAndEmail(schedule);
+  const reportRun = await runScheduleAndEmail(schedule, { respectQuietHours: false });
+  if (!reportRun?.sent) {
+    return {
+      success: false,
+      message: reportRun?.reason || 'Report could not be sent due to notification preferences',
+      report: { name: schedule.name, email: schedule.email, timeframe: schedule.timeframe }
+    };
+  }
   if (scheduleId) {
     await ReportSchedule.updateOne({ _id: scheduleId, userId }, { $set: { lastRunAt: new Date() } });
   }
@@ -131,7 +152,7 @@ const executeSendPushNotification = async (args, userId, socket) => {
   const title = normalizeOptionalText(args?.title);
   const body = normalizeOptionalText(args?.body);
   if (!title || !body) return { error: "title and body are required" };
-  const result = await sendPushToUser(userId, { title, body });
+  const result = await sendPushToUser(userId, { title, body }, { severity: normalizeOptionalText(args?.severity) || 'medium' });
   emitTalkAction(socket, 'push_notification_sent', { title, body, ...result });
   return { success: true, title, body, ...result };
 };
@@ -146,7 +167,11 @@ const executeNotifyAlert = async (args, userId, socket) => {
   if (!alert) return { error: "Alert not found" };
   const title = `[${String(alert.severity || '').toUpperCase()}] ${alert.title}`;
   const body = alert.message || 'Alert triggered';
-  const result = await sendPushToUser(userId, { title, body, alertId: String(alert._id) });
+  const result = await sendPushToUser(
+    userId,
+    { title, body, alertId: String(alert._id) },
+    { severity: String(alert.severity || 'medium').toLowerCase() }
+  );
   emitTalkAction(socket, 'alert_notification_sent', { alertId: String(alert._id), ...result });
   return { success: true, alert: toAlertPayload(alert), ...result };
 };
