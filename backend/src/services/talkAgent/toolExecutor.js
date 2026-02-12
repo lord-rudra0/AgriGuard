@@ -2,6 +2,7 @@ import SensorData from '../../models/SensorData.js';
 import ScanHistory from '../../models/ScanHistory.js';
 import Alert from '../../models/Alert.js';
 import CalendarEvent from '../../models/CalendarEvent.js';
+import Threshold from '../../models/Threshold.js';
 
 const NEXT_FIELD_QUESTION = {
   title: "What should the event title be?",
@@ -54,6 +55,138 @@ const toAlertPayload = (alert) => ({
   isResolved: !!alert.isResolved,
   isRead: !!alert.isRead
 });
+
+const toThresholdPayload = (threshold) => ({
+  id: String(threshold._id),
+  name: threshold.name,
+  metric: threshold.metric,
+  roomId: threshold.roomId ?? null,
+  min: threshold.min ?? null,
+  max: threshold.max ?? null,
+  severity: threshold.severity,
+  enabled: !!threshold.enabled,
+  notes: threshold.notes || '',
+  updatedAt: threshold.updatedAt || null
+});
+
+const emitThresholdAction = (socket, action, payload) => {
+  socket.emit('talk:action', { action, ...payload });
+};
+
+const normalizeOptionalText = (value) => {
+  if (value === undefined || value === null) return null;
+  const str = String(value).trim();
+  if (!str) return null;
+  if (str.toLowerCase() === 'none') return null;
+  return str;
+};
+
+const normalizeOptionalNumber = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : NaN;
+};
+
+const executeListThresholds = async (args, userId) => {
+  const query = { userId };
+  if (args?.metric) query.metric = String(args.metric);
+  if (args?.roomId) query.roomId = String(args.roomId);
+
+  const thresholds = await Threshold.find(query).sort({ updatedAt: -1 }).limit(100).lean();
+  return { thresholds: thresholds.map(toThresholdPayload) };
+};
+
+const executeCreateThreshold = async (args, userId, socket) => {
+  const name = normalizeOptionalText(args?.name);
+  const metric = normalizeOptionalText(args?.metric);
+  if (!name || !metric) return { error: "name and metric are required" };
+
+  const min = normalizeOptionalNumber(args?.min);
+  const max = normalizeOptionalNumber(args?.max);
+  if (Number.isNaN(min) || Number.isNaN(max)) {
+    return { error: "min/max must be valid numbers when provided" };
+  }
+  if (min == null && max == null) {
+    return { error: "At least one of min or max is required" };
+  }
+  if (min != null && max != null && min > max) {
+    return { error: "min cannot be greater than max" };
+  }
+
+  const severity = normalizeOptionalText(args?.severity) || 'warning';
+  const enabled = args?.enabled === undefined ? true : Boolean(args.enabled);
+  const roomId = normalizeOptionalText(args?.roomId);
+  const notes = normalizeOptionalText(args?.notes);
+
+  try {
+    const threshold = await Threshold.create({
+      userId,
+      name,
+      metric,
+      roomId,
+      min,
+      max,
+      severity,
+      enabled,
+      notes
+    });
+    const serialized = toThresholdPayload(threshold);
+    emitThresholdAction(socket, 'threshold_created', { threshold: serialized });
+    return { success: true, threshold: serialized };
+  } catch (err) {
+    if (err?.code === 11000) {
+      return { error: "A threshold with this name/metric/room already exists" };
+    }
+    throw err;
+  }
+};
+
+const executeUpdateThreshold = async (args, userId, socket) => {
+  const thresholdId = normalizeOptionalText(args?.thresholdId);
+  if (!thresholdId) return { error: "thresholdId is required" };
+
+  const existing = await Threshold.findOne({ _id: thresholdId, userId });
+  if (!existing) return { error: "Threshold not found" };
+
+  const updates = {};
+  if (args?.name !== undefined) {
+    const name = normalizeOptionalText(args.name);
+    if (!name) return { error: "name cannot be empty" };
+    updates.name = name;
+  }
+  if (args?.roomId !== undefined) updates.roomId = normalizeOptionalText(args.roomId);
+  if (args?.notes !== undefined) updates.notes = normalizeOptionalText(args.notes) || '';
+  if (args?.severity !== undefined) updates.severity = String(args.severity);
+  if (args?.enabled !== undefined) updates.enabled = Boolean(args.enabled);
+  if (args?.min !== undefined) {
+    const min = normalizeOptionalNumber(args.min);
+    if (Number.isNaN(min)) return { error: "min must be a valid number or null" };
+    updates.min = min;
+  }
+  if (args?.max !== undefined) {
+    const max = normalizeOptionalNumber(args.max);
+    if (Number.isNaN(max)) return { error: "max must be a valid number or null" };
+    updates.max = max;
+  }
+
+  const finalMin = updates.min !== undefined ? updates.min : existing.min;
+  const finalMax = updates.max !== undefined ? updates.max : existing.max;
+  if (finalMin != null && finalMax != null && finalMin > finalMax) {
+    return { error: "min cannot be greater than max" };
+  }
+
+  try {
+    const threshold = await Threshold.findOneAndUpdate({ _id: thresholdId, userId }, { $set: updates }, { new: true });
+    const serialized = toThresholdPayload(threshold);
+    emitThresholdAction(socket, 'threshold_updated', { threshold: serialized });
+    return { success: true, threshold: serialized };
+  } catch (err) {
+    if (err?.code === 11000) {
+      return { error: "A threshold with this name/metric/room already exists" };
+    }
+    throw err;
+  }
+};
 
 const executeResolveAlert = async (args, userId, socket) => {
   const alertId = args?.alertId ? String(args.alertId) : null;
@@ -301,6 +434,9 @@ const executeTool = async (name, args, userId, socket) => {
   if (name === "resolve_alert") return executeResolveAlert(args, userId, socket);
   if (name === "escalate_alert") return executeEscalateAlert(args, userId, socket);
   if (name === "create_alert_followup_event") return executeCreateAlertFollowupEvent(args, userId, socket);
+  if (name === "list_thresholds") return executeListThresholds(args, userId);
+  if (name === "create_threshold") return executeCreateThreshold(args, userId, socket);
+  if (name === "update_threshold") return executeUpdateThreshold(args, userId, socket);
 
   if (name === "create_calendar_event") return executeCalendarCreate(args, userId, socket);
   if (name === "list_calendar_events") return executeCalendarList(args, userId);

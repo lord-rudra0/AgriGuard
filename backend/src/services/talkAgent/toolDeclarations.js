@@ -96,6 +96,71 @@ export const TALK_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: "list_thresholds",
+    description: "List user thresholds, optionally filtered by metric and room.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        metric: {
+          type: "STRING",
+          enum: ["temperature", "humidity", "co2", "light", "soilMoisture"],
+          description: "Optional metric filter"
+        },
+        roomId: {
+          type: "STRING",
+          description: "Optional room filter"
+        }
+      }
+    }
+  },
+  {
+    name: "create_threshold",
+    description: "Create a new threshold rule.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        name: { type: "STRING", description: "Threshold name" },
+        metric: {
+          type: "STRING",
+          enum: ["temperature", "humidity", "co2", "light", "soilMoisture"],
+          description: "Metric type"
+        },
+        min: { type: "NUMBER", description: "Optional minimum limit" },
+        max: { type: "NUMBER", description: "Optional maximum limit" },
+        roomId: { type: "STRING", description: "Optional room identifier" },
+        severity: {
+          type: "STRING",
+          enum: ["info", "warning", "critical"],
+          description: "Alert severity"
+        },
+        enabled: { type: "BOOLEAN", description: "Threshold enabled status" },
+        notes: { type: "STRING", description: "Optional notes" }
+      },
+      required: ["name", "metric"]
+    }
+  },
+  {
+    name: "update_threshold",
+    description: "Update an existing threshold by ID.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        thresholdId: { type: "STRING", description: "Threshold ID" },
+        name: { type: "STRING" },
+        min: { type: "NUMBER" },
+        max: { type: "NUMBER" },
+        roomId: { type: "STRING" },
+        severity: {
+          type: "STRING",
+          enum: ["info", "warning", "critical"]
+        },
+        enabled: { type: "BOOLEAN" },
+        notes: { type: "STRING" }
+      },
+      required: ["thresholdId"]
+    }
+  },
+  {
     name: "create_calendar_event",
     description: "Create a calendar event for the user.",
     parameters: {

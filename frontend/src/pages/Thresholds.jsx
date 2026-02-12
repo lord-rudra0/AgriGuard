@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Plus, Trash2, Save, ToggleLeft, ToggleRight, Filter, AlertTriangle, CloudRain, Droplets, Sun, Thermometer, Wind, AlertCircle } from 'lucide-react';
+import { useSocket } from '../context/SocketContext';
 
 const metrics = [
   { value: 'temperature', label: 'Temperature', icon: Thermometer, color: 'text-orange-500', bg: 'bg-orange-500/10' },
@@ -17,6 +18,7 @@ const severities = [
 ];
 
 export default function Thresholds() {
+  const { socket } = useSocket();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +51,17 @@ export default function Thresholds() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+    const onTalkAction = (payload = {}) => {
+      if (payload.action === 'threshold_created' || payload.action === 'threshold_updated') {
+        load();
+      }
+    };
+    socket.on('talk:action', onTalkAction);
+    return () => socket.off('talk:action', onTalkAction);
+  }, [socket]);
 
   const filtered = useMemo(() => items, [items]);
 
