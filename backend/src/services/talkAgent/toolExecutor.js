@@ -6,6 +6,7 @@ import Threshold from '../../models/Threshold.js';
 import Device from '../../models/Device.js';
 import DeviceCommand from '../../models/DeviceCommand.js';
 import AutomationRule from '../../models/AutomationRule.js';
+import ReportSchedule from '../../models/ReportSchedule.js';
 
 const NEXT_FIELD_QUESTION = {
   title: "What should the event title be?",
@@ -24,6 +25,10 @@ const DEVICE_CONTROL_QUESTION = {
 };
 const AUTOMATION_RULE_QUESTION = {
   confirm: "Please confirm: should I create this automation rule now?"
+};
+const REPORT_QUESTION = {
+  confirmCreate: "Please confirm: should I create this report schedule now?",
+  confirmRunNow: "Please confirm: should I send this report now?"
 };
 const HIGH_RISK_ACTUATORS = new Set(['pump', 'irrigation']);
 const HIGH_RISK_DURATION_MINUTES = 15;
@@ -111,11 +116,24 @@ const toAutomationRulePayload = (rule) => ({
   lastTriggeredAt: rule.lastTriggeredAt || null,
   notes: rule.notes || ''
 });
+const toReportSchedulePayload = (schedule) => ({
+  id: String(schedule._id),
+  name: schedule.name,
+  timeframe: schedule.timeframe,
+  email: schedule.email,
+  frequency: schedule.frequency,
+  hourLocal: schedule.hourLocal,
+  enabled: !!schedule.enabled,
+  lastRunAt: schedule.lastRunAt || null
+});
 
 const emitThresholdAction = (socket, action, payload) => {
   socket.emit('talk:action', { action, ...payload });
 };
 const emitAutomationAction = (socket, action, payload) => {
+  socket.emit('talk:action', { action, ...payload });
+};
+const emitReportAction = (socket, action, payload) => {
   socket.emit('talk:action', { action, ...payload });
 };
 
@@ -376,6 +394,99 @@ const executeDeleteAutomationRule = async (args, userId, socket) => {
   if (!rule) return { error: "Automation rule not found" };
   emitAutomationAction(socket, 'automation_rule_deleted', { ruleId });
   return { success: true, message: "Automation rule deleted", ruleId };
+};
+
+const executeListReportSchedules = async (userId) => {
+  const schedules = await ReportSchedule.find({ userId }).sort({ createdAt: -1 }).limit(100).lean();
+  return { schedules: schedules.map(toReportSchedulePayload) };
+};
+
+const executeCreateReportSchedule = async (args, userId, socket) => {
+  if (!normalizeConfirm(args?.confirm)) {
+    return { needsMoreInfo: true, nextField: 'confirm', question: REPORT_QUESTION.confirmCreate };
+  }
+
+  const name = normalizeOptionalText(args?.name);
+  const email = normalizeOptionalText(args?.email);
+  if (!name || !email) return { error: "name and email are required" };
+
+  const timeframe = normalizeOptionalText(args?.timeframe) || '24h';
+  const frequency = normalizeOptionalText(args?.frequency) || 'daily';
+  const hourRaw = args?.hourLocal === undefined ? 8 : Number(args.hourLocal);
+  if (!Number.isFinite(hourRaw) || hourRaw < 0 || hourRaw > 23) {
+    return { error: "hourLocal must be between 0 and 23" };
+  }
+
+  const schedule = await ReportSchedule.create({
+    userId,
+    name,
+    timeframe,
+    email,
+    frequency,
+    hourLocal: Math.floor(hourRaw),
+    enabled: args?.enabled === undefined ? true : Boolean(args.enabled)
+  });
+
+  const serialized = toReportSchedulePayload(schedule);
+  emitReportAction(socket, 'report_schedule_created', { schedule: serialized });
+  return { success: true, schedule: serialized };
+};
+
+const executeDeleteReportSchedule = async (args, userId, socket) => {
+  const scheduleId = normalizeOptionalText(args?.scheduleId);
+  if (!scheduleId) return { error: "scheduleId is required" };
+
+  const schedule = await ReportSchedule.findOneAndDelete({ _id: scheduleId, userId });
+  if (!schedule) return { error: "Report schedule not found" };
+
+  emitReportAction(socket, 'report_schedule_deleted', { scheduleId });
+  return { success: true, message: "Report schedule deleted", scheduleId };
+};
+
+const executeRunReportNow = async (args, userId, socket) => {
+  if (!normalizeConfirm(args?.confirm)) {
+    return { needsMoreInfo: true, nextField: 'confirm', question: REPORT_QUESTION.confirmRunNow };
+  }
+
+  const scheduleId = normalizeOptionalText(args?.scheduleId);
+  let schedule = null;
+  if (scheduleId) {
+    schedule = await ReportSchedule.findOne({ _id: scheduleId, userId }).lean();
+    if (!schedule) return { error: "Report schedule not found" };
+  } else {
+    const name = normalizeOptionalText(args?.name) || 'On-demand Report';
+    const email = normalizeOptionalText(args?.email);
+    if (!email) return { error: "email is required when scheduleId is not provided" };
+    schedule = {
+      userId,
+      name,
+      email,
+      timeframe: normalizeOptionalText(args?.timeframe) || '24h',
+      frequency: normalizeOptionalText(args?.frequency) || 'daily'
+    };
+  }
+
+  const { runScheduleAndEmail } = await import('../../routes/reports.js');
+  await runScheduleAndEmail(schedule);
+
+  if (scheduleId) {
+    await ReportSchedule.updateOne({ _id: scheduleId, userId }, { $set: { lastRunAt: new Date() } });
+  }
+
+  emitReportAction(socket, 'report_sent', {
+    scheduleId: scheduleId || null,
+    email: schedule.email,
+    timeframe: schedule.timeframe
+  });
+  return {
+    success: true,
+    message: "Report send triggered",
+    report: {
+      name: schedule.name,
+      email: schedule.email,
+      timeframe: schedule.timeframe
+    }
+  };
 };
 
 const executeCreateThreshold = async (args, userId, socket) => {
@@ -886,6 +997,10 @@ const executeTool = async (name, args, userId, socket) => {
   if (name === "create_automation_rule") return executeCreateAutomationRule(args, userId, socket);
   if (name === "toggle_automation_rule") return executeToggleAutomationRule(args, userId, socket);
   if (name === "delete_automation_rule") return executeDeleteAutomationRule(args, userId, socket);
+  if (name === "list_report_schedules") return executeListReportSchedules(userId);
+  if (name === "create_report_schedule") return executeCreateReportSchedule(args, userId, socket);
+  if (name === "delete_report_schedule") return executeDeleteReportSchedule(args, userId, socket);
+  if (name === "run_report_now") return executeRunReportNow(args, userId, socket);
   if (name === "list_thresholds") return executeListThresholds(args, userId);
   if (name === "create_threshold") return executeCreateThreshold(args, userId, socket);
   if (name === "update_threshold") return executeUpdateThreshold(args, userId, socket);

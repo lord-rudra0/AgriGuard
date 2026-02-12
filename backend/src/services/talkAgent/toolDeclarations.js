@@ -242,6 +242,69 @@ export const TALK_FUNCTION_DECLARATIONS = [
     }
   },
   {
+    name: "list_report_schedules",
+    description: "List report email schedules for the user.",
+    parameters: {
+      type: "OBJECT",
+      properties: {}
+    }
+  },
+  {
+    name: "create_report_schedule",
+    description: "Create a scheduled analytics email report. Executes only when confirm=true.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        name: { type: "STRING", description: "Schedule name" },
+        email: { type: "STRING", description: "Destination email address" },
+        timeframe: {
+          type: "STRING",
+          enum: ["1h", "24h", "7d", "30d"]
+        },
+        frequency: {
+          type: "STRING",
+          enum: ["daily", "weekly"]
+        },
+        hourLocal: { type: "NUMBER", description: "Hour of day in local time, 0-23" },
+        enabled: { type: "BOOLEAN" },
+        confirm: { type: "BOOLEAN", description: "Must be true only after explicit user confirmation." }
+      },
+      required: ["name", "email"]
+    }
+  },
+  {
+    name: "delete_report_schedule",
+    description: "Delete report schedule by ID.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        scheduleId: { type: "STRING", description: "Report schedule ID" }
+      },
+      required: ["scheduleId"]
+    }
+  },
+  {
+    name: "run_report_now",
+    description: "Send analytics report immediately by email. Executes only when confirm=true.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        scheduleId: { type: "STRING", description: "Optional existing schedule ID to run" },
+        name: { type: "STRING", description: "Required if scheduleId not provided" },
+        email: { type: "STRING", description: "Required if scheduleId not provided" },
+        timeframe: {
+          type: "STRING",
+          enum: ["1h", "24h", "7d", "30d"]
+        },
+        frequency: {
+          type: "STRING",
+          enum: ["daily", "weekly"]
+        },
+        confirm: { type: "BOOLEAN", description: "Must be true only after explicit user confirmation." }
+      }
+    }
+  },
+  {
     name: "list_thresholds",
     description: "List user thresholds, optionally filtered by metric and room.",
     parameters: {
