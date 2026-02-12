@@ -13,14 +13,30 @@ import { Link } from 'react-router-dom';
 const FarmOverview = () => {
     const [analyticsData, setAnalyticsData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [timeframeUsed, setTimeframeUsed] = useState('24h');
 
     // Fetch Analytics Summary (Last 24h)
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
-                // Assuming standard analytics endpoint returns hourly data
-                const res = await axios.get('/api/sensors/analytics', { params: { timeframe: '24h' } });
-                setAnalyticsData((res.data?.series && res.data.series.length > 0) ? res.data.series : (res.data?.analytics || []));
+                // Primary window: last 24h. Fallback to 7d if user has no recent readings.
+                const res24h = await axios.get('/api/sensors/analytics', { params: { timeframe: '24h' } });
+                const data24h = (res24h.data?.series && res24h.data.series.length > 0)
+                    ? res24h.data.series
+                    : (res24h.data?.analytics || []);
+
+                if (Array.isArray(data24h) && data24h.length > 0) {
+                    setAnalyticsData(data24h);
+                    setTimeframeUsed('24h');
+                    return;
+                }
+
+                const res7d = await axios.get('/api/sensors/analytics', { params: { timeframe: '7d' } });
+                const data7d = (res7d.data?.series && res7d.data.series.length > 0)
+                    ? res7d.data.series
+                    : (res7d.data?.analytics || []);
+                setAnalyticsData(Array.isArray(data7d) ? data7d : []);
+                setTimeframeUsed('7d');
             } catch (err) {
                 console.error("Failed to fetch farm overview analytics", err);
             } finally {
@@ -142,7 +158,7 @@ const FarmOverview = () => {
     }, [hourlySeries]);
 
 
-    if (loading || !metrics) return (
+    if (loading) return (
         // Simple skeleton to prevent layout shift
         <div className="mb-8 animate-pulse">
             <div className="h-4 w-32 bg-gray-200 dark:bg-gray-800 rounded mb-4"></div>
@@ -151,6 +167,19 @@ const FarmOverview = () => {
             </div>
         </div>
     );
+
+    if (!metrics) {
+        return (
+            <div className="mb-8">
+                <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 p-4">
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">Farm Overview</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                        No historical sensor analytics found for the selected windows (24h/7d). Once data exists in your account, overview metrics will appear here.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="mb-8">
@@ -240,7 +269,7 @@ const FarmOverview = () => {
                     <span className="font-medium text-gray-700 dark:text-gray-300">
                         {metrics.riskLevel === 'High' ? 'Critical conditions detected — Action required' :
                             metrics.complianceScore < 80 ? 'Growth compliance dropping — Check parameters' :
-                                'System running optimally — View detailed analysis'}
+                                `System running optimally — View detailed analysis (${timeframeUsed})`}
                     </span>
                     <ArrowRight className="w-4 h-4 text-indigo-400 group-hover:translate-x-1 transition-transform ml-auto" />
                 </div>
