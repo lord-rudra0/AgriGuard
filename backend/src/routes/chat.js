@@ -1,6 +1,7 @@
 import express from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { authenticateToken } from '../middleware/auth.js';
+import { buildWindowComparison } from '../services/analytics/windowComparison.js';
 
 const router = express.Router();
 
@@ -215,6 +216,78 @@ router.post('/farming-tips', authenticateToken, async (req, res) => {
   } catch (error) {
     logError(error, 'AI tips');
     return res.status(500).json({ message: 'AI tips generation failed. Please try again.' });
+  }
+});
+
+// @route   POST /api/chat/what-changed
+// @desc    Compare two time windows and summarize key changes
+// @access  Private
+router.post('/what-changed', authenticateToken, async (req, res) => {
+  try {
+    const {
+      baselineStart,
+      baselineEnd,
+      compareStart,
+      compareEnd,
+      sensorTypes = ['temperature', 'humidity', 'co2', 'light', 'soilMoisture'],
+      includeAiSummary = true
+    } = req.body || {};
+
+    const comparison = await buildWindowComparison({
+      userId: req.user._id,
+      baselineStart,
+      baselineEnd,
+      compareStart,
+      compareEnd,
+      sensorTypes
+    });
+    if (comparison?.error) {
+      return res.status(400).json({ message: comparison.error });
+    }
+
+    let summary = comparison.summaryText;
+    let aiSummaryUsed = false;
+
+    if (includeAiSummary) {
+      const model = getModel();
+      if (model) {
+        const prompt = `
+You are AgriGuard AI. Summarize what changed between two time windows using this data:
+${JSON.stringify({
+  windows: comparison.windows,
+  topChanges: comparison.topChanges,
+  metrics: comparison.metrics.map((m) => ({
+    sensorType: m.sensorType,
+    baselineAvg: m.baseline?.avg ?? null,
+    compareAvg: m.compare?.avg ?? null,
+    delta: m.change?.abs ?? null,
+    deltaPct: m.change?.pct ?? null,
+    direction: m.change?.direction ?? 'no_data'
+  }))
+}, null, 2)}
+
+Return:
+1) Brief summary (2-4 lines)
+2) Biggest 3 shifts
+3) Practical actions to investigate next
+Keep it concise and actionable.
+`;
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        summary = response.text() || summary;
+        aiSummaryUsed = true;
+      }
+    }
+
+    return res.json({
+      success: true,
+      summary,
+      aiSummaryUsed,
+      comparison
+    });
+  } catch (error) {
+    logError(error, 'what-changed');
+    return res.status(500).json({ message: 'Failed to compute what-changed summary. Please try again.' });
   }
 });
 

@@ -2,6 +2,7 @@ import SensorData from '../../../models/SensorData.js';
 import ScanHistory from '../../../models/ScanHistory.js';
 import Alert from '../../../models/Alert.js';
 import { emitTalkAction } from './shared.js';
+import { buildWindowComparison } from '../../analytics/windowComparison.js';
 
 export const executeBaseTool = async (name, args, userId, socket) => {
   if (name === "navigate_to") {
@@ -37,6 +38,24 @@ export const executeBaseTool = async (name, args, userId, socket) => {
     }
     const alerts = await Alert.find(query).sort({ createdAt: -1 }).limit(10);
     return { alerts: alerts.map((a) => ({ title: a.title, severity: a.severity, message: a.message })) };
+  }
+
+  if (name === "summarize_what_changed") {
+    const result = await buildWindowComparison({
+      userId,
+      baselineStart: args?.baselineStart,
+      baselineEnd: args?.baselineEnd,
+      compareStart: args?.compareStart,
+      compareEnd: args?.compareEnd,
+      sensorTypes: Array.isArray(args?.sensorTypes) ? args.sensorTypes : undefined
+    });
+    if (result?.error) return { error: result.error };
+    return {
+      summary: result.summaryText,
+      windows: result.windows,
+      topChanges: result.topChanges,
+      metrics: result.metrics
+    };
   }
 
   return null;

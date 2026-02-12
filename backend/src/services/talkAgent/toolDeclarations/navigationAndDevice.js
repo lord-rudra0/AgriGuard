@@ -89,5 +89,27 @@ export const NAVIGATION_AND_DEVICE_DECLARATIONS = [
         }
       }
     }
+  },
+  {
+    name: "summarize_what_changed",
+    description: "Compare two sensor-data time windows and summarize what changed.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        baselineStart: { type: "STRING", description: "Baseline window start (ISO datetime)" },
+        baselineEnd: { type: "STRING", description: "Baseline window end (ISO datetime)" },
+        compareStart: { type: "STRING", description: "Comparison window start (ISO datetime)" },
+        compareEnd: { type: "STRING", description: "Comparison window end (ISO datetime)" },
+        sensorTypes: {
+          type: "ARRAY",
+          items: {
+            type: "STRING",
+            enum: ["temperature", "humidity", "co2", "light", "soilMoisture"]
+          },
+          description: "Optional sensor types to include"
+        }
+      },
+      required: ["baselineStart", "baselineEnd", "compareStart", "compareEnd"]
+    }
   }
 ];
