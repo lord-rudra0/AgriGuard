@@ -74,7 +74,11 @@ export async function runHistoryAggregation() {
         const currentHourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours());
         const prevHourStart = new Date(currentHourStart.getTime() - 60 * 60 * 1000);
 
-        // 3. Weekly Aggregation (for the previous 7 days)
+        // 2. Daily Aggregation (for the previous day)
+        const currentDayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const prevDayStart = new Date(currentDayStart.getTime() - 24 * 60 * 60 * 1000);
+
+        // 3. Weekly Aggregation (rolling previous 7 full days)
         const prevWeekStart = new Date(currentDayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
 
         // Get unique users to aggregate for
