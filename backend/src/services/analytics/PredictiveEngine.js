@@ -59,8 +59,15 @@ export const calculatePredictiveForecasts = async (chartData, stageId = 'fruitin
             }
 
             if (predictedEvent && timeToEvent < 48) { // Up to 48h forecast
+                const sensorLabel = key === 'co2'
+                    ? 'CO2'
+                    : key === 'temperature'
+                        ? 'Temperature'
+                        : 'Humidity';
+
                 results.push({
-                    type: key.charAt(0).toUpperCase() + key.slice(1),
+                    metric: key,
+                    type: sensorLabel,
                     currentValue: Number(currentVal.toFixed(2)),
                     predictedValue: Number((currentVal + (slope * 24)).toFixed(2)),
                     unit: key === 'co2' ? 'ppm' : key === 'temperature' ? '°C' : '%',

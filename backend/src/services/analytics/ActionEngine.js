@@ -3,6 +3,14 @@
 // Improvement #1: Logic Moved to Backend
 import { getStageConfig } from './StageEngine.js';
 
+const toMetricKey = (targetMetric = '') => {
+    const normalized = String(targetMetric).toLowerCase();
+    if (normalized.includes('temperature') || normalized === 'temp') return 'temperature';
+    if (normalized.includes('humidity') || normalized.includes('humid')) return 'humidity';
+    if (normalized.includes('co2')) return 'co2';
+    return null;
+};
+
 export const generateActionRecommendations = async (chartData, predictions = [], stageId = 'fruiting') => {
     if (!chartData || chartData.length === 0) return [];
 
@@ -21,7 +29,12 @@ export const generateActionRecommendations = async (chartData, predictions = [],
         const { type, title, action, description, iconName, riskReduction, stabilityGain, targetMetric } = props;
 
         // Find relevant prediction for TTF logic
-        const prediction = predictions.find(p => p.type.toLowerCase().includes(targetMetric.toLowerCase()));
+        const metricKey = toMetricKey(targetMetric);
+        const prediction = predictions.find((p) => {
+            if (metricKey && p.metric) return p.metric === metricKey;
+            if (metricKey) return String(p.type || '').toLowerCase().includes(metricKey);
+            return false;
+        });
         const ttf = prediction ? prediction.timeToEvent : null;
 
         let baseScore = type === 'critical' ? 50 : type === 'high' ? 30 : 10;
