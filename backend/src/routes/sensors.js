@@ -238,39 +238,79 @@ router.get('/analytics/full', authenticateToken, async (req, res) => {
     }).lean();
 
     // b. Find most recent precomputed bucket to know where to start raw aggregation
-    const latestPrecomputed = precomputed.length > 0 ? precomputed.sort((a, b) => b.endTime - a.endTime)[0].endTime : startDate;
+    const latestPrecomputed = precomputed.length > 0
+      ? precomputed.reduce((latest, item) => (item.endTime > latest ? item.endTime : latest), precomputed[0].endTime)
+      : startDate;
 
     // c. Aggregate only the missing "tip" (raw data since last precomputed bucket)
     const rawTip = await SensorData.aggregate([
       {
         $match: {
           'metadata.userId': req.user._id,
-          timestamp: { $gte: latestPrecomputed }
+          timestamp: { $gt: latestPrecomputed }
         }
       },
       {
         $group: {
           _id: {
             sensorType: '$metadata.sensorType',
-            hour: { $hour: '$timestamp' },
-            date: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } }
+            bucketStart: {
+              $dateFromParts: {
+                year: { $year: '$timestamp' },
+                month: { $month: '$timestamp' },
+                day: { $dayOfMonth: '$timestamp' },
+                hour: { $hour: '$timestamp' }
+              }
+            }
           },
-          avgValue: { $avg: '$value' },
-          timestamp: { $first: '$timestamp' }
+          avgValue: { $avg: '$value' }
         }
+      },
+      {
+        $project: {
+          _id: { sensorType: '$_id.sensorType' },
+          avgValue: 1,
+          timestamp: '$_id.bucketStart'
+        }
+      },
+      {
+        $sort: { timestamp: 1 }
       }
     ]);
 
     // 3. Format into structure expected by Engines
-    // We combine precomputed (SensorHistory) and rawTip
-    const historyData = [
-      ...precomputed.map(h => ({
-        _id: { sensorType: h.metadata.sensorType },
-        avgValue: h.metrics.avg,
-        timestamp: h.startTime
-      })),
-      ...rawTip
-    ];
+    // We combine precomputed (SensorHistory) and rawTip by (sensorType, hour)
+    // to avoid duplicate/overlap artifacts.
+    const merged = {};
+    const addPoint = (sensorType, timestamp, value) => {
+      const ts = new Date(timestamp);
+      if (!sensorType || !Number.isFinite(value) || Number.isNaN(ts.getTime())) return;
+
+      const hourStart = new Date(ts);
+      hourStart.setMinutes(0, 0, 0);
+      const key = `${sensorType}|${hourStart.toISOString()}`;
+      if (!merged[key]) {
+        merged[key] = {
+          sensorType,
+          timestamp: new Date(hourStart),
+          sum: 0,
+          count: 0
+        };
+      }
+      merged[key].sum += value;
+      merged[key].count += 1;
+    };
+
+    precomputed.forEach((h) => addPoint(h?.metadata?.sensorType, h?.startTime, h?.metrics?.avg));
+    rawTip.forEach((r) => addPoint(r?._id?.sensorType, r?.timestamp, r?.avgValue));
+
+    const historyData = Object.values(merged)
+      .map((entry) => ({
+        _id: { sensorType: entry.sensorType },
+        avgValue: entry.count > 0 ? entry.sum / entry.count : 0,
+        timestamp: entry.timestamp
+      }))
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
     const timeBuckets = {};
     historyData.forEach(d => {
