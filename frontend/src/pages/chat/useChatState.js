@@ -122,7 +122,10 @@ export const useChatState = ({ socket, joinChat, leaveChat, setTyping, user }) =
 
   useEffect(() => {
     if (!socket || !selectedChat) return;
-    if (!input) return setTyping(selectedChat._id, false);
+    if (!input) {
+      setTyping(selectedChat._id, false);
+      return;
+    }
     setTyping(selectedChat._id, true);
     const t = setTimeout(() => setTyping(selectedChat._id, false), 1200);
     return () => clearTimeout(t);
