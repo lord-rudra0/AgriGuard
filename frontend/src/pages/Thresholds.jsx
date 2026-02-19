@@ -101,12 +101,12 @@ export default function Thresholds() {
   };
 
   return (
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300 overflow-hidden">
+    <div className="relative min-h-screen bg-stone-50 dark:bg-slate-950 transition-colors duration-300 overflow-hidden">
       {/* Background Decorative Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-emerald-500/10 dark:bg-emerald-500/5 blur-[120px] rounded-full" />
         <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-emerald-600/10 dark:bg-emerald-600/5 blur-[100px] rounded-full" />
-        <div className="absolute bottom-[10%] left-[20%] w-[20%] h-[20%] bg-teal-500/10 dark:bg-teal-500/5 blur-[100px] rounded-full" />
+        <div className="absolute bottom-[10%] left-[20%] w-[20%] h-[20%] bg-amber-500/10 dark:bg-amber-500/10 blur-[100px] rounded-full" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
@@ -299,7 +299,7 @@ export default function Thresholds() {
                             {t.roomId && (
                               <>
                                 <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
-                                <span className="text-indigo-500 dark:text-indigo-400">{t.roomId}</span>
+                                <span className="text-emerald-600 dark:text-emerald-400">{t.roomId}</span>
                               </>
                             )}
                           </span>
