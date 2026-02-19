@@ -69,7 +69,7 @@ const UpcomingEventsPanel = ({
                   )}
 
                   {ev.roomId && (
-                    <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800/30">
+                    <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/30">
                       {ev.roomId}
                     </span>
                   )}
