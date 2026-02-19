@@ -5,16 +5,16 @@ const MessageBubble = ({ me, author, content, time, type, mediaUrl, mediaType, s
     <div className={`flex ${me ? 'justify-end' : 'justify-start'} animate-fade-up transition-all duration-300`}>
       <div
         className={`max-w-[90%] sm:max-w-[75%] px-4 py-3 rounded-2xl shadow-lg transition-all duration-300 backdrop-blur-md will-change-transform ${me
-          ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-sm border border-white/20 shadow-indigo-500/20 hover:scale-[1.01]'
+          ? 'bg-gradient-to-br from-emerald-600 to-teal-600 text-white rounded-tr-sm border border-white/20 shadow-emerald-500/20 hover:scale-[1.01]'
           : 'bg-white dark:bg-white/10 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-white/10 rounded-tl-sm hover:bg-gray-50 dark:hover:bg-white/15 hover:scale-[1.01] shadow-sm shadow-black/5 dark:shadow-black/10'
           }`}
       >
         {!me && (
-          <p className="text-[10px] font-bold mb-1 opacity-80 text-indigo-300 uppercase tracking-wider">{author}</p>
+          <p className="text-[10px] font-bold mb-1 opacity-80 text-emerald-600 dark:text-emerald-300 uppercase tracking-wider">{author}</p>
         )}
         {type === 'ai_loader' ? (
-          <div className="flex items-center gap-3 text-sm font-medium text-indigo-200">
-            <span className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></span>
+          <div className="flex items-center gap-3 text-sm font-medium text-emerald-200">
+            <span className="w-4 h-4 border-2 border-emerald-300 border-t-transparent rounded-full animate-spin"></span>
             <span className="animate-pulse">ASKAI is thinking...</span>
           </div>
         ) : type === 'image' && mediaUrl ? (() => {

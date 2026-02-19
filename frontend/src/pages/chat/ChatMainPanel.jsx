@@ -48,7 +48,7 @@ const ChatMainPanel = ({
               </button>
               {selectedChat.type === 'one-to-one' ? (
                 <>
-                  <span className="text-gray-900 dark:bg-gradient-to-r dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 dark:bg-clip-text dark:text-transparent font-bold">{getChatTitle(selectedChat, user)}</span>
+                  <span className="text-gray-900 dark:bg-gradient-to-r dark:from-emerald-300 dark:via-emerald-200 dark:to-amber-300 dark:bg-clip-text dark:text-transparent font-bold">{getChatTitle(selectedChat, user)}</span>
                   {(() => {
                     const otherId = (selectedChat.members || []).map((m) => (typeof m === 'object' ? m._id : m)).find((id) => String(id) !== String(user?._id));
                     const isOnline = otherId ? !!presence.get(String(otherId)) : false;
@@ -64,7 +64,7 @@ const ChatMainPanel = ({
                   })()}
                 </>
               ) : (
-                <span className="text-gray-900 dark:bg-gradient-to-r dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 dark:bg-clip-text dark:text-transparent font-bold">{getChatTitle(selectedChat, user)}</span>
+                <span className="text-gray-900 dark:bg-gradient-to-r dark:from-emerald-300 dark:via-emerald-200 dark:to-amber-300 dark:bg-clip-text dark:text-transparent font-bold">{getChatTitle(selectedChat, user)}</span>
               )}
             </div>
             <div className="relative" ref={headerMenuRef}>
@@ -79,8 +79,8 @@ const ChatMainPanel = ({
                 <div role="menu" className="absolute right-0 mt-2 w-44 rounded-xl overflow-hidden border border-white/60 dark:border-gray-700/60 shadow-lg bg-white dark:bg-gray-900 z-30">
                   {selectedChat.type === 'group' && (
                     <>
-                      <button className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-gray-800/60 text-gray-800 dark:text-gray-100" onClick={() => { setShowMembers(true); setHeaderMenuOpen(false); }}>Members</button>
-                      <button className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-gray-800/60 text-gray-800 dark:text-gray-100" onClick={() => { setShowAddMember(true); setHeaderMenuOpen(false); }}>Add member</button>
+                      <button className="w-full text-left px-3 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-gray-800/60 text-gray-800 dark:text-gray-100" onClick={() => { setShowMembers(true); setHeaderMenuOpen(false); }}>Members</button>
+                      <button className="w-full text-left px-3 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-gray-800/60 text-gray-800 dark:text-gray-100" onClick={() => { setShowAddMember(true); setHeaderMenuOpen(false); }}>Add member</button>
                       <div className="h-px bg-gray-200 dark:bg-gray-700" />
                     </>
                   )}
@@ -89,7 +89,7 @@ const ChatMainPanel = ({
               )}
             </div>
           </div>
-          {isTyping ? <div className="text-xs mb-2 bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent font-medium animate-pulse">{isTyping} is typing…</div> : <div className="h-2" />}
+          {isTyping ? <div className="text-xs mb-2 bg-gradient-to-r from-emerald-300 to-amber-300 bg-clip-text text-transparent font-medium animate-pulse">{isTyping} is typing…</div> : <div className="h-2" />}
           <div className={`chat-messages-container flex-1 min-h-0 overflow-y-auto no-scrollbar overflow-x-hidden pb-24 md:pb-6 md:rounded-[24px] md:shadow-2xl md:p-6 p-3 mb-2 md:mb-4 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 shadow-gray-200/50 dark:shadow-black/20 transition-all duration-500 ease-out transform ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             {loadingMessages ? (
               <div className="text-gray-500 dark:text-gray-400 text-center mt-8">Loading messages…</div>
@@ -132,8 +132,8 @@ const ChatMainPanel = ({
             )}
           </div>
 
-          <div className={`hidden md:block w-full h-2 bg-transparent hover:bg-blue-500/20 cursor-ns-resize transition-all duration-500 ease-out transform relative group mb-2 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} onMouseDown={handleMouseDown}>
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center"><div className="w-12 h-1 bg-gray-300 rounded-full group-hover:bg-blue-500 transition-colors duration-200"></div></div>
+          <div className={`hidden md:block w-full h-2 bg-transparent hover:bg-emerald-500/20 cursor-ns-resize transition-all duration-500 ease-out transform relative group mb-2 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} onMouseDown={handleMouseDown}>
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center"><div className="w-12 h-1 bg-gray-300 rounded-full group-hover:bg-emerald-500 transition-colors duration-200"></div></div>
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-xs text-gray-400 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">{isResizing ? 'Resizing...' : 'Drag to resize'}</div>
           </div>
 

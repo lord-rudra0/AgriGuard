@@ -58,7 +58,7 @@ const NewChatModal = ({
             Cancel
           </button>
           <button
-            className={`px-3 py-1 rounded text-white ${creating ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-primary-600 to-indigo-600 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99]'} shadow-sm ring-1 ring-black/5 transition-all duration-200 disabled:opacity-60`}
+            className={`px-3 py-1 rounded text-white ${creating ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 hover:scale-[1.02] active:scale-[0.99]'} shadow-sm ring-1 ring-black/5 transition-all duration-200 disabled:opacity-60`}
             disabled={creating || (newChatType === 'group' ? !newChatName : !newChatUserInput)}
             onClick={createChat}
           >
@@ -93,7 +93,7 @@ const ChatSidebar = ({
     <div className="p-4 flex items-center justify-between sticky top-0 z-10 bg-white/60 dark:bg-white/5 backdrop-blur-xl border-b border-gray-200 dark:border-white/10">
       <span className="font-bold text-lg text-gray-900 dark:text-white tracking-wide">Chats</span>
       <button
-        className="ml-2 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-indigo-600 dark:text-indigo-300 border border-gray-200 dark:border-white/10 transition-all hover:scale-105 active:scale-95"
+        className="ml-2 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-500/20 transition-all hover:scale-105 active:scale-95"
         onClick={() => setShowNewChat(true)}
         title="New chat"
       >
@@ -116,7 +116,7 @@ const ChatSidebar = ({
 
     {loadingChats ? (
       <div className="p-4 text-gray-400 flex items-center justify-center h-32">
-        <span className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin mr-2"></span>
+        <span className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mr-2"></span>
         Loading...
       </div>
     ) : (

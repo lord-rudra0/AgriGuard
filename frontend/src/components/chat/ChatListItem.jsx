@@ -18,13 +18,13 @@ const ChatListItem = ({ chat, active, onClick, currentUser, online = false, clas
       <Avatar name={title} size={40} online={online} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
-          <p className="font-medium text-gray-900 dark:text-gray-200 group-hover:text-indigo-600 dark:group-hover:text-white transition-colors truncate">{title}</p>
+          <p className="font-medium text-gray-900 dark:text-gray-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors truncate">{title}</p>
           <span className="text-[10px] text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">{time}</span>
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-400 truncate transition-colors">{preview}</p>
       </div>
       {chat.unreadCount ? (
-        <span className="ml-2 text-[10px] bg-primary-600 text-white rounded-full px-2 py-0.5">{chat.unreadCount}</span>
+        <span className="ml-2 text-[10px] bg-emerald-600 text-white rounded-full px-2 py-0.5">{chat.unreadCount}</span>
       ) : null}
     </li>
   );
