@@ -193,19 +193,19 @@ export default function Scan() {
 
   return (
 
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 p-6 pb-24 md:pb-6 overflow-hidden transition-colors duration-300">
+    <div className="relative min-h-screen bg-stone-50 dark:bg-slate-950 p-6 pb-24 md:pb-6 overflow-hidden transition-colors duration-300">
       {/* Mesh Gradient Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-indigo-500/20 blur-[120px] rounded-full animate-pulse-slow" />
-        <div className="absolute top-[20%] -right-[5%] w-[40%] h-[40%] bg-purple-500/20 blur-[100px] rounded-full animate-float" />
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-emerald-500/20 blur-[120px] rounded-full animate-pulse-slow" />
+        <div className="absolute top-[20%] -right-[5%] w-[40%] h-[40%] bg-amber-500/20 blur-[100px] rounded-full animate-float" />
         <div className="absolute bottom-[10%] left-[20%] w-[30%] h-[30%] bg-emerald-500/20 blur-[80px] rounded-full animate-pulse-slow" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-500/10 blur-[120px] rounded-full animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-[40%] left-[10%] w-[20%] h-[20%] bg-cyan-500/10 blur-[60px] rounded-full animate-pulse-slow" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-yellow-500/10 blur-[120px] rounded-full animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[40%] left-[10%] w-[20%] h-[20%] bg-lime-500/10 blur-[60px] rounded-full animate-pulse-slow" style={{ animationDelay: '1s' }} />
       </div>
       <div className="relative z-10 max-w-5xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent filter drop-shadow-sm mb-1">Scan</h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-emerald-700 via-emerald-600 to-amber-500 dark:from-emerald-400 dark:via-emerald-300 dark:to-amber-300 bg-clip-text text-transparent filter drop-shadow-sm mb-1">Scan</h1>
             <p className="text-lg text-gray-600 dark:text-gray-300 font-light">Capture or upload a photo and get a quick classification.</p>
           </div>
           <button
@@ -254,7 +254,7 @@ export default function Scan() {
               />
               <button
                 onClick={() => inputRef.current && inputRef.current.click()}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-bold tracking-wide hover:brightness-110 hover:shadow-lg hover:shadow-indigo-500/20 hover:scale-[1.02] transition-all duration-200 active:scale-95"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold tracking-wide hover:brightness-110 hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-[1.02] transition-all duration-200 active:scale-95"
               >
                 Upload image
               </button>
@@ -271,12 +271,12 @@ export default function Scan() {
                     }
                   }}
                   placeholder="Paste image URL or data:image base64..."
-                  className="min-w-0 flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/15 bg-white dark:bg-gray-900/60 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                  className="min-w-0 flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/15 bg-white dark:bg-gray-900/60 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 />
                 <button
                   onClick={handleImageUrlSubmit}
                   disabled={urlLoading}
-                  className="shrink-0 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition-colors disabled:opacity-60 sm:min-w-[92px]"
+                  className="shrink-0 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500 transition-colors disabled:opacity-60 sm:min-w-[92px]"
                 >
                   {urlLoading ? 'Loading...' : 'Use Link'}
                 </button>
@@ -375,7 +375,7 @@ export default function Scan() {
                             {detailedAnalysis.disease ? (
                               <span className="break-words text-amber-500 leading-snug">⚠️ {detailedAnalysis.diseaseType || 'Diseased'}</span>
                             ) : (
-                              <span className="text-blue-500">Healthy</span>
+                            <span className="text-emerald-600 dark:text-emerald-400">Healthy</span>
                             )}
                           </div>
                           {detailedAnalysis.disease && detailedAnalysis.diseaseTypeConfidence && (
@@ -407,7 +407,7 @@ export default function Scan() {
                       ) : (
                         <>
                           <div className="mb-6">
-                            <div className="text-xs font-bold tracking-wider text-blue-600 dark:text-blue-400 uppercase mb-1">Quick Scan Result</div>
+                            <div className="text-xs font-bold tracking-wider text-emerald-700 dark:text-emerald-400 uppercase mb-1">Quick Scan Result</div>
                             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                               {analysis.classLabel || 'Unidentified'}
                             </h3>
@@ -416,7 +416,7 @@ export default function Scan() {
                             </p>
                           </div>
 
-                          <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 mb-6">
+                          <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 mb-6">
                             <div className="flex items-center gap-3">
                               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${analysis.isEdible ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
                                 {analysis.isEdible ? '✓' : '!'}
@@ -435,7 +435,7 @@ export default function Scan() {
                           <div className="mt-auto">
                             <button
                               onClick={handleDetailedAnalysis}
-                              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                              className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
                             >
                               <span>✨ Run Deep Analysis</span>
                               <span className="bg-white/20 px-2 py-0.5 rounded text-xs">Recommended</span>
