@@ -68,7 +68,7 @@ export default function Landing() {
       </div>
 
       {/* Hero Section */}
-      <section className="relative container mx-auto px-4 pt-6 pb-12 md:pt-20 md:pb-32 max-w-7xl">
+      <section className="relative container mx-auto px-4 py-10 md:py-14 max-w-7xl min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] flex items-center">
         <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
           {/* Text Content */}
           <div className={`space-y-6 md:space-y-8 transition-all duration-1000 ease-out ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'}`}>
