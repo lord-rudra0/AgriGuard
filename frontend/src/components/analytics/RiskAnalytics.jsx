@@ -131,7 +131,7 @@ const RiskAnalytics = ({ riskProfile }) => {
                             {risk.name === 'Mold Risk' && <Droplets className="w-5 h-5 text-blue-500 mb-2" />}
                             {risk.name === 'Dryness' && <Wind className="w-5 h-5 text-yellow-500 mb-2" />}
                             {risk.name === 'Air Quality' && <CloudRain className="w-5 h-5 text-gray-400 mb-2" />}
-                            {risk.name === 'Instability' && <Activity className="w-5 h-5 text-pink-500 mb-2" />}
+                            {risk.name === 'Instability' && <Activity className="w-5 h-5 text-amber-500 mb-2" />}
 
                             <span className="text-[10px] font-black uppercase tracking-tighter text-gray-500 mb-1">{risk.name}</span>
                             <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
@@ -161,7 +161,7 @@ const RiskAnalytics = ({ riskProfile }) => {
                                             }
                                         }));
                                     }}
-                                    className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-indigo-500 hover:text-white transition-all text-gray-400"
+                                    className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-emerald-500 hover:text-white transition-all text-gray-400"
                                     title="Open Chat"
                                 >
                                     <MessageSquarePlus className="w-3 h-3" />

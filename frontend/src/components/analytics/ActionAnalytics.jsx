@@ -58,12 +58,12 @@ const ActionAnalytics = ({ recommendations = [] }) => {
             {/* Header */}
             <div className="flex items-center justify-between mb-6 relative z-10">
                 <h3 className="text-base font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-                        <Zap className="w-5 h-5 text-indigo-500 fill-indigo-500/20" />
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                        <Zap className="w-5 h-5 text-emerald-500 fill-emerald-500/20" />
                     </div>
                     Action & Decision Engine
                 </h3>
-                <div className="px-3 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/20 text-[10px] font-black text-indigo-500 uppercase tracking-wider animate-pulse">
+                <div className="px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20 text-[10px] font-black text-emerald-500 uppercase tracking-wider animate-pulse">
                     AI-Powered
                 </div>
             </div>
@@ -75,7 +75,7 @@ const ActionAnalytics = ({ recommendations = [] }) => {
                         className={`relative group overflow-hidden rounded-2xl p-[1px] ${rec.type === 'critical' ? 'bg-gradient-to-r from-rose-500 to-orange-500' :
                             rec.type === 'high' ? 'bg-gradient-to-r from-orange-400 to-amber-400' :
                                 rec.type === 'success' ? 'bg-gradient-to-r from-emerald-400 to-teal-400' :
-                                    'bg-gradient-to-r from-indigo-500 to-blue-500'
+                                    'bg-gradient-to-r from-emerald-500 to-blue-500'
                             }`}
                     >
                         <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 h-full relative">
@@ -83,7 +83,7 @@ const ActionAnalytics = ({ recommendations = [] }) => {
                             <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-20 pointer-events-none -mr-10 -mt-10 ${rec.type === 'critical' ? 'bg-rose-500' :
                                 rec.type === 'high' ? 'bg-orange-500' :
                                     rec.type === 'success' ? 'bg-emerald-500' :
-                                        'bg-indigo-500'
+                                        'bg-emerald-500'
                                 }`} />
 
                             <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between relative z-10">
@@ -93,7 +93,7 @@ const ActionAnalytics = ({ recommendations = [] }) => {
                                     <div className={`p-3 rounded-xl flex-shrink-0 ${rec.type === 'critical' ? 'bg-rose-500/10 text-rose-500' :
                                         rec.type === 'high' ? 'bg-orange-500/10 text-orange-500' :
                                             rec.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' :
-                                                'bg-indigo-500/10 text-indigo-500'
+                                                'bg-emerald-500/10 text-emerald-500'
                                         }`}>
                                         {IconMap[rec.iconName] || <Zap className="w-5 h-5" />}
                                     </div>
@@ -115,7 +115,7 @@ const ActionAnalytics = ({ recommendations = [] }) => {
                                                 <MoveDown className="w-3 h-3" />
                                                 {Math.abs(rec.impact.riskReduction)}% Risk
                                             </div>
-                                            <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-md">
+                                            <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                                                 <MoveUp className="w-3 h-3" />
                                                 {rec.impact.stabilityGain}% Stability
                                             </div>
@@ -132,7 +132,7 @@ const ActionAnalytics = ({ recommendations = [] }) => {
                                     <button
                                         onClick={(e) => handleAskAI(rec, e)}
                                         disabled={loadingAnalysis[rec.id]}
-                                        className="ml-4 p-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all duration-300 shadow-sm border border-indigo-100 dark:border-indigo-500/20"
+                                        className="ml-4 p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all duration-300 shadow-sm border border-emerald-100 dark:border-emerald-500/20"
                                         title="Get AI Insights"
                                     >
                                         {loadingAnalysis[rec.id] ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
@@ -159,12 +159,12 @@ const ActionAnalytics = ({ recommendations = [] }) => {
                                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <div className="flex gap-3">
                                         <div className="flex-shrink-0 mt-0.5">
-                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-amber-600 flex items-center justify-center shadow-md">
                                                 <Sparkles className="w-3.5 h-3.5 text-white" />
                                             </div>
                                         </div>
                                         <div className="flex-1">
-                                            <h5 className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1">AI Insight</h5>
+                                            <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">AI Insight</h5>
                                             {loadingAnalysis[rec.id] ? (
                                                 <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                                             ) : (

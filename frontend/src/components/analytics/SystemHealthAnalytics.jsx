@@ -34,8 +34,8 @@ const SystemHealthAnalytics = ({ healthProfile }) => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
                 <h3 className="text-base font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-                        <ShieldCheck className="w-5 h-5 text-indigo-500" />
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                        <ShieldCheck className="w-5 h-5 text-emerald-500" />
                     </div>
                     System Intelligence
                 </h3>
@@ -55,7 +55,7 @@ const SystemHealthAnalytics = ({ healthProfile }) => {
                 {/* 1. Trust Scores (Per Sensor) */}
                 <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {Object.entries(systemHealth.sensors).map(([key, data]) => (
-                        <div key={key} className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 border border-gray-100 dark:border-white/5 relative overflow-hidden group hover:border-indigo-500/30 transition-all">
+                        <div key={key} className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 border border-gray-100 dark:border-white/5 relative overflow-hidden group hover:border-emerald-500/30 transition-all">
 
                             <div className="flex justify-between items-start mb-2">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{data.label}</span>
@@ -104,8 +104,8 @@ const SystemHealthAnalytics = ({ healthProfile }) => {
                 </div>
 
                 {/* 2. System Status Summary */}
-                <div className="bg-indigo-500/5 rounded-2xl p-5 border border-indigo-500/10 flex flex-col justify-center relative overflow-hidden">
-                    <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
+                <div className="bg-emerald-500/5 rounded-2xl p-5 border border-emerald-500/10 flex flex-col justify-center relative overflow-hidden">
+                    <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
 
                     <div className="mb-4">
                         <div className="flex items-center gap-2 mb-1">
@@ -130,7 +130,7 @@ const SystemHealthAnalytics = ({ healthProfile }) => {
 
                     <div className="space-y-2">
                         <div className="flex items-center gap-3 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-white/5">
-                            <Database className="w-4 h-4 text-indigo-500" />
+                            <Database className="w-4 h-4 text-emerald-500" />
                             <div className="flex flex-col">
                                 <span className="text-[10px] text-gray-400 font-bold uppercase">Total Packets</span>
                                 <span className="text-xs font-black text-gray-900 dark:text-white">{systemHealth.totalPoints}</span>

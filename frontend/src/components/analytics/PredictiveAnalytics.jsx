@@ -33,11 +33,11 @@ const PredictiveAnalytics = ({ predictions = [] }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
                 {predictions.map((pred) => (
-                    <div key={pred.type} className="group flex flex-col bg-gray-50 dark:bg-black/20 rounded-3xl p-5 border border-gray-100 dark:border-white/5 hover:border-indigo-500/30 transition-all duration-300">
+                    <div key={pred.type} className="group flex flex-col bg-gray-50 dark:bg-black/20 rounded-3xl p-5 border border-gray-100 dark:border-white/5 hover:border-emerald-500/30 transition-all duration-300">
 
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm text-indigo-500">
+                                <div className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm text-emerald-500">
                                     <TrendingUp className="w-5 h-5" />
                                 </div>
                                 <h4 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white capitalize">{pred.type}</h4>
@@ -52,8 +52,8 @@ const PredictiveAnalytics = ({ predictions = [] }) => {
                                 </div>
                                 <ArrowRight className="w-6 h-6 text-gray-300" />
                                 <div className="flex flex-col text-right">
-                                    <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-tighter mb-1">Next 24h (Est)</span>
-                                    <span className="text-xl font-black text-indigo-500">{pred.predictedValue}{pred.unit}</span>
+                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter mb-1">Next 24h (Est)</span>
+                                    <span className="text-xl font-black text-emerald-500">{pred.predictedValue}{pred.unit}</span>
                                 </div>
                             </div>
                         </div>
@@ -61,7 +61,7 @@ const PredictiveAnalytics = ({ predictions = [] }) => {
                         {/* Insight Footer */}
                         <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5">
                             <div className="flex items-center gap-2">
-                                <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                                <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
                                 <span className="text-[10px] font-bold text-gray-500 leading-tight">
                                     {pred.insight}
                                 </span>

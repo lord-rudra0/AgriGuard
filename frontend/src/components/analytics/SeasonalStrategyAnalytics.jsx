@@ -127,15 +127,15 @@ const SeasonalStrategyAnalytics = () => {
     <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-3xl p-6 shadow-lg relative overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <h3 className="text-base font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-            <CalendarClock className="w-5 h-5 text-cyan-500" />
+          <div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center">
+            <CalendarClock className="w-5 h-5 text-teal-500" />
           </div>
           Seasonal Strategy Assistant
         </h3>
         <button
           onClick={handleGenerate}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-cyan-500/20 disabled:opacity-60"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-teal-500/20 disabled:opacity-60"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           Generate Plan
@@ -194,7 +194,7 @@ const SeasonalStrategyAnalytics = () => {
       ) : null}
 
       {summary ? (
-        <div className="rounded-xl border border-cyan-200/50 dark:border-cyan-900/40 bg-cyan-500/5 p-4 mb-4">
+        <div className="rounded-xl border border-teal-200/50 dark:border-teal-900/40 bg-teal-500/5 p-4 mb-4">
           <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{summary}</p>
         </div>
       ) : null}
@@ -232,7 +232,7 @@ const SeasonalStrategyAnalytics = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {strategy.weeklyPlan.map((w) => (
               <div key={w.week} className="rounded-xl border border-gray-200 dark:border-gray-800 p-3 bg-white/70 dark:bg-gray-900/50">
-                <p className="text-xs font-black uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
+                <p className="text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
                   Week {w.week}: {w.theme}
                 </p>
                 <ul className="mt-2 space-y-1 text-xs text-gray-600 dark:text-gray-300">

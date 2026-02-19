@@ -104,12 +104,12 @@ export default function Analytics() {
 	}
 
 	return (
-		<div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300 overflow-hidden">
+		<div className="relative min-h-screen bg-stone-50 dark:bg-slate-950 transition-colors duration-300 overflow-hidden">
 			{/* Background Decorative Elements */}
 			<div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
 				<div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-emerald-500/10 dark:bg-emerald-500/5 blur-[120px] rounded-full" />
 				<div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-teal-500/10 dark:bg-teal-500/5 blur-[100px] rounded-full" />
-				<div className="absolute bottom-[10%] left-[20%] w-[20%] h-[20%] bg-cyan-500/10 dark:bg-cyan-500/5 blur-[100px] rounded-full" />
+				<div className="absolute bottom-[10%] left-[20%] w-[20%] h-[20%] bg-amber-500/10 dark:bg-amber-500/10 blur-[100px] rounded-full" />
 			</div>
 
 			<div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
@@ -148,7 +148,7 @@ export default function Analytics() {
 									key={st.key}
 									onClick={() => setStage(st.key)}
 									className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${stage === st.key
-										? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
+										? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
 										: 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
 										}`}
 								>
@@ -259,8 +259,8 @@ export default function Analytics() {
 					<div className="flex flex-col gap-6">
 						<div className="flex items-center justify-between">
 							<h2 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-3">
-								<div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-									<TrendingUp className="w-5 h-5 text-indigo-500" />
+								<div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+									<TrendingUp className="w-5 h-5 text-emerald-500" />
 								</div>
 								Drift & Deviation Analysis
 							</h2>

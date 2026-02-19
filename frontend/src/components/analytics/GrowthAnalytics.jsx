@@ -149,11 +149,11 @@ const GrowthAnalytics = ({ growthProfile, selectedStage = 'fruiting', onStageCha
             </div>
 
             {/* AI Insight Section */}
-            <div className="bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-2xl p-4 border border-indigo-500/10">
+            <div className="bg-gradient-to-br from-emerald-500/5 to-amber-500/5 rounded-2xl p-4 border border-emerald-500/10">
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-indigo-500" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                        <Sparkles className="w-4 h-4 text-emerald-500" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                             Growth Intelligence
                         </h4>
                     </div>
@@ -161,7 +161,7 @@ const GrowthAnalytics = ({ growthProfile, selectedStage = 'fruiting', onStageCha
                         <button
                             onClick={(e) => handleAskAI(metrics, e)}
                             disabled={loadingAnalysis}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all text-xs font-bold"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all text-xs font-bold"
                         >
                             {loadingAnalysis ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                             Analyze Stage
@@ -183,7 +183,7 @@ const GrowthAnalytics = ({ growthProfile, selectedStage = 'fruiting', onStageCha
                                         }
                                     }));
                                 }}
-                                className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-indigo-500 transition-colors"
+                                className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-emerald-500 transition-colors"
                             >
                                 <MessageSquarePlus className="w-3 h-3" />
                                 Discuss Strategy

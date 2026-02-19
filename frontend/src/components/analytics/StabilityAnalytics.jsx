@@ -83,11 +83,11 @@ const StabilityAnalytics = ({ stabilityProfiles }) => {
                             </div>
 
                             {/* Consistency Ranges */}
-                            <div className="p-4 bg-indigo-500/5 dark:bg-indigo-400/5 border border-indigo-500/10 dark:border-indigo-400/10 rounded-2xl">
-                                <div className="flex items-center justify-between mb-3 text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                            <div className="p-4 bg-emerald-500/5 dark:bg-emerald-400/5 border border-emerald-500/10 dark:border-emerald-400/10 rounded-2xl">
+                                <div className="flex items-center justify-between mb-3 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                                     <span>Stability Periods</span>
                                     <div className="flex items-center gap-1">
-                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                                         Live Analysis
                                     </div>
                                 </div>
@@ -100,7 +100,7 @@ const StabilityAnalytics = ({ stabilityProfiles }) => {
                                         </div>
                                         <p className="text-[9px] font-bold text-gray-400 uppercase">Longest Stable</p>
                                     </div>
-                                    <div className="w-px h-8 bg-indigo-500/10" />
+                                    <div className="w-px h-8 bg-emerald-500/10" />
                                     <div className="flex-1 text-right">
                                         <div className="flex items-center justify-end gap-2 mb-1">
                                             <span className="text-xs font-black text-gray-900 dark:text-white">{stats.maxUnstable}h</span>
