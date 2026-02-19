@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
-  Copy, Plus, RefreshCw, Cpu, Wifi, WifiOff, Clock, ShieldCheck,
+  Copy, Plus, RefreshCw, Cpu, Wifi, WifiOff, Clock, ShieldCheck, Activity,
   Trash2, Terminal, QrCode, Smartphone, Settings2, CheckCircle2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -128,12 +128,12 @@ const Devices = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300 overflow-hidden">
+    <div className="relative min-h-screen bg-stone-50 dark:bg-slate-950 transition-colors duration-300 overflow-hidden">
       {/* Background Decorative Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-emerald-500/10 dark:bg-emerald-500/5 blur-[120px] rounded-full" />
         <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-teal-500/10 dark:bg-teal-500/5 blur-[100px] rounded-full" />
-        <div className="absolute bottom-[10%] left-[20%] w-[20%] h-[20%] bg-indigo-500/10 dark:bg-indigo-500/5 blur-[100px] rounded-full" />
+        <div className="absolute bottom-[10%] left-[20%] w-[20%] h-[20%] bg-amber-500/10 dark:bg-amber-500/10 blur-[100px] rounded-full" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
@@ -224,7 +224,7 @@ const Devices = () => {
             <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[1.5rem] p-6 shadow-xl border border-white/20 dark:border-gray-800">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                  <Cpu className="w-4 h-4 text-indigo-500" /> Provisioning Tool
+                  <Cpu className="w-4 h-4 text-amber-500" /> Provisioning Tool
                 </h2>
                 <button
                   onClick={() => setShowFactory(!showFactory)}
@@ -243,7 +243,7 @@ const Devices = () => {
                       value={adminSecret}
                       onChange={(e) => setAdminSecret(e.target.value)}
                       placeholder="Factory Secret Key"
-                      className="w-full px-4 py-2.5 bg-gray-50/50 dark:bg-gray-800/50 border border-transparent focus:border-indigo-500/50 rounded-xl text-sm font-bold text-gray-900 dark:text-white outline-none transition-all placeholder:text-gray-400 placeholder:font-medium"
+                      className="w-full px-4 py-2.5 bg-gray-50/50 dark:bg-gray-800/50 border border-transparent focus:border-amber-500/50 rounded-xl text-sm font-bold text-gray-900 dark:text-white outline-none transition-all placeholder:text-gray-400 placeholder:font-medium"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -251,13 +251,13 @@ const Devices = () => {
                     <input
                       value={factoryName}
                       onChange={(e) => setFactoryName(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-gray-50/50 dark:bg-gray-800/50 border border-transparent focus:border-indigo-500/50 rounded-xl text-sm font-bold text-gray-900 dark:text-white outline-none transition-all"
+                      className="w-full px-4 py-2.5 bg-gray-50/50 dark:bg-gray-800/50 border border-transparent focus:border-amber-500/50 rounded-xl text-sm font-bold text-gray-900 dark:text-white outline-none transition-all"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={creatingFactory}
-                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-indigo-500/20 transition-all disabled:opacity-50"
+                    className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50"
                   >
                     {creatingFactory ? 'Provisioning...' : 'Generate Factory Entry'}
                   </button>
@@ -268,7 +268,7 @@ const Devices = () => {
                 <div className="mt-6 p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center gap-4 animate-fade-up">
                   <div className="w-full">
                     <label className="block text-[8px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Factory UUID</label>
-                    <div className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 break-all select-all">
+                    <div className="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400 break-all select-all">
                       {factoryResult.factoryToken}
                     </div>
                   </div>
@@ -381,10 +381,10 @@ const Devices = () => {
               </div>
             )}
 
-            <div className="mt-4 p-4 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/30 flex items-start gap-3">
-              <ShieldCheck className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+            <div className="mt-4 p-4 bg-amber-50/30 dark:bg-amber-900/10 rounded-2xl border border-amber-100/50 dark:border-amber-900/30 flex items-start gap-3">
+              <ShieldCheck className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-widest mb-1">Security Note</h4>
+                <h4 className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest mb-1">Security Note</h4>
                 <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-tight">Devices must be flashed with their unique Hardware Token to authorize data ingestion. Factory UUIDs are for association only.</p>
               </div>
             </div>
