@@ -75,7 +75,7 @@ const AppLayout = ({ children }) => {
             <span className="text-xl md:text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent uppercase tracking-tight leading-none">
               AgriGuard
             </span>
-            <span className="hidden md:block text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mt-0.5">Mycology Platform</span>
+            <span className="hidden md:block text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mt-0.5">Farmer Intelligence Platform</span>
           </div>
         </Link>
         <nav className="flex items-center gap-2 md:gap-4">
@@ -88,10 +88,10 @@ const AppLayout = ({ children }) => {
           </button>
           <div className="flex items-center gap-2 pl-2 border-l border-gray-100 dark:border-gray-800">
             <Link to="/login" className="px-4 py-2.5 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:text-emerald-500 transition-colors">
-              Session
+              Sign In
             </Link>
             <Link to="/register" className="px-5 md:px-7 py-2.5 md:py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] md:text-xs font-black uppercase tracking-widest hover:brightness-110 shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all">
-              Initialize
+              Get Started
             </Link>
           </div>
         </nav>
@@ -103,10 +103,10 @@ const AppLayout = ({ children }) => {
     <footer className="container mx-auto px-4 py-12 text-center">
       <div className="flex items-center justify-center gap-3 mb-4 opacity-50">
         <Shield className="w-4 h-4 text-emerald-500" />
-        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 dark:text-gray-400">Advanced OS Deployment</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 dark:text-gray-400">Farmer-First AI Platform</span>
       </div>
       <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-        © {new Date().getFullYear()} AgriGuard Mycology. Decentralized Intelligence for Modern Agriculture.
+        © {new Date().getFullYear()} AgriGuard. Practical Intelligence for Mushroom Farming.
       </p>
     </footer>
   );

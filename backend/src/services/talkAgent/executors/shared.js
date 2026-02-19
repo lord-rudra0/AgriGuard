@@ -70,6 +70,11 @@ export const toAlertPayload = (alert) => ({
   id: String(alert._id),
   title: alert.title,
   severity: alert.severity,
+  severityLevel: alert.severityLevel || null,
+  confidence: alert.confidence ?? null,
+  origin: alert.origin || 'reactive',
+  riskCategory: alert.riskCategory || null,
+  prediction: alert.prediction || null,
   message: alert.message,
   isResolved: !!alert.isResolved,
   isRead: !!alert.isRead

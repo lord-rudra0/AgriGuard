@@ -20,9 +20,10 @@ export default function useAlertsSocket(options = {}) {
     const title = a.title || (a.type === 'weather' ? 'Weather Alert' : 'Threshold Breach');
     const msg = a.message || `${a.type} alert`;
 
-    if (a.severity === 'high') {
+    const severity = String(a.severityLevel || a.severity || '').toLowerCase();
+    if (severity === 'critical' || severity === 'high') {
       toast.error(`${title}: ${msg}`);
-    } else if (a.severity === 'medium') {
+    } else if (severity === 'warning' || severity === 'medium') {
       toast(`${title}: ${msg}`, { icon: '⚠️' });
     } else {
       toast.success(`${title}: ${msg}`);

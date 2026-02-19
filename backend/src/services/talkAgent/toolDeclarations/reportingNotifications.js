@@ -72,12 +72,28 @@ export const REPORTING_NOTIFICATIONS_DECLARATIONS = [
         body: { type: "STRING", description: "Notification message body" },
         severity: {
           type: "STRING",
-          enum: ["low", "medium", "high", "critical"],
+          enum: ["info", "warning", "critical", "low", "medium", "high"],
           description: "Optional severity used for notification preference filtering"
         },
         confirm: { type: "BOOLEAN", description: "Must be true only after explicit user confirmation." }
       },
       required: ["title", "body"]
+    }
+  },
+  {
+    name: "generate_proactive_alerts",
+    description: "Generate proactive risk alerts (disease, weather stress, irrigation) from recent sensor trends.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        deviceId: { type: "STRING", description: "Optional device ID. If omitted, all active devices are evaluated." },
+        minConfidence: { type: "NUMBER", description: "Optional minimum confidence (0-100) to keep generated alerts. Default 55." },
+        categories: {
+          type: "ARRAY",
+          items: { type: "STRING", enum: ["disease", "weather_stress", "irrigation"] },
+          description: "Optional subset of predictive risk categories to include."
+        }
+      }
     }
   },
   {

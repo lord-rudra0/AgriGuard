@@ -13,8 +13,34 @@ const alertSchema = new mongoose.Schema({
   },
   severity: {
     type: String,
-    enum: ['low', 'medium', 'high', 'critical'],
+    enum: ['info', 'warning', 'critical', 'low', 'medium', 'high'],
     required: true
+  },
+  severityLevel: {
+    type: String,
+    enum: ['info', 'warning', 'critical'],
+    default: 'warning'
+  },
+  confidence: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: null
+  },
+  origin: {
+    type: String,
+    enum: ['reactive', 'predictive', 'manual', 'system'],
+    default: 'reactive'
+  },
+  riskCategory: {
+    type: String,
+    enum: ['disease', 'weather_stress', 'irrigation'],
+    default: null
+  },
+  prediction: {
+    windowMinutes: { type: Number, min: 1, default: null },
+    score: { type: Number, min: 0, max: 100, default: null },
+    basedOn: [{ type: String }]
   },
   title: {
     type: String,
@@ -91,5 +117,7 @@ alertSchema.index({ severity: 1, createdAt: -1 });
 alertSchema.index({ type: 1, createdAt: -1 });
 alertSchema.index({ isResolved: 1, createdAt: -1 });
 alertSchema.index({ isRead: 1, createdAt: -1 });
+alertSchema.index({ origin: 1, createdAt: -1 });
+alertSchema.index({ riskCategory: 1, createdAt: -1 });
 
 export default mongoose.model('Alert', alertSchema);

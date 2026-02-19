@@ -11,6 +11,8 @@ const AlertsFilterBar = ({ filters, setFilters, fetchAlerts, loading }) => (
           className="bg-transparent text-xs font-bold text-gray-700 dark:text-gray-300 focus:outline-none border-none cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
         >
           <option value="">All Severities</option>
+          <option value="info">Info</option>
+          <option value="warning">Warning</option>
           <option value="low">Low</option>
           <option value="medium">Medium</option>
           <option value="high">High</option>

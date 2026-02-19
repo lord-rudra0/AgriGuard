@@ -4,19 +4,19 @@
 
 /* CSS variables used by Tailwind color tokens (see tailwind.config.js) */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 47.4% 11.2%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 215 20.2% 65.1%;
+  --background: 48 33% 98%;
+  --foreground: 150 24% 16%;
+  --border: 146 18% 86%;
+  --input: 146 18% 86%;
+  --ring: 146 30% 55%;
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
+  --background: 150 24% 10%;
+  --foreground: 46 33% 94%;
+  --border: 150 16% 24%;
+  --input: 150 16% 24%;
+  --ring: 146 34% 72%;
 }
 
 @layer base {

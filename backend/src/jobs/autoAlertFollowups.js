@@ -2,6 +2,8 @@ import Alert from '../models/Alert.js';
 import CalendarEvent from '../models/CalendarEvent.js';
 
 const ALERT_DELAY_MINUTES = {
+  info: 360,
+  warning: 120,
   low: 360,
   medium: 120,
   high: 45,
@@ -9,6 +11,8 @@ const ALERT_DELAY_MINUTES = {
 };
 
 const FOLLOWUP_OFFSET_MINUTES = {
+  info: 180,
+  warning: 60,
   low: 180,
   medium: 60,
   high: 30,

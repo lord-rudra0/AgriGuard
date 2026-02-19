@@ -1,4 +1,5 @@
 import UserSettings from '../models/UserSettings.js';
+import { toLegacySeverity } from './alerts/severity.js';
 
 const SEVERITY_RANK = {
   low: 1,
@@ -43,7 +44,8 @@ export const isInQuietHours = ({ now = new Date(), timezone = 'UTC', quietStart 
 };
 
 export const meetsSeverityThreshold = ({ eventSeverity = 'medium', minSeverity = 'low' }) => {
-  const eventRank = SEVERITY_RANK[String(eventSeverity || 'medium').toLowerCase()] || SEVERITY_RANK.medium;
+  const eventLegacy = toLegacySeverity(eventSeverity, 'medium');
+  const eventRank = SEVERITY_RANK[String(eventLegacy || 'medium').toLowerCase()] || SEVERITY_RANK.medium;
   const minRank = SEVERITY_RANK[String(minSeverity || 'low').toLowerCase()] || SEVERITY_RANK.low;
   return eventRank >= minRank;
 };

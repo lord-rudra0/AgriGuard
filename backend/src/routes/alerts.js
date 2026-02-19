@@ -4,6 +4,14 @@ import Alert from '../models/Alert.js';
 import { listIncidentPlaybooks, getIncidentPlaybook, buildIncidentPlaybookRun } from '../services/incidentPlaybooks.js';
 
 const router = express.Router();
+const SEVERITY_FILTER_MAP = {
+  info: ['info', 'low'],
+  warning: ['warning', 'medium', 'high'],
+  critical: ['critical'],
+  low: ['low', 'info'],
+  medium: ['medium', 'warning'],
+  high: ['high', 'warning'],
+};
 
 // Middleware to verify JWT token
 const authenticateToken = (req, res, next) => {
@@ -34,7 +42,11 @@ router.get('/', authenticateToken, async (req, res) => {
     const { severity, type, isRead, isResolved, limit = 50, page = 1 } = req.query;
 
     const query = { userId };
-    if (severity) query.severity = severity;
+    if (severity) {
+      const normalized = String(severity).toLowerCase();
+      const mapped = SEVERITY_FILTER_MAP[normalized];
+      query.severity = mapped ? { $in: mapped } : normalized;
+    }
     if (type) query.type = type;
     if (isRead !== undefined) query.isRead = isRead === 'true';
     if (isResolved !== undefined) query.isResolved = isResolved === 'true';

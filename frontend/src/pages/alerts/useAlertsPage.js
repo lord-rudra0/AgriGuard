@@ -134,7 +134,9 @@ export const useAlertsPage = ({ liveAlerts, socket }) => {
 
   const grouped = useMemo(() => (
     [...items].sort((a, b) => {
-      const s = severityOrder[b.severity] - severityOrder[a.severity];
+      const rankB = severityOrder[String(b.severityLevel || b.severity || '').toLowerCase()] ?? -1;
+      const rankA = severityOrder[String(a.severityLevel || a.severity || '').toLowerCase()] ?? -1;
+      const s = rankB - rankA;
       if (s !== 0) return s;
       return new Date(b.createdAt) - new Date(a.createdAt);
     })

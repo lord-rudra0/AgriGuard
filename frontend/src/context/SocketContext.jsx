@@ -227,6 +227,17 @@ export const SocketProvider = ({ children }) => {
         };
         setAlerts(prev => [alert, ...prev]);
       }
+      if (action === 'proactive_alerts_generated') {
+        const count = Number(payload?.count || 0);
+        const alert = {
+          type: 'system',
+          title: 'Proactive alerts generated',
+          message: `${count} predictive risk alert${count === 1 ? '' : 's'} generated from recent sensor trends.`,
+          severity: count > 0 ? 'warning' : 'info',
+          timestamp: new Date()
+        };
+        setAlerts(prev => [alert, ...prev]);
+      }
     });
 
     newSocket.on('presence:update', ({ userId, online }) => {

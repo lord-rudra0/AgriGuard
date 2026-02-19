@@ -11,18 +11,23 @@ import {
   emitTalkAction
 } from './shared.js';
 
-const ALERT_SEVERITY_ORDER = ['low', 'medium', 'high', 'critical'];
+const ALERT_SEVERITY_ORDER = ['info', 'low', 'warning', 'medium', 'high', 'critical'];
 
-const getNextSeverity = (current = 'low') => {
-  const idx = ALERT_SEVERITY_ORDER.indexOf(String(current));
+const getNextSeverity = (current = 'warning') => {
+  const normalizedCurrent = String(current || '').toLowerCase();
+  const idx = ALERT_SEVERITY_ORDER.indexOf(normalizedCurrent);
   if (idx < 0 || idx >= ALERT_SEVERITY_ORDER.length - 1) return 'critical';
-  return ALERT_SEVERITY_ORDER[idx + 1];
+  const next = ALERT_SEVERITY_ORDER[idx + 1];
+  if (next === 'low') return 'warning';
+  if (next === 'medium') return 'warning';
+  if (next === 'high') return 'critical';
+  return next;
 };
 
 const buildAlertPlaybook = (alert) => {
   const recommendations = [];
-  const severity = String(alert?.severity || 'low');
-  if (severity === 'critical' || severity === 'high') {
+  const severity = String(alert?.severityLevel || alert?.severity || 'warning').toLowerCase();
+  if (severity === 'critical' || severity === 'high' || severity === 'warning') {
     recommendations.push({ action: 'followup', reason: 'High-severity alerts should have a tracked follow-up task.' });
     recommendations.push({
       action: 'escalate',
@@ -106,12 +111,17 @@ const executeResolveAlert = async (args, userId, socket) => {
 
 const executeEscalateAlert = async (args, userId, socket) => {
   const alertId = args?.alertId ? String(args.alertId) : null;
-  const targetSeverity = args?.severity ? String(args.severity) : null;
+  const targetSeverity = args?.severity ? String(args.severity).toLowerCase() : null;
   if (!alertId) return { error: "alertId is required" };
-  if (!targetSeverity || !['medium', 'high', 'critical'].includes(targetSeverity)) {
-    return { error: "severity must be one of: medium, high, critical" };
+  if (!targetSeverity || !['warning', 'critical', 'medium', 'high'].includes(targetSeverity)) {
+    return { error: "severity must be one of: warning, critical" };
   }
-  const alert = await Alert.findOneAndUpdate({ _id: alertId, userId }, { severity: targetSeverity }, { new: true });
+  const normalizedSeverity = targetSeverity === 'high' ? 'critical' : targetSeverity === 'medium' ? 'warning' : targetSeverity;
+  const alert = await Alert.findOneAndUpdate(
+    { _id: alertId, userId },
+    { severity: normalizedSeverity, severityLevel: normalizedSeverity },
+    { new: true }
+  );
   if (!alert) return { error: "Alert not found" };
   const serialized = toAlertPayload(alert);
   emitTalkAction(socket, 'alert_escalated', { alert: serialized });

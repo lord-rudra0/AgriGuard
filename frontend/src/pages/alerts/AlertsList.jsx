@@ -24,26 +24,43 @@ const AlertsList = ({
       </div>
     ) : (
       items.map((alert) => (
+        (() => {
+          const badgeSeverity = String(alert.severityLevel || alert.severity || 'warning').toLowerCase();
+          const iconColor = badgeSeverity === 'critical'
+            ? 'text-red-500'
+            : badgeSeverity === 'high'
+              ? 'text-orange-500'
+              : badgeSeverity === 'warning' || badgeSeverity === 'medium'
+                ? 'text-yellow-500'
+                : 'text-blue-500';
+          const confidence = Number(alert.confidence);
+          const hasConfidence = Number.isFinite(confidence);
+          return (
         <div
           key={alert._id}
-          className={`group relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border rounded-2xl p-4 shadow-sm transition-all duration-300 hover:scale-[1.01] hover:shadow-lg ${severityColors[alert.severity]} ${severityGlows[alert.severity]} ${alert.isResolved ? 'opacity-60 grayscale-[0.5]' : ''}`}
+          className={`group relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border rounded-2xl p-4 shadow-sm transition-all duration-300 hover:scale-[1.01] hover:shadow-lg ${severityColors[badgeSeverity] || severityColors.warning} ${severityGlows[badgeSeverity] || severityGlows.warning} ${alert.isResolved ? 'opacity-60 grayscale-[0.5]' : ''}`}
         >
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0 mt-1">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${alert.isResolved ? 'bg-gray-100 dark:bg-gray-800 text-gray-400' : 'bg-white dark:bg-gray-800 shadow-sm'}`}>
-                {alert.isResolved ? <Check className="w-5 h-5" /> : <AlertTriangle className={`w-5 h-5 ${alert.severity === 'critical' ? 'text-red-500' : alert.severity === 'high' ? 'text-orange-500' : alert.severity === 'medium' ? 'text-yellow-500' : 'text-blue-500'}`} />}
+                {alert.isResolved ? <Check className="w-5 h-5" /> : <AlertTriangle className={`w-5 h-5 ${iconColor}`} />}
               </div>
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-white/50 dark:bg-gray-900/50">
-                  {alert.severity}
+                  {badgeSeverity}
                 </span>
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-gray-400" />
-                  {alert.type}
+                  {alert.riskCategory || alert.type}
                 </span>
+                {hasConfidence && (
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    confidence {Math.round(confidence)}%
+                  </span>
+                )}
                 <span className="text-[10px] text-gray-400 ml-auto">{new Date(alert.createdAt).toLocaleString()}</span>
               </div>
 
@@ -90,6 +107,8 @@ const AlertsList = ({
             <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-emerald-500 animate-pulse md:hidden" />
           )}
         </div>
+          );
+        })()
       ))
     )}
   </div>

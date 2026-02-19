@@ -15,13 +15,18 @@ const DashboardRightPanel = ({
       {recentAlerts.length > 0 ? (
         <div className="space-y-4">
           {recentAlerts.map((alert, index) => (
+            (() => {
+              const severity = String(alert.severityLevel || alert.severity || '').toLowerCase();
+              const isCritical = severity === 'critical' || severity === 'high';
+              const isWarning = severity === 'warning' || severity === 'medium';
+              return (
             <div
               key={index}
               style={{ transitionDelay: `${index * 100}ms` }}
-              className={`p-4 rounded-2xl border border-gray-100 dark:border-white/5 transition-all duration-500 hover:bg-gray-50 dark:hover:bg-white/5 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'} ${alert.severity === 'high' ? 'bg-rose-500/10 text-rose-300' : alert.severity === 'medium' ? 'bg-amber-500/10 text-amber-300' : 'bg-emerald-500/10 text-emerald-300'}`}
+              className={`p-4 rounded-2xl border border-gray-100 dark:border-white/5 transition-all duration-500 hover:bg-gray-50 dark:hover:bg-white/5 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'} ${isCritical ? 'bg-rose-500/10 text-rose-300' : isWarning ? 'bg-amber-500/10 text-amber-300' : 'bg-emerald-500/10 text-emerald-300'}`}
             >
               <div className="flex items-start space-x-3">
-                {alert.severity === 'high' ? <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 animate-pulse" /> : <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />}
+                {isCritical || isWarning ? <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 animate-pulse" /> : <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{alert.message || `${alert.type} Alert`}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -30,6 +35,8 @@ const DashboardRightPanel = ({
                 </div>
               </div>
             </div>
+              );
+            })()
           ))}
         </div>
       ) : (

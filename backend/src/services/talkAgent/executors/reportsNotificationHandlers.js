@@ -1,7 +1,10 @@
 import ReportSchedule from '../../../models/ReportSchedule.js';
 import NotificationToken from '../../../models/NotificationToken.js';
 import Alert from '../../../models/Alert.js';
+import Device from '../../../models/Device.js';
 import { getNotificationPreferences, evaluatePushDelivery } from '../../notificationPreferences.js';
+import { generateProactiveRiskAlerts } from '../../alerts/proactiveRiskAlerts.js';
+import { toCanonicalSeverity } from '../../alerts/severity.js';
 import {
   REPORT_QUESTION,
   NOTIFICATION_QUESTION,
@@ -21,7 +24,7 @@ const getWebpush = async () => {
 };
 
 const sendPushToUser = async (userId, payload, options = {}) => {
-  const severity = options.severity || payload?.severity || 'medium';
+  const severity = toCanonicalSeverity(options.severity || payload?.severity || 'warning');
   const prefs = await getNotificationPreferences(userId);
   const delivery = evaluatePushDelivery({ prefs, severity });
   if (!delivery.allowed) {
@@ -152,9 +155,45 @@ const executeSendPushNotification = async (args, userId, socket) => {
   const title = normalizeOptionalText(args?.title);
   const body = normalizeOptionalText(args?.body);
   if (!title || !body) return { error: "title and body are required" };
-  const result = await sendPushToUser(userId, { title, body }, { severity: normalizeOptionalText(args?.severity) || 'medium' });
+  const result = await sendPushToUser(userId, { title, body }, { severity: normalizeOptionalText(args?.severity) || 'warning' });
   emitTalkAction(socket, 'push_notification_sent', { title, body, ...result });
   return { success: true, title, body, ...result };
+};
+
+const executeGenerateProactiveAlerts = async (args, userId, socket) => {
+  const deviceId = normalizeOptionalText(args?.deviceId);
+  const minConfidenceRaw = Number(args?.minConfidence);
+  const minConfidence = Number.isFinite(minConfidenceRaw) ? Math.max(0, Math.min(100, minConfidenceRaw)) : 55;
+  const requestedCategories = Array.isArray(args?.categories)
+    ? new Set(args.categories.map((v) => String(v || '').trim().toLowerCase()).filter(Boolean))
+    : null;
+
+  const devices = deviceId
+    ? [{ deviceId }]
+    : await Device.find({ userId, active: true }, { deviceId: 1 }).lean();
+  if (!devices || devices.length === 0) return { success: true, generated: [], count: 0, message: 'No active devices found' };
+
+  const collected = [];
+  for (const d of devices) {
+    const next = await generateProactiveRiskAlerts({
+      userId,
+      deviceId: d.deviceId,
+      minConfidence,
+      allowedCategories: requestedCategories
+    });
+    collected.push(...next);
+  }
+
+  const serialized = collected.map(toAlertPayload);
+  emitTalkAction(socket, 'proactive_alerts_generated', {
+    count: serialized.length,
+    alerts: serialized
+  });
+  return {
+    success: true,
+    count: serialized.length,
+    generated: serialized
+  };
 };
 
 const executeNotifyAlert = async (args, userId, socket) => {
@@ -170,7 +209,7 @@ const executeNotifyAlert = async (args, userId, socket) => {
   const result = await sendPushToUser(
     userId,
     { title, body, alertId: String(alert._id) },
-    { severity: String(alert.severity || 'medium').toLowerCase() }
+    { severity: String(alert.severityLevel || alert.severity || 'warning').toLowerCase() }
   );
   emitTalkAction(socket, 'alert_notification_sent', { alertId: String(alert._id), ...result });
   return { success: true, alert: toAlertPayload(alert), ...result };
@@ -182,6 +221,7 @@ export const executeReportNotificationTool = async (name, args, userId, socket) 
   if (name === "delete_report_schedule") return executeDeleteReportSchedule(args, userId, socket);
   if (name === "run_report_now") return executeRunReportNow(args, userId, socket);
   if (name === "send_push_notification") return executeSendPushNotification(args, userId, socket);
+  if (name === "generate_proactive_alerts") return executeGenerateProactiveAlerts(args, userId, socket);
   if (name === "notify_alert") return executeNotifyAlert(args, userId, socket);
   return null;
 };

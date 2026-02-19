@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import Alert from '../../models/Alert.js';
 import Device from '../../models/Device.js';
+import { generateProactiveRiskAlerts } from '../../services/alerts/proactiveRiskAlerts.js';
 
 export const normalizeType = (type) => {
   if (!type) return null;
@@ -135,11 +136,17 @@ export const checkAndCreateAlerts = async (userId, sensorDataArray, debounceMs) 
     }).sort({ createdAt: -1 });
     if (recent) continue;
 
-    const severity = value < min * 0.8 || value > max * 1.2 ? 'high' : 'medium';
+    const severityLevel = value < min * 0.8 || value > max * 1.2 ? 'critical' : 'warning';
+    const distance = value < min ? (min - value) : (value - max);
+    const span = Math.max(1, max - min);
+    const confidence = Math.max(40, Math.min(95, Math.round(55 + ((distance / span) * 80))));
     const alert = new Alert({
       userId,
       type: sType,
-      severity,
+      severity: severityLevel,
+      severityLevel,
+      confidence,
+      origin: 'reactive',
       title: `${sType} Alert`,
       message: `${sType} is ${value < min ? 'too low' : 'too high'}: ${value} ${data.unit}`,
       value,
@@ -148,6 +155,16 @@ export const checkAndCreateAlerts = async (userId, sensorDataArray, debounceMs) 
     });
 
     alerts.push(await alert.save());
+  }
+
+  const deviceIds = [...new Set(sensorDataArray.map((d) => d.metadata?.deviceId || d.deviceId).filter(Boolean))];
+  for (const deviceId of deviceIds) {
+    const proactiveAlerts = await generateProactiveRiskAlerts({
+      userId,
+      deviceId,
+      debounceMs: effectiveDebounceMs
+    });
+    alerts.push(...proactiveAlerts);
   }
 
   return alerts;
