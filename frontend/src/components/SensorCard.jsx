@@ -47,11 +47,11 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
   const getTrendIcon = () => {
     switch (trend) {
       case 'up':
-        return <TrendingUp className="w-4 h-4 text-green-500" />;
+        return <TrendingUp className="w-4 h-4 text-emerald-500" />;
       case 'down':
-        return <TrendingDown className="w-4 h-4 text-red-500" />;
+        return <TrendingDown className="w-4 h-4 text-rose-500" />;
       default:
-        return <Minus className="w-4 h-4 text-gray-400" />;
+        return <Minus className="w-4 h-4 text-gray-500 dark:text-gray-300" />;
     }
   };
 
@@ -67,6 +67,19 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
         return 'text-gray-500 dark:text-gray-400 bg-gray-500/10 border border-gray-500/20';
       default:
         return 'text-gray-500 dark:text-gray-400 bg-gray-500/10 border border-gray-500/20';
+    }
+  };
+
+  const getValueColor = () => {
+    switch (status) {
+      case 'safe':
+        return 'text-emerald-600 dark:text-emerald-300';
+      case 'warning':
+        return 'text-amber-600 dark:text-amber-300';
+      case 'danger':
+        return 'text-rose-600 dark:text-rose-300';
+      default:
+        return 'text-gray-900 dark:text-white';
     }
   };
 
@@ -97,7 +110,7 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
   };
 
   return (
-    <div className="relative p-6 rounded-[24px] bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-white/10 hover:bg-white/80 dark:hover:bg-white/10 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 shadow-xl shadow-gray-200/50 dark:shadow-black/20 group">
+    <div className="relative p-6 rounded-[24px] bg-white/70 dark:bg-slate-900/50 backdrop-blur-md border border-stone-200 dark:border-slate-700/60 hover:bg-white/90 dark:hover:bg-slate-900/70 hover:border-emerald-500/30 transition-all duration-300 hover:-translate-y-1 shadow-xl shadow-stone-200/50 dark:shadow-black/20 group">
       {/* Header with icon and status */}
       <div className="flex items-center justify-between mb-6">
         <div className={`p-3 rounded-2xl ${getStatusColor()} transition-colors duration-300 group-hover:scale-110 transform`}>
@@ -112,15 +125,15 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
       </div>
 
       {/* Title */}
-      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1 text-left">
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-widest mb-1 text-left">
         {formatTitle(type)}
       </h3>
 
       {/* Value */}
       <div className="mb-6 text-left">
-        <div className="text-4xl font-black text-gray-900 dark:text-white tracking-tight flex items-baseline gap-1">
+        <div className={`text-4xl font-black tracking-tight flex items-baseline gap-1 ${getValueColor()}`}>
           {value !== undefined && value !== null ? value : '--'}
-          <span className="text-lg font-bold text-gray-400 dark:text-white/40">
+          <span className="text-lg font-bold text-gray-500 dark:text-gray-200">
             {unit}
           </span>
         </div>
@@ -128,24 +141,24 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
 
       {/* Threshold info */}
       {threshold && (
-        <div className="mb-4 text-xs font-medium text-gray-500 text-left">
+        <div className="mb-4 text-xs font-medium text-gray-700 dark:text-gray-300 text-left">
           <div className="flex justify-between items-center">
             <span>Safe Range</span>
-            <span className="text-gray-300">
-              {threshold.min} - {threshold.max} <span className="text-gray-500">{unit}</span>
+            <span className="text-gray-700 dark:text-gray-200">
+              {threshold.min} - {threshold.max} <span className="text-gray-600 dark:text-gray-300">{unit}</span>
             </span>
           </div>
         </div>
       )}
 
       {/* Last updated */}
-      <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-t border-gray-200 dark:border-white/5 pt-4">
+      <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-widest border-t border-gray-200 dark:border-white/10 pt-4">
         <span>Updated</span>
-        <span className="text-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.4)] animate-pulse">{formatTime(lastReading)}</span>
+        <span className="text-emerald-500 dark:text-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.4)] animate-pulse">{formatTime(lastReading)}</span>
       </div>
 
       {/* Status indicator bar (removed inline width style for cleaner look) */}
-      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
     </div>
   );
 };

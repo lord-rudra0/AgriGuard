@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 import useAlertsSocket from '../hooks/useAlertsSocket';
 import { useSocket } from '../context/SocketContext';
 import SensorCard from '../components/SensorCard';
@@ -10,6 +13,7 @@ import { getStatus, getThreshold } from './dashboard/dashboardUtils';
 
 const Dashboard = () => {
   const { sensorData, alerts, connected } = useSocket();
+  const [isGeneratingDummy, setIsGeneratingDummy] = useState(false);
   useAlertsSocket();
 
   const {
@@ -25,14 +29,32 @@ const Dashboard = () => {
     lastSeenWindowMs
   } = useDashboardData({ sensorData, connected, alerts });
 
+  const handleGenerateDummyData = async () => {
+    if (isGeneratingDummy) return;
+    try {
+      setIsGeneratingDummy(true);
+      const preferredDeviceId = sensorData?.deviceId || devices?.[0]?.deviceId;
+      const { data } = await axios.post('/api/iot/dummy-data/auth', {
+        ...(preferredDeviceId ? { deviceId: preferredDeviceId } : {}),
+        points: 48,
+        intervalMinutes: 15
+      });
+      toast.success(`Dummy data added: ${data?.readingsInserted || 0} readings`);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to add dummy data');
+    } finally {
+      setIsGeneratingDummy(false);
+    }
+  };
+
   return (
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden text-gray-900 dark:text-gray-100 selection:bg-indigo-500/30 transition-colors duration-300">
+    <div className="relative min-h-screen bg-stone-50 dark:bg-slate-950 overflow-hidden text-gray-900 dark:text-gray-100 selection:bg-emerald-500/30 transition-colors duration-300">
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-indigo-500/20 blur-[120px] rounded-full animate-pulse-slow" />
-        <div className="absolute top-[20%] -right-[5%] w-[40%] h-[40%] bg-purple-500/20 blur-[100px] rounded-full animate-float" />
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-emerald-500/20 blur-[120px] rounded-full animate-pulse-slow" />
+        <div className="absolute top-[20%] -right-[5%] w-[40%] h-[40%] bg-amber-500/20 blur-[100px] rounded-full animate-float" />
         <div className="absolute bottom-[10%] left-[20%] w-[30%] h-[30%] bg-emerald-500/20 blur-[80px] rounded-full animate-pulse-slow" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-500/10 blur-[120px] rounded-full animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-[40%] left-[10%] w-[20%] h-[20%] bg-cyan-500/10 blur-[60px] rounded-full animate-pulse-slow" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-yellow-500/10 blur-[120px] rounded-full animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[40%] left-[10%] w-[20%] h-[20%] bg-lime-500/10 blur-[60px] rounded-full animate-pulse-slow" style={{ animationDelay: '1s' }} />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-up">
@@ -41,6 +63,8 @@ const Dashboard = () => {
           isIotActive={isIotActive}
           hasSensorData={hasSensorData}
           sensorData={sensorData}
+          onGenerateDummyData={handleGenerateDummyData}
+          isGeneratingDummy={isGeneratingDummy}
         />
 
         <div className="mb-8">

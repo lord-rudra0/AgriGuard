@@ -157,6 +157,12 @@ const FarmOverview = () => {
         };
     }, [hourlySeries]);
 
+    const scoreColor = (score) => {
+        if (score >= 80) return 'text-emerald-600 dark:text-emerald-300';
+        if (score >= 60) return 'text-amber-600 dark:text-amber-300';
+        return 'text-rose-600 dark:text-rose-300';
+    };
+
 
     if (loading) return (
         // Simple skeleton to prevent layout shift
@@ -172,8 +178,8 @@ const FarmOverview = () => {
         return (
             <div className="mb-8">
                 <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 p-4">
-                    <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">Farm Overview</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-gray-700 dark:text-gray-200 mb-2">Farm Overview</h2>
+                    <p className="text-sm text-gray-700 dark:text-gray-200">
                         No historical sensor analytics found for the selected windows (24h/7d). Once data exists in your account, overview metrics will appear here.
                     </p>
                 </div>
@@ -184,7 +190,7 @@ const FarmOverview = () => {
     return (
         <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                <h2 className="text-sm font-bold uppercase tracking-widest text-gray-700 dark:text-gray-200">
                     Farm Overview
                 </h2>
             </div>
@@ -192,13 +198,13 @@ const FarmOverview = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
 
                 {/* 1. Farm Stability */}
-                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+                <div className="bg-white dark:bg-slate-900/70 border border-stone-200 dark:border-slate-700/60 rounded-xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Stability</span>
-                        <Activity className="w-4 h-4 text-indigo-500" />
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Stability</span>
+                        <Activity className="w-4 h-4 text-emerald-500" />
                     </div>
                     <div>
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <div className={`text-2xl font-bold ${scoreColor(metrics.stabilityScore)}`}>
                             {metrics.stabilityScore}%
                         </div>
                         <div className={`text-xs font-medium mt-1 ${metrics.stabilityScore > 80 ? 'text-emerald-500' :
@@ -212,32 +218,32 @@ const FarmOverview = () => {
                 </div>
 
                 {/* 2. Ecosystem Risk */}
-                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+                <div className="bg-white dark:bg-slate-900/70 border border-stone-200 dark:border-slate-700/60 rounded-xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Risk Level</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Risk Level</span>
                         <ShieldAlert className={`w-4 h-4 ${metrics.riskLevel === 'High' ? 'text-rose-500' : 'text-gray-400'}`} />
                     </div>
                     <div>
                         <div className={`inline-flex px-2 py-0.5 rounded-md text-sm font-bold border ${metrics.riskColor}`}>
                             {metrics.riskLevel}
                         </div>
-                        <div className="text-xs text-gray-400 mt-2">
+                        <div className="text-xs text-gray-600 dark:text-gray-300 mt-2">
                             Current Assessment
                         </div>
                     </div>
                 </div>
 
                 {/* 3. Growth Compliance */}
-                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+                <div className="bg-white dark:bg-slate-900/70 border border-stone-200 dark:border-slate-700/60 rounded-xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Growth</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Growth</span>
                         <ScanLine className="w-4 h-4 text-emerald-500" />
                     </div>
                     <div>
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <div className={`text-2xl font-bold ${scoreColor(metrics.complianceScore)}`}>
                             {metrics.complianceScore}%
                         </div>
-                        <div className="text-xs font-medium text-gray-500 mt-1 flex items-center gap-1">
+                        <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mt-1 flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             {metrics.stage}
                         </div>
@@ -245,16 +251,16 @@ const FarmOverview = () => {
                 </div>
 
                 {/* 4. System Confidence */}
-                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+                <div className="bg-white dark:bg-slate-900/70 border border-stone-200 dark:border-slate-700/60 rounded-xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">System</span>
-                        <ShieldCheck className="w-4 h-4 text-blue-500" />
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">System</span>
+                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
                     </div>
                     <div>
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <div className={`text-2xl font-bold ${scoreColor(metrics.confidenceScore)}`}>
                             {metrics.confidenceScore}%
                         </div>
-                        <div className={`text-xs font-medium mt-1 ${metrics.confidenceScore > 90 ? 'text-blue-500' : 'text-amber-500'}`}>
+                        <div className={`text-xs font-medium mt-1 ${metrics.confidenceScore > 80 ? 'text-emerald-500' : metrics.confidenceScore > 60 ? 'text-amber-500' : 'text-rose-500'}`}>
                             {metrics.systemStatus}
                         </div>
                     </div>
@@ -264,14 +270,14 @@ const FarmOverview = () => {
 
             {/* Insight Teaser Strip */}
             <Link to="/analytics" className="group block">
-                <div className="flex items-center gap-3 px-4 py-2 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-lg text-sm transition-all hover:bg-indigo-100 dark:hover:bg-indigo-500/20">
-                    <AlertTriangle className="w-4 h-4 text-indigo-500" />
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                <div className="flex items-center gap-3 px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-lg text-sm transition-all hover:bg-emerald-100 dark:hover:bg-emerald-500/20">
+                    <AlertTriangle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="font-semibold text-gray-800 dark:text-gray-100">
                         {metrics.riskLevel === 'High' ? 'Critical conditions detected — Action required' :
                             metrics.complianceScore < 80 ? 'Growth compliance dropping — Check parameters' :
                                 `System running optimally — View detailed analysis (${timeframeUsed})`}
                     </span>
-                    <ArrowRight className="w-4 h-4 text-indigo-400 group-hover:translate-x-1 transition-transform ml-auto" />
+                    <ArrowRight className="w-4 h-4 text-emerald-500 group-hover:translate-x-1 transition-transform ml-auto" />
                 </div>
             </Link>
 
