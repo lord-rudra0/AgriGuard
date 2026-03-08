@@ -5,6 +5,9 @@
 #include <Preferences.h>
 
 /* -------- WIFI + API CONFIG -------- */
+// Set to 1 to force WiFi config portal on next boot (to change SSID/server URL/token)
+#define FORCE_WIFI_CONFIG 1
+
 const char *deviceId = "esp32-greenhouse-1";
 String serverUrlStr = "http://10.52.132.132:5000/api/iot/ingest";
 String deviceTokenStr = "";
@@ -42,6 +45,9 @@ void setup() {
   wm.addParameter(&p_server);
   wm.addParameter(&p_token);
 
+  if (FORCE_WIFI_CONFIG) {
+    wm.resetSettings();
+  }
   bool res = wm.autoConnect("AgriGuard-Setup");
   if (!res) {
     Serial.println("WiFiManager failed, restarting...");
