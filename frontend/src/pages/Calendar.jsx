@@ -14,10 +14,12 @@ export default function Calendar() {
     form,
     setForm,
     upcoming,
+    completed,
     resetForm,
     upsertEvent,
     editEvent,
-    deleteEvent
+    deleteEvent,
+    completeEvent
   } = useCalendarEvents({ user, socket });
 
   return (
@@ -44,6 +46,8 @@ export default function Calendar() {
             upcoming={upcoming}
             editEvent={editEvent}
             deleteEvent={deleteEvent}
+            completed={completed}
+            completeEvent={completeEvent}
           />
         </div>
       </div>

@@ -17,6 +17,13 @@ const CalendarEventSchema = new mongoose.Schema(
     endAt: { type: Date },
     reminders: { type: [ReminderSchema], default: [] },
     deliveredReminders: { type: [Number], default: [] }, // store minutesBefore values already delivered
+    status: {
+      type: String,
+      enum: ['scheduled', 'completed', 'cancelled'],
+      default: 'scheduled',
+      index: true
+    },
+    completedAt: { type: Date },
     sourceType: {
       type: String,
       enum: ['alert_followup', 'manual', 'system'],

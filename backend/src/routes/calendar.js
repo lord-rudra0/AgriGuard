@@ -49,11 +49,11 @@ router.post('/events', authenticateToken, async (req, res) => {
   }
 });
 
-// Update event
+// Update event (also supports marking complete / cancelled via status field)
 router.put('/events/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, roomId, startAt, endAt, reminders } = req.body || {};
+    const { title, description, roomId, startAt, endAt, reminders, status, completedAt } = req.body || {};
 
     const doc = await CalendarEvent.findOneAndUpdate(
       { _id: id, userId: req.user._id },
@@ -66,6 +66,8 @@ router.put('/events/:id', authenticateToken, async (req, res) => {
         ...(Array.isArray(reminders)
           ? { reminders: reminders.filter(r => r && typeof r.minutesBefore === 'number') }
           : {}),
+        ...(status ? { status } : {}),
+        ...(completedAt ? { completedAt: new Date(completedAt) } : {}),
       },
       { new: true }
     );

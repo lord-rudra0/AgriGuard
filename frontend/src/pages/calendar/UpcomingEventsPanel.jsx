@@ -1,11 +1,13 @@
 import { format, parseISO } from 'date-fns';
-import { Calendar as CalendarIcon, Clock, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Trash2, CheckCircle2 } from 'lucide-react';
 
 const UpcomingEventsPanel = ({
   loading,
   upcoming,
   editEvent,
-  deleteEvent
+  deleteEvent,
+  completed = [],
+  completeEvent
 }) => (
   <div className="lg:col-span-8 h-full overflow-hidden flex flex-col">
     <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[1.2rem] p-5 md:p-6 shadow-xl border border-white/20 dark:border-gray-800 h-full flex flex-col">
@@ -41,6 +43,15 @@ const UpcomingEventsPanel = ({
                     {ev.title}
                   </h3>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {completeEvent && (
+                      <button
+                        className="p-1 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg transition-colors"
+                        onClick={() => completeEvent(ev._id)}
+                        title="Mark completed"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
                       className="p-1 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg transition-colors"
                       onClick={() => editEvent(ev)}
@@ -96,6 +107,38 @@ const UpcomingEventsPanel = ({
               </li>
             ))}
           </ul>
+        )}
+        {completed.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                Recent History
+              </h3>
+              <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">
+                {completed.length} completed
+              </span>
+            </div>
+            <ul className="space-y-2">
+              {completed.map((ev) => (
+                <li key={ev._id} className="flex items-start justify-between text-[11px] text-gray-600 dark:text-gray-300">
+                  <div className="flex flex-col">
+                    <span className="font-semibold">
+                      {ev.title}
+                    </span>
+                    <span className="text-[10px] text-gray-400">
+                      {format(parseISO(ev.startAt), 'MMM d, h:mm a')}
+                    </span>
+                  </div>
+                  {ev.completedAt && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Done
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
     </div>

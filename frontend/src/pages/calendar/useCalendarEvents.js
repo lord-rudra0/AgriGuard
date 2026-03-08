@@ -109,11 +109,32 @@ export const useCalendarEvents = ({ user, socket }) => {
     }
   };
 
+  const completeEvent = async (id) => {
+    try {
+      await axios.put(`/api/calendar/events/${id}`, {
+        status: 'completed',
+        completedAt: new Date().toISOString()
+      });
+      await loadEvents();
+      if (editingId === id) resetForm();
+    } catch (err) {
+      console.error('Complete failed', err);
+    }
+  };
+
   const upcoming = useMemo(() => {
     const now = Date.now();
     return [...events]
-      .filter((ev) => new Date(ev.startAt).getTime() >= now - 24 * 3600 * 1000)
+      .filter((ev) => ev.status !== 'completed' && new Date(ev.startAt).getTime() >= now - 24 * 3600 * 1000)
       .sort((a, b) => new Date(a.startAt) - new Date(b.startAt));
+  }, [events]);
+
+  const completed = useMemo(() => {
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 24 * 3600 * 1000;
+    return [...events]
+      .filter((ev) => ev.status === 'completed' && new Date(ev.startAt).getTime() >= thirtyDaysAgo && new Date(ev.startAt).getTime() <= now)
+      .sort((a, b) => new Date(b.startAt) - new Date(a.startAt));
   }, [events]);
 
   return {
@@ -123,9 +144,11 @@ export const useCalendarEvents = ({ user, socket }) => {
     form,
     setForm,
     upcoming,
+    completed,
     resetForm,
     upsertEvent,
     editEvent,
-    deleteEvent
+    deleteEvent,
+    completeEvent
   };
 };
