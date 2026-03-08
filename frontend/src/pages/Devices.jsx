@@ -23,6 +23,10 @@ const Devices = () => {
   const [factoryDeviceId, setFactoryDeviceId] = useState('');
   const [factoryResult, setFactoryResult] = useState(null);
   const [creatingFactory, setCreatingFactory] = useState(false);
+  const [showAdd, setShowAdd] = useState(true);
+  const [addName, setAddName] = useState('');
+  const [addDeviceId, setAddDeviceId] = useState('esp32-greenhouse-1');
+  const [creating, setCreating] = useState(false);
 
   const fetchDevices = async () => {
     try {
@@ -55,6 +59,30 @@ const Devices = () => {
     socket.on('talk:action', onTalkAction);
     return () => socket.off('talk:action', onTalkAction);
   }, [socket]);
+
+  const handleAddDevice = async (e) => {
+    e.preventDefault();
+    if (!addName.trim() || !addDeviceId.trim()) {
+      toast.error('Name and Device ID are required');
+      return;
+    }
+    try {
+      setCreating(true);
+      const res = await axios.post('/api/devices', {
+        name: addName.trim(),
+        deviceId: addDeviceId.trim()
+      });
+      setLastToken(res.data?.deviceToken || null);
+      setAddName('');
+      setAddDeviceId('esp32-greenhouse-1');
+      await fetchDevices();
+      toast.success('Device created. Copy the token below and set it on your ESP32.');
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to create device');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const handleClaim = async (e) => {
     e.preventDefault();
@@ -170,6 +198,51 @@ const Devices = () => {
 
           {/* Controls Panel (Left) */}
           <div className="lg:col-span-4 space-y-6">
+
+            {/* Add device (no factory token needed) */}
+            <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[1.5rem] p-6 shadow-xl border border-white/20 dark:border-gray-800 relative overflow-hidden">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-emerald-500" /> Add ESP32 device
+                </h2>
+                <button
+                  onClick={() => setShowAdd(!showAdd)}
+                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-400"
+                >
+                  <Settings2 className={`w-4 h-4 transition-transform duration-500 ${showAdd ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+              {showAdd && (
+                <form onSubmit={handleAddDevice} className="space-y-4 animate-fade-in">
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Device ID (must match ESP32)</label>
+                    <input
+                      value={addDeviceId}
+                      onChange={(e) => setAddDeviceId(e.target.value)}
+                      placeholder="esp32-greenhouse-1"
+                      className="w-full px-4 py-2.5 bg-gray-50/50 dark:bg-gray-800/50 border border-transparent focus:border-emerald-500/50 rounded-xl text-sm font-bold text-gray-900 dark:text-white outline-none transition-all placeholder:text-gray-400 placeholder:font-medium"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Label name</label>
+                    <input
+                      value={addName}
+                      onChange={(e) => setAddName(e.target.value)}
+                      placeholder="e.g. North Greenhouse"
+                      className="w-full px-4 py-2.5 bg-gray-50/50 dark:bg-gray-800/50 border border-transparent focus:border-emerald-500/50 rounded-xl text-sm font-bold text-gray-900 dark:text-white outline-none transition-all placeholder:text-gray-400 placeholder:font-medium"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={creating}
+                    className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-emerald-500/20 hover:brightness-110 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+                  >
+                    {creating ? 'Creating...' : 'Add device'}
+                  </button>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Creates a device and shows a token once. Paste that token into your ESP32 config portal (Device Token).</p>
+                </form>
+              )}
+            </div>
 
             {/* Claim Section */}
             <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[1.5rem] p-6 shadow-xl border border-white/20 dark:border-gray-800 relative overflow-hidden">
