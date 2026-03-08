@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns';
-import { Calendar as CalendarIcon, Clock, Trash2, CheckCircle2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Trash2, CheckCircle2, History } from 'lucide-react';
 
 const UpcomingEventsPanel = ({
   loading,
@@ -15,9 +15,24 @@ const UpcomingEventsPanel = ({
         <h2 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-wider">
           Upcoming Schedule
         </h2>
-        <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-wider">
-          {upcoming.length} Events
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-wider">
+            {upcoming.length} Events
+          </span>
+          {completed.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('calendar-history');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] font-bold uppercase tracking-wider text-gray-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
+            >
+              <History className="w-3 h-3" />
+              History
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide pr-2">
@@ -47,9 +62,9 @@ const UpcomingEventsPanel = ({
                       <button
                         className="p-1 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg transition-colors"
                         onClick={() => completeEvent(ev._id)}
-                        title="Mark completed"
+                        title="Move to history"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <History className="w-3.5 h-3.5" />
                       </button>
                     )}
                     <button
@@ -109,7 +124,7 @@ const UpcomingEventsPanel = ({
           </ul>
         )}
         {completed.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
+          <div id="calendar-history" className="mt-4 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-black uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
                 Recent History
