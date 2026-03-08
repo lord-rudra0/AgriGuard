@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import ExportButtons from '../components/analytics/ExportButtons';
 import SavedViews from '../components/analytics/SavedViews';
 import ReportScheduler from '../components/analytics/ReportScheduler';
@@ -81,12 +82,18 @@ export default function Analytics() {
 		}));
 	}, [rows]);
 
+	const trendKeys = useMemo(
+		() => ['temperature', 'humidity', 'co2'].filter((key) => rows.some((r) => typeof r[key] === 'number')),
+		[rows]
+	);
+
 	const summary = fullData?.summary || {};
 	const sampleCounts = fullData?.sampleCounts || {};
 	const totalSamples = fullData?.totalSamples || 0;
 	const lastSampleAt = fullData?.lastSampleAt ? new Date(fullData.lastSampleAt) : null;
 	const types = Object.keys(summary);
 	const MIN_SAMPLES_PER_TYPE = 10;
+	const visibleTypes = activeTypes ?? types;
 	const hasRecommendations = Array.isArray(fullData?.recommendations) && fullData.recommendations.length > 0;
 	const hasGrowth = !!fullData?.growth;
 	const hasEfficiency = !!fullData?.efficiency;
@@ -203,6 +210,50 @@ export default function Analytics() {
 				)}
 
 				<div id="analytics-print-area" className="flex flex-col gap-6">
+
+					{/* Core Trends - always directly driven by your sensor data */}
+					{chartData.length > 0 && trendKeys.length > 0 && (
+						<div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/20 dark:border-gray-800">
+							<div className="flex items-center justify-between mb-4">
+								<div>
+									<h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-700 dark:text-gray-300 flex items-center gap-2">
+										<span className="inline-flex w-6 h-6 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+											<TrendingUp className="w-4 h-4" />
+										</span>
+										Core Trends
+									</h2>
+									<p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+										Last {timeframe.toUpperCase()} · live averages per sensor
+									</p>
+								</div>
+							</div>
+							<div className="h-64">
+								<ResponsiveContainer width="100%" height="100%">
+									<LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+										<XAxis dataKey="name" tick={{ fontSize: 10 }} />
+										<YAxis tick={{ fontSize: 10 }} />
+										<Tooltip />
+										<Legend />
+										{trendKeys.map((key, idx) => {
+											const colors = ['#10b981', '#3b82f6', '#f59e0b'];
+											return (
+												<Line
+													key={key}
+													type="monotone"
+													dataKey={key}
+													name={formatSensorName(key)}
+													stroke={colors[idx % colors.length]}
+													strokeWidth={2}
+													dot={false}
+													activeDot={{ r: 4 }}
+												/>
+											);
+										})}
+									</LineChart>
+								</ResponsiveContainer>
+							</div>
+						</div>
+					)}
 					{/* Action & Decision Section - only when we have enough recent data */}
 					{hasRecommendations && totalSamples > 50 ? (
 						<ActionAnalytics recommendations={fullData?.recommendations || []} />
