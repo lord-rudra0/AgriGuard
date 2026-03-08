@@ -160,17 +160,10 @@ export const generateActionRecommendations = async (chartData, predictions = [],
         });
     }
 
+    // If everything is within ideal ranges, return no recommendations.
+    // The frontend will interpret this as \"no actions needed\" instead of showing a generic success card.
     if (actions.length === 0) {
-        addRecommendation({
-            type: 'success',
-            title: 'Perfect Maintenance',
-            action: 'Continue Current Flow',
-            description: `All systems nominal for ${stage.label}.`,
-            iconName: 'CheckCircle2',
-            riskReduction: 0,
-            stabilityGain: 2,
-            targetMetric: 'Overall'
-        });
+        return [];
     }
 
     // Sort by Score/Priority (Imminent & Critical First)
