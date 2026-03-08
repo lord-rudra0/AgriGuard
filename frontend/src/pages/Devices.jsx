@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import {
@@ -27,6 +27,7 @@ const Devices = () => {
   const [addName, setAddName] = useState('');
   const [addDeviceId, setAddDeviceId] = useState('esp32-greenhouse-1');
   const [creating, setCreating] = useState(false);
+  const tokenBoxRef = useRef(null);
 
   const fetchDevices = async () => {
     try {
@@ -43,6 +44,12 @@ const Devices = () => {
   useEffect(() => {
     fetchDevices();
   }, []);
+
+  useEffect(() => {
+    if (lastToken && tokenBoxRef.current) {
+      tokenBoxRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [lastToken]);
 
   useEffect(() => {
     if (!socket) return undefined;
@@ -244,6 +251,28 @@ const Devices = () => {
               )}
             </div>
 
+            {/* Token shown here so it's visible right after Add device */}
+            {lastToken && (
+              <div ref={tokenBoxRef} className="bg-emerald-600 rounded-[1.5rem] p-6 shadow-xl shadow-emerald-500/20 text-white animate-fade-up relative overflow-hidden">
+                <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 blur-2xl rounded-full" />
+                <div className="flex items-center gap-2 mb-3">
+                  <ShieldCheck className="w-5 h-5" />
+                  <h2 className="text-xs font-black uppercase tracking-widest">Your device token</h2>
+                </div>
+                <p className="text-[10px] font-bold opacity-80 mb-4 leading-relaxed">Copy this and paste it into the ESP32 config portal (Device Token). It is shown only once.</p>
+                <div className="bg-black/20 backdrop-blur-md rounded-xl p-3 mb-4 font-mono text-[10px] break-all border border-white/10 select-all">
+                  {lastToken}
+                </div>
+                <button
+                  type="button"
+                  onClick={copyToken}
+                  className="w-full py-2.5 bg-white text-emerald-700 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Copy className="w-3.5 h-3.5" /> Copy token
+                </button>
+              </div>
+            )}
+
             {/* Claim Section */}
             <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[1.5rem] p-6 shadow-xl border border-white/20 dark:border-gray-800 relative overflow-hidden">
               <div className="flex items-center justify-between mb-6">
@@ -354,26 +383,6 @@ const Devices = () => {
               )}
             </div>
 
-            {/* New Token Alert */}
-            {lastToken && (
-              <div className="bg-emerald-600 rounded-[1.5rem] p-6 shadow-xl shadow-emerald-500/20 text-white animate-fade-up relative overflow-hidden">
-                <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 blur-2xl rounded-full" />
-                <div className="flex items-center gap-2 mb-3">
-                  <ShieldCheck className="w-5 h-5" />
-                  <h2 className="text-xs font-black uppercase tracking-widest">Secure Access Token</h2>
-                </div>
-                <p className="text-[10px] font-bold opacity-80 mb-4 leading-relaxed uppercase tracking-tight">Save this token immediately. It will only be displayed once.</p>
-                <div className="bg-black/20 backdrop-blur-md rounded-xl p-3 mb-4 font-mono text-[10px] break-all border border-white/10 select-all">
-                  {lastToken}
-                </div>
-                <button
-                  onClick={copyToken}
-                  className="w-full py-2.5 bg-white text-emerald-700 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Copy className="w-3.5 h-3.5" /> Copy Secure Token
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Device List (Right) */}
