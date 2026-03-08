@@ -87,6 +87,24 @@ export default function Analytics() {
 		[rows]
 	);
 
+	// Very lightweight forecast: moving average trend line based on last few points
+	const trendChartData = useMemo(() => {
+		if (!chartData.length) return [];
+		const windowSize = 3;
+		return chartData.map((point, idx) => {
+			const forecasted = {};
+			trendKeys.forEach((key) => {
+				const slice = chartData.slice(Math.max(0, idx - windowSize + 1), idx + 1);
+				const vals = slice.map((p) => p[key]).filter((v) => typeof v === 'number');
+				if (vals.length) {
+					const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+					forecasted[`${key}Forecast`] = Number(avg.toFixed(2));
+				}
+			});
+			return { ...point, ...forecasted };
+		});
+	}, [chartData, trendKeys]);
+
 	const summary = fullData?.summary || {};
 	const sampleCounts = fullData?.sampleCounts || {};
 	const totalSamples = fullData?.totalSamples || 0;
@@ -212,7 +230,7 @@ export default function Analytics() {
 				<div id="analytics-print-area" className="flex flex-col gap-6">
 
 					{/* Core Trends - always directly driven by your sensor data */}
-					{chartData.length > 0 && trendKeys.length > 0 && (
+					{trendChartData.length > 0 && trendKeys.length > 0 && (
 						<div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/20 dark:border-gray-800">
 							<div className="flex items-center justify-between mb-4">
 								<div>
@@ -229,7 +247,7 @@ export default function Analytics() {
 							</div>
 							<div className="h-64">
 								<ResponsiveContainer width="100%" height="100%">
-									<LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+									<LineChart data={trendChartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
 										<XAxis dataKey="name" tick={{ fontSize: 10 }} />
 										<YAxis tick={{ fontSize: 10 }} />
 										<Tooltip />
@@ -237,16 +255,28 @@ export default function Analytics() {
 										{trendKeys.map((key, idx) => {
 											const colors = ['#10b981', '#3b82f6', '#f59e0b'];
 											return (
-												<Line
-													key={key}
-													type="monotone"
-													dataKey={key}
-													name={formatSensorName(key)}
-													stroke={colors[idx % colors.length]}
-													strokeWidth={2}
-													dot={false}
-													activeDot={{ r: 4 }}
-												/>
+												<>
+													<Line
+														key={key}
+														type="monotone"
+														dataKey={key}
+														name={formatSensorName(key)}
+														stroke={colors[idx % colors.length]}
+														strokeWidth={2}
+														dot={false}
+														activeDot={{ r: 4 }}
+													/>
+													<Line
+														key={`${key}-forecast`}
+														type="monotone"
+														dataKey={`${key}Forecast`}
+														name={`${formatSensorName(key)} (trend)`}
+														stroke={colors[idx % colors.length]}
+														strokeWidth={1.5}
+														strokeDasharray="4 4"
+														dot={false}
+													/>
+												</>
 											);
 										})}
 									</LineChart>
@@ -280,12 +310,16 @@ export default function Analytics() {
 					{/* Predictive Analytics Section */}
 					{hasPredictions ? <PredictiveAnalytics predictions={fullData?.predictions || []} /> : null}
 
-					{/* Summary Cards - core metrics per sensor */}
+					{/* Summary Cards - core metrics per sensor, time-in-range, and baseline deviation */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
 						{(activeTypes ?? types).map((t) => {
 							const s = summary[t] || {};
 							const samplesForType = sampleCounts?.[t] || 0;
 							const hasData = typeof s.avg === 'number' && samplesForType >= MIN_SAMPLES_PER_TYPE;
+							const safePct = typeof s.safePct === 'number' ? s.safePct : null;
+							const nearPct = typeof s.nearPct === 'number' ? s.nearPct : null;
+							const dangerPct = typeof s.dangerPct === 'number' ? s.dangerPct : null;
+							const delta = typeof s.baselineDev === 'number' ? s.baselineDev : null;
 
 							return (
 								<div key={t} className="group relative bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 min-w-[180px]">
@@ -319,6 +353,32 @@ export default function Analytics() {
 											</span>
 										</div>
 									</div>
+									{hasData && safePct !== null && (
+										<div className="mt-2 flex flex-wrap items-center gap-1 text-[10px] font-medium">
+											<span className="uppercase text-gray-400">Time in range:</span>
+											<span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+												Safe {safePct}%
+											</span>
+											{nearPct !== null && (
+												<span className="px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
+													Near {nearPct}%
+												</span>
+											)}
+											{dangerPct !== null && dangerPct > 0 && (
+												<span className="px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold">
+													Out {dangerPct}%
+												</span>
+											)}
+										</div>
+									)}
+									{hasData && delta !== null && Math.abs(delta) >= 5 && (
+										<div className="mt-1 text-[10px] font-medium text-gray-500 dark:text-gray-400">
+											<span className="uppercase text-gray-400">vs 7‑day baseline:</span>{' '}
+											<span className={delta > 0 ? 'text-rose-500' : 'text-emerald-500'}>
+												{delta > 0 ? '+' : ''}{delta.toFixed(1)}%
+											</span>
+										</div>
+									)}
 								</div>
 							);
 						})}

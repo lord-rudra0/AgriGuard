@@ -8,6 +8,7 @@ import { calculatePredictiveForecasts } from './PredictiveEngine.js';
 import { calculateGrowthProfile } from './GrowthEngine.js';
 import { generateActionRecommendations } from './ActionEngine.js';
 import { calculateBaselines, getBaselineDeviation } from './BaselineEngine.js'; // Item 6: Baselines
+import { getStageConfig } from './StageEngine.js';
 
 const toMs = (value) => {
     const ms = new Date(value).getTime();
@@ -95,29 +96,55 @@ export const getFullAnalytics = async (sensorData, historyData, userId, stageId 
     const health = calculateSystemHealthProfile(wideHistory);
     const growth = await calculateGrowthProfile(wideHistory, stageId);
 
-    // Calculate Summary (Min, Max, Avg) for History
+    // Calculate Summary (Min, Max, Avg, time-in-range) for History
     const summary = {};
     const sensorTypes = [...new Set(groupedHistory.map(d => d._id?.sensorType).filter(Boolean))];
 
     // Get 7-Day Baselines (Improvement #6)
     const baselines = await calculateBaselines(userId);
+    const stageConfig = await getStageConfig(stageId);
 
     sensorTypes.forEach(type => {
-        const values = groupedHistory
-            .filter(d => d._id?.sensorType === type)
-            .map(d => d.avgValue)
-            .filter(v => typeof v === 'number');
+        const historyForType = groupedHistory
+            .filter(d => d._id?.sensorType === type && typeof d.avgValue === 'number');
+        const values = historyForType.map(d => d.avgValue).filter(v => typeof v === 'number');
 
         if (values.length > 0) {
             const currentAvg = values.reduce((a, b) => a + b, 0) / values.length;
             const b = baselines[type];
+
+            // Time-in-range metrics (percentage of buckets in safe / near / danger bands)
+            let safe = 0;
+            let near = 0;
+            let danger = 0;
+            const idealRange = stageConfig?.ideal?.[type];
+            if (idealRange && typeof idealRange.min === 'number' && typeof idealRange.max === 'number') {
+                historyForType.forEach((row) => {
+                    const v = row.avgValue;
+                    if (!Number.isFinite(v)) return;
+                    if (v >= idealRange.min && v <= idealRange.max) {
+                        safe += 1;
+                    } else if (v >= idealRange.min * 0.9 && v <= idealRange.max * 1.1) {
+                        near += 1;
+                    } else {
+                        danger += 1;
+                    }
+                });
+            }
+            const totalBuckets = safe + near + danger;
+            const safePct = totalBuckets > 0 ? Math.round((safe / totalBuckets) * 100) : null;
+            const nearPct = totalBuckets > 0 ? Math.round((near / totalBuckets) * 100) : null;
+            const dangerPct = totalBuckets > 0 ? Math.max(0, 100 - safePct - nearPct) : null;
 
             summary[type] = {
                 min: Math.round(Math.min(...values) * 10) / 10,
                 max: Math.round(Math.max(...values) * 10) / 10,
                 avg: Math.round(currentAvg * 10) / 10,
                 baselineAvg: b ? b.baselineAvg : null,
-                baselineDev: b ? getBaselineDeviation(currentAvg, b) : 0
+                baselineDev: b ? getBaselineDeviation(currentAvg, b) : 0,
+                safePct,
+                nearPct,
+                dangerPct
             };
         }
     });
