@@ -104,6 +104,11 @@ const ActionAnalytics = ({ recommendations = [] }) => {
                                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                                             {rec.title} &middot; {rec.description}
                                         </p>
+                                        {typeof rec.outOfRangeShare === 'number' && (
+                                            <p className="mt-1 text-[11px] font-semibold text-amber-600 dark:text-amber-300">
+                                                Out of range for about {rec.outOfRangeShare}% of the selected window.
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 

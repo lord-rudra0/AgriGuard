@@ -21,12 +21,22 @@ export const generateActionRecommendations = async (chartData, predictions = [],
     const actions = [];
     let idCounter = 1;
 
+    const MIN_POINTS_PER_METRIC = 12;
+    const MIN_OUT_OF_RANGE_FRACTION = 0.2; // at least 20% of samples outside range
+
+    const computeOutOfRangeShare = (metric, predicate) => {
+        const points = chartData.filter((d) => typeof d[metric] === 'number');
+        if (points.length < MIN_POINTS_PER_METRIC) return 0;
+        const count = points.filter((d) => predicate(d[metric])).length;
+        return count / points.length;
+    };
+
     /**
      * Helper to score recommendations (Improvement #9)
      * score = basePriority + (24 - TTF) * weight
      */
     const addRecommendation = (props) => {
-        const { type, title, action, description, iconName, riskReduction, stabilityGain, targetMetric } = props;
+        const { type, title, action, description, iconName, riskReduction, stabilityGain, targetMetric, outOfRangeShare } = props;
 
         // Find relevant prediction for TTF logic
         const metricKey = toMetricKey(targetMetric);
@@ -51,6 +61,9 @@ export const generateActionRecommendations = async (chartData, predictions = [],
             iconName,
             ttf: ttf ? Number(ttf.toFixed(1)) : null,
             score: baseScore + ttfBoost,
+            outOfRangeShare: typeof outOfRangeShare === 'number'
+                ? Number((outOfRangeShare * 100).toFixed(0))
+                : null,
             impact: {
                 riskReduction,
                 stabilityGain,
@@ -59,10 +72,21 @@ export const generateActionRecommendations = async (chartData, predictions = [],
         });
     };
 
-    // 1. Biological Threshold Checks (Using Stage-Aware Ideals)
+    // 1. Biological Threshold Checks (Using Stage-Aware Ideals + duration)
+
+    const tempHighShare = computeOutOfRangeShare('temperature', (v) => v > ideal.temperature.max);
+    const tempLowShare = computeOutOfRangeShare('temperature', (v) => v < ideal.temperature.min);
+    const humidityHighShare = computeOutOfRangeShare('humidity', (v) => v > ideal.humidity.max);
+    const humidityLowShare = computeOutOfRangeShare('humidity', (v) => v < ideal.humidity.min);
+    const co2HighShare = computeOutOfRangeShare('co2', (v) => v > ideal.co2.max);
+    const co2LowShare = computeOutOfRangeShare('co2', (v) => v < ideal.co2.min);
 
     // Temp Logic
-    if (typeof latest.temperature === 'number' && latest.temperature > ideal.temperature.max) {
+    if (
+        typeof latest.temperature === 'number' &&
+        latest.temperature > ideal.temperature.max &&
+        tempHighShare >= MIN_OUT_OF_RANGE_FRACTION
+    ) {
         addRecommendation({
             type: 'high',
             title: 'Temperature Too High',
@@ -71,10 +95,15 @@ export const generateActionRecommendations = async (chartData, predictions = [],
             iconName: 'ThermometerSun',
             riskReduction: -15,
             stabilityGain: 10,
-            targetMetric: 'Temperature'
+            targetMetric: 'Temperature',
+            outOfRangeShare: tempHighShare
         });
     }
-    if (typeof latest.temperature === 'number' && latest.temperature < ideal.temperature.min) {
+    if (
+        typeof latest.temperature === 'number' &&
+        latest.temperature < ideal.temperature.min &&
+        tempLowShare >= MIN_OUT_OF_RANGE_FRACTION
+    ) {
         addRecommendation({
             type: 'medium',
             title: 'Temperature Too Low',
@@ -83,12 +112,17 @@ export const generateActionRecommendations = async (chartData, predictions = [],
             iconName: 'ThermometerSnowflake',
             riskReduction: -10,
             stabilityGain: 5,
-            targetMetric: 'Temperature'
+            targetMetric: 'Temperature',
+            outOfRangeShare: tempLowShare
         });
     }
 
     // Humidity Logic
-    if (typeof latest.humidity === 'number' && latest.humidity > ideal.humidity.max) {
+    if (
+        typeof latest.humidity === 'number' &&
+        latest.humidity > ideal.humidity.max &&
+        humidityHighShare >= MIN_OUT_OF_RANGE_FRACTION
+    ) {
         addRecommendation({
             type: 'high',
             title: 'Humidity Too High',
@@ -97,10 +131,15 @@ export const generateActionRecommendations = async (chartData, predictions = [],
             iconName: 'Droplets',
             riskReduction: -20,
             stabilityGain: 10,
-            targetMetric: 'Humidity'
+            targetMetric: 'Humidity',
+            outOfRangeShare: humidityHighShare
         });
     }
-    if (typeof latest.humidity === 'number' && latest.humidity < ideal.humidity.min) {
+    if (
+        typeof latest.humidity === 'number' &&
+        latest.humidity < ideal.humidity.min &&
+        humidityLowShare >= MIN_OUT_OF_RANGE_FRACTION
+    ) {
         addRecommendation({
             type: 'high',
             title: 'Humidity Too Low',
@@ -109,12 +148,17 @@ export const generateActionRecommendations = async (chartData, predictions = [],
             iconName: 'Droplets',
             riskReduction: -20,
             stabilityGain: 10,
-            targetMetric: 'Humidity'
+            targetMetric: 'Humidity',
+            outOfRangeShare: humidityLowShare
         });
     }
 
     // CO2 Logic
-    if (typeof latest.co2 === 'number' && latest.co2 > ideal.co2.max) {
+    if (
+        typeof latest.co2 === 'number' &&
+        latest.co2 > ideal.co2.max &&
+        co2HighShare >= MIN_OUT_OF_RANGE_FRACTION
+    ) {
         addRecommendation({
             type: 'medium',
             title: 'High CO2 Concentration',
@@ -123,10 +167,15 @@ export const generateActionRecommendations = async (chartData, predictions = [],
             iconName: 'Wind',
             riskReduction: -12,
             stabilityGain: 8,
-            targetMetric: 'CO2'
+            targetMetric: 'CO2',
+            outOfRangeShare: co2HighShare
         });
     }
-    if (typeof latest.co2 === 'number' && latest.co2 < ideal.co2.min) {
+    if (
+        typeof latest.co2 === 'number' &&
+        latest.co2 < ideal.co2.min &&
+        co2LowShare >= MIN_OUT_OF_RANGE_FRACTION
+    ) {
         addRecommendation({
             type: 'medium',
             title: 'CO2 Too Low',
@@ -135,7 +184,8 @@ export const generateActionRecommendations = async (chartData, predictions = [],
             iconName: 'Wind',
             riskReduction: -8,
             stabilityGain: 6,
-            targetMetric: 'CO2'
+            targetMetric: 'CO2',
+            outOfRangeShare: co2LowShare
         });
     }
 
