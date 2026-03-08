@@ -7,6 +7,34 @@ import { checkAndCreateAlerts, determineStatus, parseIngestionTimestamp } from '
 
 const router = express.Router();
 
+router.get('/latest', authenticateToken, async (req, res) => {
+  try {
+    const types = ['temperature', 'humidity', 'co2', 'light', 'soilMoisture'];
+    const latest = {};
+    for (const type of types) {
+      const doc = await SensorData.findOne(
+        { 'metadata.userId': req.user._id, 'metadata.sensorType': type },
+        { value: 1, timestamp: 1, 'metadata.deviceId': 1 }
+      )
+        .sort({ timestamp: -1 })
+        .lean();
+      if (doc) {
+        latest[type] = doc.value;
+        if (!latest.timestamp || new Date(doc.timestamp) > new Date(latest.timestamp)) {
+          latest.timestamp = doc.timestamp;
+          latest.deviceId = doc.metadata?.deviceId;
+        }
+      }
+    }
+    if (!latest.timestamp) return res.json(null);
+    latest.lastUpdated = latest.timestamp;
+    res.json(latest);
+  } catch (error) {
+    console.error('Get latest sensor data error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 router.get('/data', authenticateToken, async (req, res) => {
   try {
     const {
@@ -17,18 +45,18 @@ router.get('/data', authenticateToken, async (req, res) => {
       page = 1
     } = req.query;
 
-    const query = { userId: req.user._id };
-    if (sensorType) query.sensorType = sensorType;
+    const query = { 'metadata.userId': req.user._id };
+    if (sensorType) query['metadata.sensorType'] = sensorType;
 
     if (startDate || endDate) {
-      query.createdAt = {};
-      if (startDate) query.createdAt.$gte = new Date(startDate);
-      if (endDate) query.createdAt.$lte = new Date(endDate);
+      query.timestamp = {};
+      if (startDate) query.timestamp.$gte = new Date(startDate);
+      if (endDate) query.timestamp.$lte = new Date(endDate);
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const data = await SensorData.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ timestamp: -1 })
       .limit(parseInt(limit))
       .skip(skip);
 
