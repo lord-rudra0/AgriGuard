@@ -86,6 +86,7 @@ export default function Analytics() {
 	const totalSamples = fullData?.totalSamples || 0;
 	const lastSampleAt = fullData?.lastSampleAt ? new Date(fullData.lastSampleAt) : null;
 	const types = Object.keys(summary);
+	const MIN_SAMPLES_PER_TYPE = 10;
 	const hasRecommendations = Array.isArray(fullData?.recommendations) && fullData.recommendations.length > 0;
 	const hasGrowth = !!fullData?.growth;
 	const hasEfficiency = !!fullData?.efficiency;
@@ -228,38 +229,48 @@ export default function Analytics() {
 					{/* Predictive Analytics Section */}
 					{hasPredictions ? <PredictiveAnalytics predictions={fullData?.predictions || []} /> : null}
 
-					{/* Summary Cards */}
+					{/* Summary Cards - core metrics per sensor */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-						{(activeTypes ?? types).map((t) => (
-							<div key={t} className="group relative bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 min-w-[180px]">
-								<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
-								<div className="flex items-center justify-between mb-2">
-									<span className="text-[10px] font-black uppercase tracking-[0.1em] text-gray-500 dark:text-gray-400">{formatSensorName(t)}</span>
-									<Activity className="w-4 h-4 text-emerald-500 opacity-50 group-hover:opacity-100 transition-opacity" />
-								</div>
-								<div className="flex items-baseline gap-2 mb-3">
-									<span className="text-3xl font-black text-gray-900 dark:text-white">
-										{typeof summary[t]?.avg === 'number' ? summary[t].avg.toFixed(1) : '—'}
-									</span>
-									<span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Avg</span>
-								</div>
-								<div className="flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
-									<div className="flex-1 flex flex-col">
-										<span className="text-[8px] uppercase font-black text-gray-400 tracking-tighter">Min</span>
-										<span className="text-xs font-black text-gray-900 dark:text-gray-300">
-											{typeof summary[t]?.min === 'number' ? summary[t].min.toFixed(1) : '-'}
+						{(activeTypes ?? types).map((t) => {
+							const s = summary[t] || {};
+							const samplesForType = sampleCounts?.[t] || 0;
+							const hasData = typeof s.avg === 'number' && samplesForType >= MIN_SAMPLES_PER_TYPE;
+
+							return (
+								<div key={t} className="group relative bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 min-w-[180px]">
+									<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
+									<div className="flex items-center justify-between mb-1.5">
+										<span className="text-[10px] font-black uppercase tracking-[0.1em] text-gray-500 dark:text-gray-400">{formatSensorName(t)}</span>
+										<span className="text-[9px] font-semibold text-gray-400 dark:text-gray-500">
+											{samplesForType > 0 ? `${samplesForType} samples` : 'No samples'}
 										</span>
 									</div>
-									<div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
-									<div className="flex-1 flex flex-col text-right">
-										<span className="text-[8px] uppercase font-black text-gray-400 tracking-tighter">Max</span>
-										<span className="text-xs font-black text-gray-900 dark:text-gray-300">
-											{typeof summary[t]?.max === 'number' ? summary[t].max.toFixed(1) : '-'}
+									<div className="flex items-baseline gap-2 mb-3">
+										<span className="text-3xl font-black text-gray-900 dark:text-white">
+											{hasData ? s.avg.toFixed(1) : '—'}
+										</span>
+										<span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
+											{hasData ? 'Avg' : 'Insufficient data'}
 										</span>
 									</div>
+									<div className="flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
+										<div className="flex-1 flex flex-col">
+											<span className="text-[8px] uppercase font-black text-gray-400 tracking-tighter">Min</span>
+											<span className="text-xs font-black text-gray-900 dark:text-gray-300">
+												{hasData && typeof s.min === 'number' ? s.min.toFixed(1) : '—'}
+											</span>
+										</div>
+										<div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
+										<div className="flex-1 flex flex-col text-right">
+											<span className="text-[8px] uppercase font-black text-gray-400 tracking-tighter">Max</span>
+											<span className="text-xs font-black text-gray-900 dark:text-gray-300">
+												{hasData && typeof s.max === 'number' ? s.max.toFixed(1) : '—'}
+											</span>
+										</div>
+									</div>
 								</div>
-							</div>
-						))}
+							);
+						})}
 					</div>
 
 					{/* Stability & Consistency Section */}
