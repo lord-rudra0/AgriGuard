@@ -50,6 +50,10 @@ const EfficiencyAnalytics = ({ efficiencyProfile }) => {
 
     if (!efficiency) return null;
 
+    const sampleCounts = efficiency.sampleCounts || {};
+    const allInsufficient =
+        ['ventilation', 'water', 'energy'].every((key) => efficiency[key]?.status === 'Insufficient Data');
+
     return (
         <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-3xl p-6 shadow-lg relative overflow-hidden">
 
@@ -62,7 +66,7 @@ const EfficiencyAnalytics = ({ efficiencyProfile }) => {
                     Efficiency & Optimization
                 </h3>
                 <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-black uppercase tracking-wider">
-                    {efficiency.overallScore}% Efficient
+                    {allInsufficient ? 'Insufficient data' : `${efficiency.overallScore}% Efficient`}
                 </div>
             </div>
 

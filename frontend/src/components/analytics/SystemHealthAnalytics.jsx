@@ -14,6 +14,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 const SystemHealthAnalytics = ({ healthProfile }) => {
     if (!healthProfile) return null;
     const systemHealth = healthProfile;
+    const insufficient = !systemHealth || systemHealth.totalPoints < 5;
 
     const getTrustColor = (score) => {
         if (score >= 90) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
@@ -45,9 +46,15 @@ const SystemHealthAnalytics = ({ healthProfile }) => {
                     : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
                     }`}>
                     <Activity className="w-4 h-4" />
-                    System Confidence: {systemHealth.systemConfidence}%
+                    {insufficient ? 'Insufficient data' : `System Confidence: ${systemHealth.systemConfidence}%`}
                 </div>
             </div>
+
+            {insufficient && (
+                <div className="mb-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-4 py-3 text-xs text-amber-800 dark:text-amber-100">
+                    Not enough packets in this window to assess sensor reliability. Keep the system online longer to unlock system health analytics.
+                </div>
+            )}
 
             {/* Main Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

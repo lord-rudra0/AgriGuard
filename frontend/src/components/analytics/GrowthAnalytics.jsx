@@ -71,6 +71,7 @@ const GrowthAnalytics = ({ growthProfile, selectedStage = 'fruiting', onStageCha
     const stageLabel = metrics?.meta?.stageLabel || selectedStage;
     const stageIdeal = metrics?.meta?.ideal || {};
     const stageVisual = STAGE_VISUALS[stageId] || STAGE_VISUALS.fruiting;
+    const insufficient = !!metrics?.meta?.insufficientData;
 
     return (
         <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-3xl p-6 shadow-lg relative overflow-hidden transition-all duration-500">
@@ -103,6 +104,14 @@ const GrowthAnalytics = ({ growthProfile, selectedStage = 'fruiting', onStageCha
                 </div>
             </div>
 
+            {/* If we don't have enough evaluable points, show a friendly message instead of 0% */}
+            {insufficient && (
+                <div className="mb-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-4 py-3 text-xs text-amber-800 dark:text-amber-100">
+                    Not enough temperature, humidity and CO₂ samples in this window to compute a reliable growth compliance score.
+                    Keep your device running and check back after more readings have been collected.
+                </div>
+            )}
+
             {/* Main Compliance Score */}
             <div className="flex items-center justify-center py-6 mb-6 relative">
                 {/* Decorative background ring */}
@@ -112,7 +121,7 @@ const GrowthAnalytics = ({ growthProfile, selectedStage = 'fruiting', onStageCha
 
                 <div className="text-center">
                     <div className="text-5xl font-black text-gray-900 dark:text-white mb-1">
-                        {metrics.complianceScore}%
+                        {insufficient ? '—' : `${metrics.complianceScore}%`}
                     </div>
                     <div className={`text-xs font-bold uppercase tracking-widest ${stageVisual.color} mb-2`}>
                         {stageLabel} Compliance
