@@ -82,6 +82,9 @@ export default function Analytics() {
 	}, [rows]);
 
 	const summary = fullData?.summary || {};
+	const sampleCounts = fullData?.sampleCounts || {};
+	const totalSamples = fullData?.totalSamples || 0;
+	const lastSampleAt = fullData?.lastSampleAt ? new Date(fullData.lastSampleAt) : null;
 	const types = Object.keys(summary);
 	const hasRecommendations = Array.isArray(fullData?.recommendations) && fullData.recommendations.length > 0;
 	const hasGrowth = !!fullData?.growth;
@@ -161,7 +164,21 @@ export default function Analytics() {
 					</div>
 				</div>
 
-				<div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/20 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+				<div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/20 dark:border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
+					<div className="flex flex-col gap-1">
+						<span className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">Data window</span>
+						<span className="text-xs font-semibold text-gray-800 dark:text-gray-100">
+							{totalSamples > 0
+								? `Analyzed ${totalSamples} readings in the last ${timeframe.toUpperCase()}`
+								: 'No sensor data found for this timeframe yet.'}
+						</span>
+						{lastSampleAt && (
+							<span className="text-[11px] text-gray-500 dark:text-gray-400">
+								Last sample at {lastSampleAt.toLocaleTimeString()} on {lastSampleAt.toLocaleDateString()}
+							</span>
+						)}
+					</div>
+
 					<SavedViews
 						currentTimeframe={timeframe}
 						currentTypes={activeTypes ?? types}
@@ -178,14 +195,20 @@ export default function Analytics() {
 					</div>
 				)}
 
+				{totalSamples === 0 && (
+					<div className="bg-yellow-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-xs text-amber-800 dark:text-amber-200 font-medium">
+						No readings in the selected window. Once your device has sent some data for this timeframe, these analytics will populate automatically.
+					</div>
+				)}
+
 				<div id="analytics-print-area" className="flex flex-col gap-6">
-					{/* Action & Decision Section - Moved to Top */}
-					{hasRecommendations ? (
+					{/* Action & Decision Section - only when we have enough recent data */}
+					{hasRecommendations && totalSamples > 50 ? (
 						<ActionAnalytics recommendations={fullData?.recommendations || []} />
 					) : null}
 
 					{/* Growth Stage Analysis */}
-					{hasGrowth ? (
+					{hasGrowth && totalSamples > 50 ? (
 						<GrowthAnalytics
 							growthProfile={fullData?.growth}
 							selectedStage={stage}
@@ -194,10 +217,10 @@ export default function Analytics() {
 					) : null}
 
 					{/* Efficiency & Optimization */}
-					{hasEfficiency ? <EfficiencyAnalytics efficiencyProfile={fullData?.efficiency} /> : null}
+					{hasEfficiency && totalSamples > 50 ? <EfficiencyAnalytics efficiencyProfile={fullData?.efficiency} /> : null}
 
 					{/* System Intelligence */}
-					{hasHealth ? <SystemHealthAnalytics healthProfile={fullData?.health} /> : null}
+					{hasHealth && totalSamples > 50 ? <SystemHealthAnalytics healthProfile={fullData?.health} /> : null}
 
 					{/* Seasonal Strategy */}
 					<SeasonalStrategyAnalytics />

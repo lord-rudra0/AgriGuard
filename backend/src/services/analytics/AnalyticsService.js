@@ -53,6 +53,9 @@ const normalizeHistoryToWideRows = (historyData = []) => {
 
 /**
  * Orchestrates the full analytics suite for a user.
+ *
+ * sensorData: raw recent SensorData documents for the selected timeframe
+ * historyData: aggregated/hourly SensorData documents for the same window
  */
 export const getFullAnalytics = async (sensorData, historyData, userId, stageId = 'fruiting') => {
     // 1. Process Raw Recent Data for Real-time metrics (Risk, Recommendations, Predictive)
@@ -64,12 +67,27 @@ export const getFullAnalytics = async (sensorData, historyData, userId, stageId 
     // Contract normalization:
     // - groupedHistory: [{ _id: { sensorType }, avgValue, timestamp }]
     // - wideHistory/wideRecent: [{ name/time, temperature?, humidity?, co2?, ... }]
+    const rawRecent = Array.isArray(sensorData) ? sensorData : [];
     const groupedHistory = Array.isArray(historyData) ? historyData : [];
     const wideHistory = normalizeHistoryToWideRows(groupedHistory);
-    const wideRecent = normalizeRawToWideRows(Array.isArray(sensorData) ? sensorData : []);
+    const wideRecent = normalizeRawToWideRows(rawRecent);
+
+    // Basic sample coverage metrics for UX
+    const sampleCounts = {};
+    let lastSampleAt = null;
+    rawRecent.forEach((d) => {
+        const type = d?.metadata?.sensorType;
+        if (!type) return;
+        sampleCounts[type] = (sampleCounts[type] || 0) + 1;
+        const ts = d?.timestamp ? new Date(d.timestamp) : null;
+        if (ts && Number.isFinite(ts.getTime())) {
+            if (!lastSampleAt || ts > lastSampleAt) lastSampleAt = ts;
+        }
+    });
+    const totalSamples = Object.values(sampleCounts).reduce((sum, n) => sum + n, 0);
 
     // Compute all modules
-    const risk = await calculateRiskProfile(sensorData, stageId);
+    const risk = await calculateRiskProfile(rawRecent, stageId);
     const predictions = await calculatePredictiveForecasts(wideRecent, stageId);
     const recommendations = await generateActionRecommendations(wideRecent, predictions, stageId);
     const stability = await calculateStabilityProfile(groupedHistory, stageId);
@@ -116,6 +134,9 @@ export const getFullAnalytics = async (sensorData, historyData, userId, stageId 
 
     return {
         timestamp: new Date(),
+        totalSamples,
+        sampleCounts,
+        lastSampleAt,
         globalConfidence,
         summary,
         baselines, // Include full baseline objects for frontend
