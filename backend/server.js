@@ -46,6 +46,9 @@ const rawAllowed = [
   process.env.FRONTEND_URL,
   process.env.VERCEL_URL,
   'http://localhost:3000',
+  'http://localhost',
+  'https://localhost',
+  'capacitor://localhost',
 ].filter(Boolean).flatMap((v) => String(v).split(',')).map((v) => v.trim().replace(/\/$/, ''));
 const ALLOWED_ORIGINS = Array.from(new Set(rawAllowed));
 

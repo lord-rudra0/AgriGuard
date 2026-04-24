@@ -28,6 +28,9 @@ const rawAllowed = [
   process.env.FRONTEND_URL,
   process.env.VERCEL_URL, // Vercel-provided URL
   'http://localhost:3000',
+  'http://localhost',
+  'https://localhost',
+  'capacitor://localhost',
 ]
   .filter(Boolean)
   .flatMap(v => String(v).split(',')) // support comma-separated values
