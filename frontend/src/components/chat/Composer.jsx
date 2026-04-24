@@ -17,20 +17,20 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
       <button
         type="button"
         onClick={() => fileRef.current?.click()}
-        className="px-4 py-3 rounded-2xl bg-gray-100 dark:bg-white/10 text-emerald-700 dark:text-emerald-300 hover:bg-gray-200 dark:hover:bg-white/20 hover:text-emerald-800 dark:hover:text-white transition-all active:scale-95 backdrop-blur-md border border-gray-200 dark:border-white/10"
+        className="p-2 md:px-4 md:py-3 shrink-0 rounded-2xl bg-gray-100 dark:bg-white/10 text-emerald-700 dark:text-emerald-300 hover:bg-gray-200 dark:hover:bg-white/20 hover:text-emerald-800 dark:hover:text-white transition-all active:scale-95 backdrop-blur-md border border-gray-200 dark:border-white/10"
         disabled={disabled || uploading}
         title="Attach image"
       >
-        <span className="text-lg">📎</span>
+        <span className="text-lg md:text-xl">📎</span>
       </button>
       <button
         type="button"
         onClick={() => onInsertAskAI && onInsertAskAI()}
-        className="px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-100 to-amber-100 dark:from-emerald-500/20 dark:to-amber-500/20 text-emerald-700 dark:text-emerald-300 hover:from-emerald-200 hover:to-amber-200 dark:hover:from-emerald-500/30 dark:hover:to-amber-500/30 hover:text-emerald-800 dark:hover:text-white transition-all active:scale-95 backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-lg shadow-emerald-500/10"
+        className="p-2 md:px-4 md:py-3 shrink-0 rounded-2xl bg-gradient-to-r from-emerald-100 to-amber-100 dark:from-emerald-500/20 dark:to-amber-500/20 text-emerald-700 dark:text-emerald-300 hover:from-emerald-200 hover:to-amber-200 dark:hover:from-emerald-500/30 dark:hover:to-amber-500/30 hover:text-emerald-800 dark:hover:text-white transition-all active:scale-95 backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-lg shadow-emerald-500/10"
         disabled={disabled}
         title="Ask AI (@ASKAI)"
       >
-        <span className="text-lg">✨</span>
+        <span className="text-lg md:text-xl">✨</span>
       </button>
       {attachedMedia && (
         <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 select-none backdrop-blur-md shadow-lg shadow-emerald-500/10 animate-fade-in">
@@ -66,7 +66,7 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
       )}
       <input
         type="text"
-        className="flex-1 px-6 py-4 rounded-3xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white/80 dark:focus:bg-white/10 transition-all backdrop-blur-md shadow-inner"
+        className="flex-1 min-w-0 px-4 md:px-6 py-3 md:py-4 rounded-3xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white/80 dark:focus:bg-white/10 transition-all backdrop-blur-md shadow-inner"
         placeholder="Type a message..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -75,7 +75,7 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
       <button
         type="submit"
         aria-label="Send message"
-        className="rounded-3xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold hover:brightness-110 hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all duration-200 active:scale-95 shadow-md flex items-center justify-center w-12 h-12 md:w-auto md:h-auto md:px-6 md:py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="shrink-0 rounded-3xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold hover:brightness-110 hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all duration-200 active:scale-95 shadow-md flex items-center justify-center w-12 h-12 md:w-auto md:h-auto md:px-6 md:py-3 disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={uploading || disabled || (!value.trim() && !attachedMedia)}
       >
         {uploading ? (
