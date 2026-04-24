@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import ChatSidebar from './chat/ChatSidebar';
@@ -9,6 +10,15 @@ const Chat = () => {
   const { socket, presence, joinChat, leaveChat, setTyping } = useSocket();
   const { user } = useAuth();
   const state = useChatState({ socket, joinChat, leaveChat, setTyping, user });
+
+  useEffect(() => {
+    if (state.selectedChat) {
+      document.body.classList.add('chat-active');
+    } else {
+      document.body.classList.remove('chat-active');
+    }
+    return () => document.body.classList.remove('chat-active');
+  }, [state.selectedChat]);
 
   return (
     <div className="relative h-full min-h-0 flex overflow-x-hidden overflow-y-hidden text-gray-900 dark:text-gray-100 selection:bg-emerald-500/30 bg-stone-50 dark:bg-slate-950 transition-colors duration-300">
