@@ -1,5 +1,11 @@
 {
   "appId": "com.rudra.agriguard",
   "appName": "AgriGuard",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "Keyboard": {
+      "resize": "body",
+      "resizeOnFullScreen": true
+    }
+  }
 }
