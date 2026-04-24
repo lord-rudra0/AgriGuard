@@ -1,6 +1,4 @@
-import { useState } from 'react';
-import axios from 'axios';
-import toast from 'react-hot-toast';
+
 import useAlertsSocket from '../hooks/useAlertsSocket';
 import { useSocket } from '../context/SocketContext';
 import SensorCard from '../components/SensorCard';
@@ -13,7 +11,6 @@ import { getStatus, getThreshold } from './dashboard/dashboardUtils';
 
 const Dashboard = () => {
   const { sensorData, alerts, connected } = useSocket();
-  const [isGeneratingDummy, setIsGeneratingDummy] = useState(false);
   useAlertsSocket();
 
   const {
@@ -29,23 +26,7 @@ const Dashboard = () => {
     lastSeenWindowMs
   } = useDashboardData({ sensorData, connected, alerts });
 
-  const handleGenerateDummyData = async () => {
-    if (isGeneratingDummy) return;
-    try {
-      setIsGeneratingDummy(true);
-      const preferredDeviceId = sensorData?.deviceId || devices?.[0]?.deviceId;
-      const { data } = await axios.post('/api/iot/dummy-data/auth', {
-        ...(preferredDeviceId ? { deviceId: preferredDeviceId } : {}),
-        points: 48,
-        intervalMinutes: 15
-      });
-      toast.success(`Dummy data added: ${data?.readingsInserted || 0} readings`);
-    } catch (error) {
-      toast.error(error?.response?.data?.message || 'Failed to add dummy data');
-    } finally {
-      setIsGeneratingDummy(false);
-    }
-  };
+
 
   return (
     <div className="relative min-h-screen bg-stone-50 dark:bg-slate-950 overflow-hidden text-gray-900 dark:text-gray-100 selection:bg-emerald-500/30 transition-colors duration-300">
@@ -63,8 +44,6 @@ const Dashboard = () => {
           isIotActive={isIotActive}
           hasSensorData={hasSensorData}
           sensorData={sensorData}
-          onGenerateDummyData={handleGenerateDummyData}
-          isGeneratingDummy={isGeneratingDummy}
         />
 
         <div className="mb-8">
