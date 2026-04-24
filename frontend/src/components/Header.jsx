@@ -79,7 +79,7 @@ const Header = () => {
   const desktopMore = navigation.filter(n => !coreDesktop.includes(n.name));
 
   return (
-    <header className="fixed top-0 inset-x-0 z-[100] transition-all duration-500">
+    <header className="fixed top-0 inset-x-0 z-[100] transition-all duration-500 pt-[env(safe-area-inset-top)]">
       <div className="absolute inset-0 bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl border-b border-white/20 dark:border-gray-800 shadow-sm" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -302,7 +302,7 @@ const Header = () => {
       )}
 
       {/* Floating Bottom Hub (Mobile Primary Tabs) */}
-      <nav className="md:hidden fixed bottom-6 inset-x-4 z-50 [.chat-active_&]:hidden">
+      <nav className="md:hidden fixed inset-x-4 z-50 [.chat-active_&]:hidden bottom-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <div className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-2xl px-2 py-1.5 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-gray-800/50 flex items-center justify-between gap-1">
           {mobileNav.slice(0, 2).map((item) => {
             const Icon = item.icon;

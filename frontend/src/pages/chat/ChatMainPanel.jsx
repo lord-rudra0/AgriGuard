@@ -137,7 +137,7 @@ const ChatMainPanel = ({
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-xs text-gray-400 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">{isResizing ? 'Resizing...' : 'Drag to resize'}</div>
           </div>
 
-          <div className={`transition-all duration-500 ease-out transform sticky bottom-0 z-40 md:static md:bottom-auto px-3 pb-4 md:px-0 pt-2 md:pt-0 md:pb-0 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} style={{ transitionDelay: '120ms' }}>
+          <div className={`transition-all duration-500 ease-out transform sticky bottom-0 z-40 md:static md:bottom-auto px-3 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-0 pt-2 md:pt-0 md:pb-0 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`} style={{ transitionDelay: '120ms' }}>
             <Composer
               value={input}
               onChange={handleInputChange}
