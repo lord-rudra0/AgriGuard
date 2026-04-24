@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
+import { triggerHaptic } from '../../utils/haptics';
 const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActive = false, onRemoveAskAI, attachedMedia, onRemoveAttachment, uploading = false, disabled }) => {
   const fileRef = useRef(null);
   return (
-    <form onSubmit={onSend} className="relative flex items-center gap-2">
+    <form onSubmit={(e) => { triggerHaptic(); onSend(e); }} className="relative flex items-center gap-2">
       <input
         ref={fileRef}
         type="file"
@@ -16,7 +17,7 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
       />
       <button
         type="button"
-        onClick={() => fileRef.current?.click()}
+        onClick={() => { triggerHaptic(); fileRef.current?.click(); }}
         className="p-2 md:px-4 md:py-3 shrink-0 rounded-2xl bg-gray-100 dark:bg-white/10 text-emerald-700 dark:text-emerald-300 hover:bg-gray-200 dark:hover:bg-white/20 hover:text-emerald-800 dark:hover:text-white transition-all active:scale-95 backdrop-blur-md border border-gray-200 dark:border-white/10"
         disabled={disabled || uploading}
         title="Attach image"
@@ -25,7 +26,7 @@ const Composer = ({ value, onChange, onSend, onUpload, onInsertAskAI, askAIActiv
       </button>
       <button
         type="button"
-        onClick={() => onInsertAskAI && onInsertAskAI()}
+        onClick={() => { triggerHaptic(); onInsertAskAI && onInsertAskAI(); }}
         className="p-2 md:px-4 md:py-3 shrink-0 rounded-2xl bg-gradient-to-r from-emerald-100 to-amber-100 dark:from-emerald-500/20 dark:to-amber-500/20 text-emerald-700 dark:text-emerald-300 hover:from-emerald-200 hover:to-amber-200 dark:hover:from-emerald-500/30 dark:hover:to-amber-500/30 hover:text-emerald-800 dark:hover:text-white transition-all active:scale-95 backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-lg shadow-emerald-500/10"
         disabled={disabled}
         title="Ask AI (@ASKAI)"

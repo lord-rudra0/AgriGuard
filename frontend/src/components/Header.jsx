@@ -28,6 +28,7 @@ import {
 import { useSocket } from '../context/SocketContext';
 import CameraNavbar from '../components/CameraNavbar';
 import TalkAgent from './TalkAgent';
+import { triggerHaptic } from '../utils/haptics';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -109,6 +110,7 @@ const Header = () => {
                 <Link
                   key={item.name}
                   to={item.href}
+                  onClick={() => triggerHaptic()}
                   className={`flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${active
                     ? 'bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-black/5'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
@@ -142,7 +144,7 @@ const Header = () => {
                         <Link
                           key={item.name}
                           to={item.href}
-                          onClick={() => setIsMoreOpen(false)}
+                          onClick={() => { setIsMoreOpen(false); triggerHaptic(); }}
                           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${active
                             ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -290,7 +292,7 @@ const Header = () => {
                     ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => { setIsMenuOpen(false); triggerHaptic(); }}
                 >
                   <Icon className="w-5 h-5" />
                   <span>{item.name}</span>
@@ -311,6 +313,7 @@ const Header = () => {
               <Link
                 key={item.name}
                 to={item.href}
+                onClick={() => triggerHaptic()}
                 className={`flex-1 flex flex-col items-center justify-center h-12 rounded-full transition-all ${active ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}
               >
                 <Icon className={`w-5 h-5 ${active ? 'scale-110' : ''}`} />
@@ -331,6 +334,7 @@ const Header = () => {
               <Link
                 key={item.name}
                 to={item.href}
+                onClick={() => triggerHaptic()}
                 className={`flex-1 flex flex-col items-center justify-center h-12 rounded-full transition-all ${active ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}
               >
                 <Icon className={`w-5 h-5 ${active ? 'scale-110' : ''}`} />

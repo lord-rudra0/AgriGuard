@@ -1,4 +1,5 @@
 import ChatListItem from '../../components/chat/ChatListItem';
+import { triggerHaptic } from '../../utils/haptics';
 
 const NewChatModal = ({
   showNewChat,
@@ -132,7 +133,7 @@ const ChatSidebar = ({
               active={selectedChat?._id === chat._id}
               currentUser={user}
               online={online}
-              onClick={() => setSelectedChat(chat)}
+              onClick={() => { triggerHaptic(); setSelectedChat(chat); }}
               className={`transition-all duration-500 ease-out transform rounded-xl ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
               style={{ transitionDelay: `${Math.min(idx, 12) * 40}ms` }}
             />
