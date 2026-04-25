@@ -117,6 +117,7 @@ const AppLayout = ({ children }) => {
       {user ? <Header /> : <PublicNav />}
       {/* Spacer to prevent content from being hidden under the sticky header */}
       {user && <div className="h-16 md:h-18" aria-hidden="true" />}
+      {!user && !isAuthPage && <div className="h-16 md:h-20" aria-hidden="true" />}
       <main className={`flex-1 flex flex-col ${(isChat || isAuthPage) ? 'h-full overflow-hidden' : ''}`}>
         {children}
       </main>
