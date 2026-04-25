@@ -64,7 +64,7 @@ const AppLayout = ({ children }) => {
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
 
   const PublicNav = () => (
-    <header className="fixed top-0 inset-x-0 z-50 transition-all duration-300">
+    <header className="fixed top-0 inset-x-0 z-50 transition-all duration-300 pt-[env(safe-area-inset-top)]">
       <div className="absolute inset-0 bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl border-b border-white/20 dark:border-gray-800 shadow-sm" />
       <div className="relative container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 group" aria-label="AgriGuard Home">
@@ -112,10 +112,10 @@ const AppLayout = ({ children }) => {
   );
 
   return (
-    <div className={`flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300 ${(isChat || isAuthPage) ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
+    <div className={`flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300 ${(isChat || isAuthPage) ? 'h-[100dvh] overflow-hidden' : 'min-h-[100dvh]'} pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]`}>
       {user ? <Header /> : <PublicNav />}
       {/* Spacer to prevent content from being hidden under the sticky header */}
-      {user && <div className="h-16 md:h-16" aria-hidden="true" />}
+      {user && <div className="h-16 md:h-18" aria-hidden="true" />}
       <main className={`flex-1 flex flex-col ${(isChat || isAuthPage) ? 'h-full overflow-hidden' : ''}`}>
         {children}
       </main>
