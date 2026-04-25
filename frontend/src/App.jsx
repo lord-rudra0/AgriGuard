@@ -8,6 +8,7 @@ import { ScanProvider } from './context/ScanContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ChatBot from './components/ChatBot';
+import BackButtonHandler from './components/BackButtonHandler';
 import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
 import Chat from './pages/Chat';
@@ -131,6 +132,7 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <Router>
+          <BackButtonHandler />
           <ScanProvider>
             <SocketProvider>
               <AppLayout>
