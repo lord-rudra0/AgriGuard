@@ -135,18 +135,18 @@ export default function Analytics() {
 	return (
 		<div className="relative min-h-screen bg-stone-50 dark:bg-slate-950 transition-colors duration-300 overflow-hidden">
 			{/* Background Decorative Elements */}
-			<div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+			<div className="fixed inset-0 overflow-hidden pointer-events-none z-0 hidden sm:block">
 				<div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-emerald-500/10 dark:bg-emerald-500/5 blur-[120px] rounded-full" />
 				<div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-teal-500/10 dark:bg-teal-500/5 blur-[100px] rounded-full" />
 				<div className="absolute bottom-[10%] left-[20%] w-[20%] h-[20%] bg-amber-500/10 dark:bg-amber-500/10 blur-[100px] rounded-full" />
 			</div>
 
-			<div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+			      <div className="relative z-10 max-w-full sm:max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8 flex flex-col gap-4 sm:gap-6">
 
 				{/* Header */}
 				<div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 					<div>
-						<h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 uppercase tracking-tight flex items-center gap-3">
+						<h1 className="text-2xl sm:text-3xl md:text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 uppercase tracking-tight flex items-center gap-3">
 							<div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/20">
 								<BarChart3 className="w-6 h-6 text-white" />
 							</div>
@@ -190,7 +190,7 @@ export default function Analytics() {
 					</div>
 				</div>
 
-				<div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/20 dark:border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
+				<div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-2xl p-2 sm:p-4 shadow-lg border border-white/20 dark:border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
 					<div className="flex flex-col gap-1">
 						<span className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">Data window</span>
 						<span className="text-xs font-semibold text-gray-800 dark:text-gray-100">
@@ -245,7 +245,7 @@ export default function Analytics() {
 									</p>
 								</div>
 							</div>
-							<div className="h-64">
+							<div className="h-40 sm:h-64">
 								<ResponsiveContainer width="100%" height="100%">
 									<LineChart data={trendChartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
 										<XAxis dataKey="name" tick={{ fontSize: 10 }} />
@@ -311,7 +311,7 @@ export default function Analytics() {
 					{hasPredictions ? <PredictiveAnalytics predictions={fullData?.predictions || []} /> : null}
 
 					{/* Summary Cards - core metrics per sensor, time-in-range, and baseline deviation */}
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
 						{(activeTypes ?? types).map((t) => {
 							const s = summary[t] || {};
 							const samplesForType = sampleCounts?.[t] || 0;
@@ -322,7 +322,7 @@ export default function Analytics() {
 							const delta = typeof s.baselineDev === 'number' ? s.baselineDev : null;
 
 							return (
-								<div key={t} className="group relative bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 min-w-[180px]">
+								<div key={t} className="group relative bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 min-w-[150px]">
 									<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
 									<div className="flex items-center justify-between mb-1.5">
 										<span className="text-[10px] font-black uppercase tracking-[0.1em] text-gray-500 dark:text-gray-400">{formatSensorName(t)}</span>
