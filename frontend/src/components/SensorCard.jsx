@@ -110,30 +110,30 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
   };
 
   return (
-    <div className="relative p-6 rounded-[24px] bg-white/70 dark:bg-slate-900/50 backdrop-blur-md border border-stone-200 dark:border-slate-700/60 hover:bg-white/90 dark:hover:bg-slate-900/70 hover:border-emerald-500/30 transition-all duration-300 hover:-translate-y-1 shadow-xl shadow-stone-200/50 dark:shadow-black/20 group">
+    <div className="relative p-3 sm:p-6 rounded-[24px] bg-white/70 dark:bg-slate-900/50 backdrop-blur-md border border-stone-200 dark:border-slate-700/60 hover:bg-white/90 dark:hover:bg-slate-900/70 hover:border-emerald-500/30 transition-all duration-300 hover:-translate-y-1 shadow-xl shadow-stone-200/50 dark:shadow-black/20 group">
       {/* Header with icon and status */}
-      <div className="flex items-center justify-between mb-6">
-        <div className={`p-3 rounded-2xl ${getStatusColor()} transition-colors duration-300 group-hover:scale-110 transform`}>
-          {getIcon()}
+      <div className="flex items-center justify-between mb-3 sm:mb-6">
+        <div className={`p-2 sm:p-3 rounded-2xl ${getStatusColor()} transition-colors duration-300 group-hover:scale-110 transform`}>
+          <div className="w-5 h-5 sm:w-8 sm:h-8">{getIcon()}</div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2">
           {getTrendIcon()}
-          <span className={`px-2.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${getStatusColor()}`}>
+          <span className={`px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[9px] sm:text-xs font-bold rounded-full uppercase tracking-wider ${getStatusColor()}`}>
             {status}
           </span>
         </div>
       </div>
 
       {/* Title */}
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-widest mb-1 text-left">
+      <h3 className="text-[10px] sm:text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-widest mb-1 text-left">
         {formatTitle(type)}
       </h3>
 
       {/* Value */}
-      <div className="mb-6 text-left">
-        <div className={`text-4xl font-black tracking-tight flex items-baseline gap-1 ${getValueColor()}`}>
+      <div className="mb-3 sm:mb-6 text-left">
+        <div className={`text-2xl sm:text-4xl font-black tracking-tight flex items-baseline gap-1 ${getValueColor()}`}>
           {value !== undefined && value !== null ? value : '--'}
-          <span className="text-lg font-bold text-gray-500 dark:text-gray-200">
+          <span className="text-sm sm:text-lg font-bold text-gray-500 dark:text-gray-200">
             {unit}
           </span>
         </div>
@@ -141,7 +141,7 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
 
       {/* Threshold info */}
       {threshold && (
-        <div className="mb-4 text-xs font-medium text-gray-700 dark:text-gray-300 text-left">
+        <div className="hidden sm:block mb-4 text-xs font-medium text-gray-700 dark:text-gray-300 text-left">
           <div className="flex justify-between items-center">
             <span>Safe Range</span>
             <span className="text-gray-700 dark:text-gray-200">
@@ -152,8 +152,9 @@ const SensorCard = ({ type, value, unit, status, threshold, lastReading }) => {
       )}
 
       {/* Last updated */}
-      <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-widest border-t border-gray-200 dark:border-white/10 pt-4">
-        <span>Updated</span>
+      <div className="flex justify-between items-center text-[9px] sm:text-[10px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-widest border-t border-gray-200 dark:border-white/10 pt-2 sm:pt-4">
+        <span className="hidden sm:inline">Updated</span>
+        <span className="sm:hidden">⏱</span>
         <span className="text-emerald-500 dark:text-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.4)] animate-pulse">{formatTime(lastReading)}</span>
       </div>
 

@@ -123,3 +123,53 @@
     filter: drop-shadow(0 0 8px currentColor);
   }
 }
+
+/* ============================================================
+   MOBILE PERFORMANCE: Disable GPU-heavy effects on small screens
+   to prevent OOM crashes in Android WebView.
+   Desktop (sm: 640px+) is completely unaffected.
+   ============================================================ */
+@media (max-width: 639px) {
+  /* Kill all backdrop-blur filters — each one is a separate GPU layer */
+  .backdrop-blur,
+  .backdrop-blur-sm,
+  .backdrop-blur-md,
+  .backdrop-blur-lg,
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl,
+  .backdrop-blur-3xl,
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Remove transparency from glass-effect backgrounds so they remain readable */
+  [class*="bg-white/"],
+  [class*="bg-gray-900/"],
+  [class*="bg-slate-900/"] {
+    background-color: var(--mobile-bg, unset);
+  }
+  .dark [class*="bg-white/"] { background-color: rgba(15, 23, 42, 0.95) !important; }
+  .dark [class*="bg-gray-900/"],
+  .dark [class*="bg-slate-900/"] { background-color: rgba(15, 23, 42, 0.95) !important; }
+  [class*="bg-white/"] { background-color: rgba(255, 255, 255, 0.97) !important; }
+
+  /* Kill expensive ambient blur orb elements (fixed background decorations) */
+  .fixed > div[class*="blur-["],
+  .fixed > div[class*="blur-[120px]"],
+  .fixed > div[class*="animate-pulse-slow"],
+  .fixed > div[class*="animate-float"] {
+    display: none !important;
+  }
+
+  /* Stop all heavy CSS animations on mobile to reduce GPU load */
+  .animate-pulse-slow,
+  .animate-float {
+    animation: none !important;
+  }
+
+  /* Simplify box shadows to reduce compositing layers */
+  [class*="shadow-2xl"] {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+  }
+}
