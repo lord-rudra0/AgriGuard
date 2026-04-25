@@ -22,6 +22,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    
+    // Rename the output APK
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "AgriGuard.apk"
+        }
+    }
 }
 
 repositories {
