@@ -60,7 +60,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-stone-50 dark:bg-slate-950 overflow-hidden">
+    <div className="relative min-h-screen bg-stone-50 dark:bg-slate-950 overflow-y-auto">
       {/* Background Decorative Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-emerald-500/10 dark:bg-emerald-500/10 blur-[120px] rounded-full" />
