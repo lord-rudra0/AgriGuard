@@ -23,6 +23,14 @@ const CameraNavbar = ({ onCapture }) => {
     };
   }, [capturedUrl]);
 
+  useEffect(() => {
+    // Attach stream once the video element mounts after open becomes true
+    if (open && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(e => console.error('Video play error:', e));
+    }
+  }, [open]);
+
   const openBackCamera = async () => {
     setError(null);
     setPlaceholderShown(false);
@@ -37,7 +45,6 @@ const CameraNavbar = ({ onCapture }) => {
         stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       }
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
       setOpen(true);
     } catch (e) {
       console.error('Camera error', e);
