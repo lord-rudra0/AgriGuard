@@ -4,6 +4,7 @@ import { Toaster, toast } from 'react-hot-toast';
 import { useCallback } from 'react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { Haptics, NotificationType } from '@capacitor/haptics';
 import { SocketProvider } from './context/SocketContext';
 import { ScanProvider } from './context/ScanContext';
 import Header from './components/Header';
@@ -68,6 +69,9 @@ const AppLayout = ({ children }) => {
 
   // 🔔 Register for FCM push notifications (only on native Android/iOS)
   const handleForegroundNotification = useCallback(({ title, body, data }) => {
+    // Vibrate phone so user feels the notification even while app is open
+    Haptics.notification({ type: NotificationType.Warning }).catch(() => {});
+
     toast.custom(
       (t) => (
         <div

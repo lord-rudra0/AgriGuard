@@ -64,7 +64,8 @@ export async function sendPushToUser(userId, { title, body, data = {} }) {
           android: { 
             priority: 'high',
             notification: {
-              channelId: 'agriguard_alerts'
+              channelId: 'agriguard_alerts',
+              sound: 'default'
             }
           },
         });
