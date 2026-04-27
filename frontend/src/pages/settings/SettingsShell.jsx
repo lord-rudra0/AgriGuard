@@ -11,41 +11,41 @@ const SettingsShell = ({ tabs, activeTab, setActiveTab, user, tabName, children 
     <div className="relative z-10 max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row gap-8">
         <div className="w-full md:w-64 flex-shrink-0">
-          <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-3xl p-4 shadow-xl border border-white/20 dark:border-gray-800">
-            <div className="space-y-2">
+          <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-3xl p-2 md:p-4 shadow-xl border border-white/20 dark:border-gray-800">
+            <div className="grid grid-cols-4 gap-1 sm:gap-2 md:flex md:flex-col md:space-x-0 md:space-y-2 pb-1 md:pb-0">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-black transition-all duration-300 group ${
+                    className={`w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 py-2 md:px-4 md:py-3 rounded-xl md:rounded-2xl text-[9px] sm:text-[10px] md:text-sm font-black transition-all duration-300 group ${
                       activeTab === tab.id
                         ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20'
                         : 'text-gray-500 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-600'
                     }`}
                   >
                     <Icon className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${activeTab === tab.id ? 'text-white' : ''}`} />
-                    {tab.name}
+                    <span className="truncate w-full text-center md:text-left">{tab.name}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <div className="mt-8 bg-gradient-to-br from-emerald-600 to-teal-800 rounded-3xl p-6 shadow-xl text-white overflow-hidden relative group">
+          <div className="hidden md:block mt-8 bg-gradient-to-br from-emerald-600 to-teal-800 rounded-3xl p-6 shadow-xl text-white overflow-hidden relative group">
             <div className="relative z-10">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
                   <User className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h4 className="font-black text-sm uppercase tracking-wider">{user?.name}</h4>
-                  <p className="text-emerald-100/70 text-xs">@{user?.username}</p>
+                  <h4 className="font-black text-sm uppercase tracking-wider truncate max-w-[120px]">{user?.name}</h4>
+                  <p className="text-emerald-100/70 text-xs truncate max-w-[120px]">@{user?.username}</p>
                 </div>
               </div>
               <div className="h-px bg-white/10 my-4" />
-              <p className="text-xs text-emerald-50/80 leading-relaxed italic">{user?.bio || 'Grow something wonderful today.'}</p>
+              <p className="text-xs text-emerald-50/80 leading-relaxed italic line-clamp-3">{user?.bio || 'Grow something wonderful today.'}</p>
             </div>
             <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 blur-2xl rounded-full group-hover:bg-white/20 transition-all duration-500"></div>
           </div>

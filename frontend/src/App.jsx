@@ -67,11 +67,22 @@ const AppLayout = ({ children }) => {
   const isChat = location.pathname.startsWith('/chat');
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
 
+  // Global audio context for ping sound to prevent WebView OOM crashes
+  const getAudioContext = () => {
+    if (!window.__appAudioContext) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      window.__appAudioContext = new AudioContext();
+    }
+    return window.__appAudioContext;
+  };
+
   // Helper to play a short native-feeling notification ping using Web Audio API
   const playPingSound = () => {
     try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioContext();
+      const ctx = getAudioContext();
+      // Resume context if suspended (browser autoplay policy)
+      if (ctx.state === 'suspended') ctx.resume();
+      
       const osc = ctx.createOscillator();
       const gainNode = ctx.createGain();
       
