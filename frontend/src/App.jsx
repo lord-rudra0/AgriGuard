@@ -73,7 +73,16 @@ const AppLayout = ({ children }) => {
         <div
           className={`${
             t.visible ? 'animate-enter' : 'animate-leave'
-          } max-w-sm w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-2xl rounded-2xl pointer-events-auto flex ring-1 ring-black/5 dark:ring-white/10 overflow-hidden transform transition-all hover:scale-[1.02]`}
+          } max-w-sm w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-2xl rounded-2xl pointer-events-auto flex ring-1 ring-black/5 dark:ring-white/10 overflow-hidden transform transition-all hover:scale-[1.02] cursor-pointer`}
+          onClick={() => {
+            toast.dismiss(t.id);
+            if (data?.screen) {
+              const urlMap = { Dashboard: '/', Chat: '/chat', Calendar: '/calendar', Alerts: '/alerts' };
+              if (urlMap[data.screen]) {
+                window.location.href = urlMap[data.screen];
+              }
+            }
+          }}
         >
           <div className="flex-1 w-0 p-4">
             <div className="flex items-start">
@@ -94,7 +103,10 @@ const AppLayout = ({ children }) => {
           </div>
           <div className="flex border-l border-gray-100 dark:border-gray-800">
             <button
-              onClick={() => toast.dismiss(t.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                toast.dismiss(t.id);
+              }}
               className="w-full border-0 border-transparent rounded-none rounded-r-2xl p-4 flex items-center justify-center text-xs font-black uppercase tracking-widest text-gray-500 hover:text-emerald-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
             >
               Close
