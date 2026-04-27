@@ -67,48 +67,10 @@ const AppLayout = ({ children }) => {
   const isChat = location.pathname.startsWith('/chat');
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
 
-  // Global audio context for ping sound to prevent WebView OOM crashes
-  const getAudioContext = () => {
-    if (!window.__appAudioContext) {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      window.__appAudioContext = new AudioContext();
-    }
-    return window.__appAudioContext;
-  };
-
-  // Helper to play a short native-feeling notification ping using Web Audio API
-  const playPingSound = () => {
-    try {
-      const ctx = getAudioContext();
-      // Resume context if suspended (browser autoplay policy)
-      if (ctx.state === 'suspended') ctx.resume();
-      
-      const osc = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(800, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
-      
-      gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      
-      osc.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      osc.start();
-      osc.stop(ctx.currentTime + 0.3);
-    } catch(e) {
-      console.warn('Audio play failed', e);
-    }
-  };
-
   // 🔔 Register for FCM push notifications (only on native Android/iOS)
   const handleForegroundNotification = useCallback(({ title, body, data }) => {
     // Vibrate phone so user feels the notification even while app is open
     Haptics.notification({ type: NotificationType.Warning }).catch(() => {});
-    playPingSound();
 
     toast.custom(
       (t) => (

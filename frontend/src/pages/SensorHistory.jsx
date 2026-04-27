@@ -148,7 +148,6 @@ const SensorHistory = () => {
                                 </div>
                                 Environmental Archive
                             </h1>
-                            <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Deep History Data Streams</p>
                         </div>
                     </div>
 
@@ -175,55 +174,48 @@ const SensorHistory = () => {
 
                 {/* Control Center */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    <div className="lg:col-span-3 space-y-4">
-                        {/* Sensor Selection */}
-                        <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-3xl p-4 shadow-lg">
-                            <span className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-2">Select Node Type</span>
-                            <div className="space-y-1.5">
-                                {SENSOR_TYPES.map(sensor => (
-                                    <button
-                                        key={sensor.key}
-                                        onClick={() => setSelectedSensor(sensor)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-black transition-all ${selectedSensor.key === sensor.key
-                                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-[1.02]'
-                                            : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                            }`}
-                                    >
-                                        <span>{sensor.label}</span>
-                                        <Activity className={`w-4 h-4 ${selectedSensor.key === sensor.key ? 'opacity-100' : 'opacity-30'}`} />
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Interval Selection */}
-                        <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-3xl p-4 shadow-lg">
-                            <span className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-2">Time Resolution</span>
-                            <div className="flex p-1 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                {INTERVAL_TYPES.map(type => (
-                                    <button
-                                        key={type.key}
-                                        onClick={() => setInterval(type.key)}
-                                        className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${interval === type.key
-                                            ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-black/5'
-                                            : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                                            }`}
-                                    >
-                                        {type.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* System Health Status */}
-                        <div className="bg-emerald-500/10 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/50 rounded-3xl p-5">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white ring-4 ring-emerald-500/20">
-                                    <Shield className="w-4 h-4" />
+                    <div className="lg:col-span-3 space-y-3 lg:space-y-4">
+                        
+                        <div className="flex flex-row lg:flex-col gap-3 lg:gap-4 items-stretch">
+                            {/* Sensor Selection */}
+                            <div className="flex-[3] bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-[1.5rem] p-2.5 lg:p-4 shadow-lg flex flex-col">
+                                <span className="block text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1 lg:mb-4 lg:ml-2">Node Type</span>
+                                <div className="flex flex-wrap lg:flex-col gap-1.5 flex-1 content-start">
+                                    {SENSOR_TYPES.map(sensor => (
+                                        <button
+                                            key={sensor.key}
+                                            onClick={() => setSelectedSensor(sensor)}
+                                            className={`flex-1 min-w-[45%] lg:w-full flex items-center justify-center lg:justify-between px-1.5 py-2 lg:py-3 lg:px-4 rounded-xl lg:rounded-2xl text-[9px] lg:text-xs font-black uppercase tracking-wider transition-all ${
+                                                selectedSensor.key === sensor.key
+                                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20 scale-[1.02]'
+                                                : 'text-gray-500 bg-white/50 dark:bg-gray-800/40 hover:bg-white dark:hover:bg-gray-700'
+                                                }`}
+                                        >
+                                            <span className="truncate">{sensor.label === 'Soil Moisture' ? 'Soil' : sensor.label}</span>
+                                            <Activity className={`hidden lg:block w-4 h-4 ${selectedSensor.key === sensor.key ? 'opacity-100' : 'opacity-30'}`} />
+                                        </button>
+                                    ))}
                                 </div>
-                                <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Pipeline Health</span>
                             </div>
-                            <p className="text-[10px] font-bold text-gray-500 dark:text-emerald-300 leading-relaxed uppercase">The Historiographer node is currently active and processing daily aggregations.</p>
+
+                            {/* Interval Selection */}
+                            <div className="flex-[2] bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-[1.5rem] p-2.5 lg:p-4 shadow-lg flex flex-col">
+                                <span className="block text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1 lg:mb-4 lg:ml-2">Time</span>
+                                <div className="flex flex-col lg:flex-row p-1 bg-gray-50/50 dark:bg-gray-800/50 rounded-xl lg:rounded-2xl border border-gray-100 dark:border-gray-700 flex-1 justify-center gap-1">
+                                    {INTERVAL_TYPES.map(type => (
+                                        <button
+                                            key={type.key}
+                                            onClick={() => setInterval(type.key)}
+                                            className={`flex-1 flex items-center justify-center py-2 lg:py-2.5 text-[9px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl transition-all ${interval === type.key
+                                                ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-black/5'
+                                                : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                                                }`}
+                                        >
+                                            {type.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -240,7 +232,6 @@ const SensorHistory = () => {
                                     <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
                                         {selectedSensor.label} Spectrum Analysis
                                     </h2>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Aggregated Min / Max / Average Trends</p>
                                 </div>
                                 <button
                                     onClick={fetchHistory}
