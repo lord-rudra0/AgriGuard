@@ -61,7 +61,12 @@ export async function sendPushToUser(userId, { title, body, data = {} }) {
           data: Object.fromEntries(
             Object.entries(data).map(([k, v]) => [k, String(v)])
           ),
-          android: { priority: 'high' },
+          android: { 
+            priority: 'high',
+            notification: {
+              channelId: 'agriguard_alerts'
+            }
+          },
         });
         sent++;
       } catch (err) {

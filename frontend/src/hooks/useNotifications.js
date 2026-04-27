@@ -34,6 +34,19 @@ export default function useNotifications(onMessage) {
         }
         console.log("✅ FCM Token:", token);
 
+        // Create Android channel so background pushes show up (Required for Android 8+)
+        if (Capacitor.getPlatform() === "android") {
+          await FirebaseMessaging.createChannel({
+            id: "agriguard_alerts",
+            name: "AgriGuard Alerts",
+            description: "Critical sensor alerts and chat messages",
+            importance: 4, // High
+            visibility: 1, // Public
+            vibration: true,
+            lights: true,
+          });
+        }
+
         // 3️⃣ Register token with backend (upserts – safe to call on every launch)
         try {
           await axios.post("/api/notifications/register-fcm", {

@@ -35,6 +35,23 @@ router.post('/register-fcm', authenticateToken, async (req, res) => {
 });
 
 // ----------------------------------------------------------------
+// Test push notification endpoint
+// ----------------------------------------------------------------
+router.post('/send-test', authenticateToken, async (req, res) => {
+  try {
+    const result = await sendPushToUser(req.user._id, {
+      title: '🚨 Test Notification',
+      body: 'If you see this, push notifications are working perfectly!',
+      data: { type: 'test' }
+    });
+    return res.json({ success: true, message: 'Test push sent', result });
+  } catch (error) {
+    console.error('test-push error', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ----------------------------------------------------------------
 // Unregister an FCM token (e.g., on logout)
 // ----------------------------------------------------------------
 router.post('/unregister-fcm', authenticateToken, async (req, res) => {
