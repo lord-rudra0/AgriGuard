@@ -2,6 +2,7 @@ import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
+import { sendPushToUser } from '../services/fcmPush.js';
 
 const router = express.Router();
 
@@ -99,9 +100,22 @@ router.post('/messages', authenticateToken, async (req, res) => {
 
     const populated = await Message.findById(msg._id).populate('sender', 'name email');
 
-    // Do not broadcast here to avoid duplicates.
-    // The client should emit 'chat:message' via Socket.IO after a successful REST save.
-    // The server (backend/server.js) forwards that socket event to other participants.
+    // Push notification to all other chat members (works when app is closed)
+    const senderName = populated.sender?.name || populated.sender?.email || 'Someone';
+    const otherMembers = chat.members.map(String).filter(id => id !== String(req.user._id));
+    const notifBody = type === 'image'
+      ? `${senderName} sent an image`
+      : `${senderName}: ${(content || '').slice(0, 100)}`;
+    const chatLabel = chat.name || 'AgriGuard Chat';
+    await Promise.all(
+      otherMembers.map(memberId =>
+        sendPushToUser(memberId, {
+          title: `💬 ${chatLabel}`,
+          body: notifBody,
+          data: { type: 'chat', chatId: String(chatId), screen: 'Chat' }
+        }).catch(console.warn)
+      )
+    );
 
     res.status(201).json({ message: populated });
   } catch (e) {

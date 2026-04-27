@@ -5,6 +5,7 @@ import Device from '../../models/Device.js';
 import UserSettings from '../../models/UserSettings.js';
 import { evaluateAutomationsForReadings } from '../../services/automation/AutomationEngine.js';
 import { authenticateToken } from '../../middleware/auth.js';
+import { sendPushToUser } from '../../services/fcmPush.js';
 import {
   checkAndCreateAlerts,
   determineStatus,
@@ -153,6 +154,14 @@ const generateDummyDataForDevice = async ({
     io.to(`user_${String(resolvedUserId)}`).emit('sensorData', dashboardData);
     alerts.forEach((alert) => {
       io.to(`user_${String(resolvedUserId)}`).emit('newAlert', alert);
+      // Push notification (works even when app is backgrounded/killed)
+      const severity = String(alert.severity || '').toLowerCase();
+      const emoji = severity === 'critical' || severity === 'high' ? '🚨' : '⚠️';
+      sendPushToUser(resolvedUserId, {
+        title: `${emoji} ${alert.title || 'AgriGuard Alert'}`,
+        body: alert.message || 'A sensor threshold was breached.',
+        data: { type: 'alert', severity, screen: 'Dashboard' }
+      }).catch(console.warn);
     });
   }
 
@@ -403,6 +412,14 @@ router.post('/ingest', async (req, res) => {
 
       alerts.forEach((alert) => {
         io.to(`user_${String(resolvedUserId)}`).emit('newAlert', alert);
+        // Push notification for IoT ingested alerts
+        const severity = String(alert.severity || '').toLowerCase();
+        const emoji = severity === 'critical' || severity === 'high' ? '🚨' : '⚠️';
+        sendPushToUser(resolvedUserId, {
+          title: `${emoji} ${alert.title || 'AgriGuard Alert'}`,
+          body: alert.message || 'A sensor threshold was breached.',
+          data: { type: 'alert', severity, screen: 'Dashboard' }
+        }).catch(console.warn);
       });
     }
 

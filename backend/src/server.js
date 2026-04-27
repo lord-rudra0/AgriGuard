@@ -17,6 +17,10 @@ import { registerTalkSocket } from './routes/talkAgent.js';
 // Load environment variables
 dotenv.config();
 
+// Explicitly initialize Firebase now that environment variables are loaded
+import { initFirebase } from './services/fcmPush.js';
+initFirebase();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_MAX_ATTEMPTS = 5;

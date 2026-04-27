@@ -2,16 +2,55 @@ import express from 'express';
 import NotificationToken from '../models/NotificationToken.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { getNotificationPreferences, evaluatePushDelivery } from '../services/notificationPreferences.js';
+import { sendPushToUser } from '../services/fcmPush.js';
 
 let webpush;
 try {
   webpush = await import('web-push');
 } catch (err) {
-  // web-push not installed; endpoints will still work for register/unregister
   webpush = null;
 }
 
 const router = express.Router();
+
+// ----------------------------------------------------------------
+// Register / update an FCM device token (native Android/iOS)
+// ----------------------------------------------------------------
+router.post('/register-fcm', authenticateToken, async (req, res) => {
+  try {
+    const { fcmToken, platform = 'android' } = req.body;
+    if (!fcmToken) return res.status(400).json({ success: false, message: 'fcmToken is required' });
+
+    await NotificationToken.findOneAndUpdate(
+      { userId: req.user._id, fcmToken },
+      { userId: req.user._id, fcmToken, platform, updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
+
+    return res.json({ success: true, message: 'FCM token registered' });
+  } catch (error) {
+    console.error('register-fcm error', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ----------------------------------------------------------------
+// Unregister an FCM token (e.g., on logout)
+// ----------------------------------------------------------------
+router.post('/unregister-fcm', authenticateToken, async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    if (!fcmToken) return res.status(400).json({ success: false, message: 'fcmToken is required' });
+
+    await NotificationToken.deleteMany({ userId: req.user._id, fcmToken });
+    return res.json({ success: true, message: 'FCM token removed' });
+  } catch (error) {
+    console.error('unregister-fcm error', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+
 
 // Register a push subscription
 router.post('/subscribe', authenticateToken, async (req, res) => {

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { Shield, Sun, Moon } from 'lucide-react';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
+import { useCallback } from 'react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
@@ -9,6 +10,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import ChatBot from './components/ChatBot';
 import BackButtonHandler from './components/BackButtonHandler';
+import useNotifications from './hooks/useNotifications';
 import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
 import Chat from './pages/Chat';
@@ -63,6 +65,12 @@ const AppLayout = ({ children }) => {
 
   const isChat = location.pathname.startsWith('/chat');
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
+
+  // 🔔 Register for FCM push notifications (only on native Android/iOS)
+  const handleForegroundNotification = useCallback(({ title, body }) => {
+    toast(`${title}\n${body}`, { icon: '🔔', duration: 5000 });
+  }, []);
+  useNotifications(handleForegroundNotification);
 
   const PublicNav = () => (
     <header className="fixed top-0 inset-x-0 z-50 transition-all duration-300 pt-[env(safe-area-inset-top)]">

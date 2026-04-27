@@ -1,16 +1,17 @@
 import { useEffect } from "react";
 import { FirebaseMessaging } from "@capacitor-firebase/messaging";
 import { Capacitor } from "@capacitor/core";
+import axios from "axios";
 
 /**
- * useNotifications – requests permission and wires up FCM listeners.
- * Works on native Android via @capacitor-firebase/messaging.
+ * useNotifications – requests FCM permission, retrieves the device token,
+ * registers it with the backend, and sets up foreground/background listeners.
  *
- * @param {function} onMessage - called with { title, body } when a notification arrives
+ * @param {function} [onMessage] - optional callback ({ title, body, data }) for foreground messages
  */
 export default function useNotifications(onMessage) {
   useEffect(() => {
-    // Only run on native Android/iOS; skip in plain browser
+    // Only run inside the native Capacitor container (Android / iOS)
     if (!Capacitor.isNativePlatform()) return;
 
     let pushListener;
@@ -25,26 +26,41 @@ export default function useNotifications(onMessage) {
           return;
         }
 
-        // 2️⃣ Get the FCM token and log it (send to backend when ready)
+        // 2️⃣ Get FCM device token
         const { token } = await FirebaseMessaging.getToken();
+        if (!token) {
+          console.warn("FCM: could not get token");
+          return;
+        }
         console.log("✅ FCM Token:", token);
-        // TODO: send `token` to your backend to target this device
 
-        // 3️⃣ Listen for foreground notifications
+        // 3️⃣ Register token with backend (upserts – safe to call on every launch)
+        try {
+          await axios.post("/api/notifications/register-fcm", {
+            fcmToken: token,
+            platform: Capacitor.getPlatform(), // 'android' | 'ios'
+          });
+        } catch (err) {
+          console.warn("FCM token registration with backend failed:", err?.response?.data || err?.message);
+        }
+
+        // 4️⃣ Foreground message listener
         pushListener = await FirebaseMessaging.addListener(
           "notificationReceived",
           (event) => {
             const { title, body } = event.notification;
-            if (onMessage) onMessage({ title, body });
+            const data = event.notification.data || {};
+            if (onMessage) onMessage({ title, body, data });
           }
         );
 
-        // 4️⃣ Listen for notification tap (app in background/killed)
+        // 5️⃣ Notification tap listener (app in background or killed)
         actionListener = await FirebaseMessaging.addListener(
           "notificationActionPerformed",
           (event) => {
-            console.log("Notification tapped:", event.notification);
-            // TODO: navigate to relevant page based on event.notification.data
+            const data = event.notification?.data || {};
+            console.log("Notification tapped:", data);
+            // TODO: navigate to data.screen when you add react-router navigation here
           }
         );
       } catch (err) {
@@ -54,10 +70,10 @@ export default function useNotifications(onMessage) {
 
     setup();
 
-    // Cleanup on unmount
     return () => {
       pushListener?.remove();
       actionListener?.remove();
     };
   }, [onMessage]);
 }
+
