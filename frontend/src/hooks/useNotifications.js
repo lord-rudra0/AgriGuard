@@ -35,9 +35,10 @@ export default function useNotifications(onMessage) {
         console.log("✅ FCM Token:", token);
 
         // Create Android channel so background pushes show up (Required for Android 8+)
+        // Note: Channel settings are immutable on Android, so we use _v2 to ensure sound changes apply
         if (Capacitor.getPlatform() === "android") {
           await FirebaseMessaging.createChannel({
-            id: "agriguard_alerts",
+            id: "agriguard_alerts_v2",
             name: "AgriGuard Alerts",
             description: "Critical sensor alerts and chat messages",
             importance: 4, // High
