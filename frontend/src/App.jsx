@@ -67,8 +67,43 @@ const AppLayout = ({ children }) => {
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
 
   // 🔔 Register for FCM push notifications (only on native Android/iOS)
-  const handleForegroundNotification = useCallback(({ title, body }) => {
-    toast(`${title}\n${body}`, { icon: '🔔', duration: 5000 });
+  const handleForegroundNotification = useCallback(({ title, body, data }) => {
+    toast.custom(
+      (t) => (
+        <div
+          className={`${
+            t.visible ? 'animate-enter' : 'animate-leave'
+          } max-w-sm w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-2xl rounded-2xl pointer-events-auto flex ring-1 ring-black/5 dark:ring-white/10 overflow-hidden transform transition-all hover:scale-[1.02]`}
+        >
+          <div className="flex-1 w-0 p-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 pt-0.5">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wide">
+                  {title}
+                </p>
+                <p className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400 leading-relaxed">
+                  {body}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex border-l border-gray-100 dark:border-gray-800">
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="w-full border-0 border-transparent rounded-none rounded-r-2xl p-4 flex items-center justify-center text-xs font-black uppercase tracking-widest text-gray-500 hover:text-emerald-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: 6000, position: 'top-center' }
+    );
   }, []);
   useNotifications(handleForegroundNotification);
 

@@ -3,6 +3,7 @@ import SensorData from '../../models/SensorData.js';
 import UserSettings from '../../models/UserSettings.js';
 import { authenticateToken } from '../../middleware/auth.js';
 import { evaluateAutomationsForReadings } from '../../services/automation/AutomationEngine.js';
+import { sendPushToUser } from '../../services/fcmPush.js';
 import { checkAndCreateAlerts, determineStatus, parseIngestionTimestamp } from './utils.js';
 
 const router = express.Router();
@@ -162,6 +163,14 @@ router.post('/data', authenticateToken, async (req, res) => {
       io.to(`user_${req.user._id}`).emit('sensorData', dashboardData);
       alerts.forEach((alert) => {
         io.to(`user_${req.user._id}`).emit('newAlert', alert);
+
+        const severity = String(alert.severity || '').toLowerCase();
+        const emoji = severity === 'critical' || severity === 'high' ? '🚨' : '⚠️';
+        sendPushToUser(req.user._id, {
+          title: `${emoji} ${alert.title || 'AgriGuard Alert'}`,
+          body: alert.message || 'A sensor threshold was breached.',
+          data: { type: 'alert', severity, screen: 'Dashboard' }
+        }).catch(console.warn);
       });
     }
 

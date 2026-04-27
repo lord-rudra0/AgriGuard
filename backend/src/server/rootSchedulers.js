@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { sendPushToUser } from '../services/fcmPush.js';
 import { runAutoAlertFollowups } from '../jobs/autoAlertFollowups.js';
 
 const SCHEDULER_INTERVAL_MS = 5 * 60 * 1000;
@@ -105,6 +106,13 @@ const startCalendarReminderScheduler = async (io) => {
               message: alertDoc.message,
               timestamp: new Date(),
             });
+
+            // FCM push so user sees it even with app closed
+            sendPushToUser(ev.userId, {
+              title: '📅 Event Reminder',
+              body: alertDoc.message,
+              data: { type: 'calendar', screen: 'Calendar' }
+            }).catch(console.warn);
 
             await CalendarEvent.updateOne(
               { _id: ev._id },

@@ -115,13 +115,20 @@ export const runAutoAlertFollowups = async ({ io, limit = 200 } = {}) => {
         }
       );
 
+      const message = `A follow-up calendar event was scheduled for unresolved alert: ${claim.title}`;
       io?.to(`user_${String(claim.userId)}`).emit('newAlert', {
         type: 'system',
         severity: 'medium',
         title: 'Auto Follow-up Scheduled',
-        message: `A follow-up calendar event was scheduled for unresolved alert: ${claim.title}`,
+        message,
         timestamp: new Date()
       });
+
+      sendPushToUser(claim.userId, {
+        title: 'Auto Follow-up Scheduled',
+        body: message,
+        data: { type: 'alert_followup', alertId: String(claim._id) }
+      }).catch(console.warn);
 
       created += 1;
     } catch (error) {
