@@ -92,7 +92,6 @@ export default function Recipes() {
               </div>
               Strain Recipes
             </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">Design and manage growth cycles for your mushrooms</p>
           </div>
 
           <div className="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md p-1.5 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
@@ -119,23 +118,23 @@ export default function Recipes() {
           {/* Recipe Builder (Left Panel) */}
           <div className="lg:col-span-7 xl:col-span-8 space-y-6">
             <div className="bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl rounded-[1.5rem] p-6 shadow-xl border border-white/20 dark:border-gray-800 relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="flex-1">
-                  <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1.5 ml-1 uppercase tracking-widest">Recipe Name</label>
+              <div className="flex flex-row gap-2 sm:gap-4 mb-4">
+                <div className="flex-1 min-w-0">
+                  <label className="block text-[9px] sm:text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1 sm:mb-1.5 ml-1 uppercase tracking-widest truncate">Recipe Name</label>
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Golden Teacher Flush"
-                    className="w-full px-4 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder-gray-400 dark:text-white"
+                    placeholder="Golden Teacher"
+                    className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder-gray-400 dark:text-white"
                   />
                 </div>
-                <div className="flex-1">
-                  <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1.5 ml-1 uppercase tracking-widest">Strain Type</label>
+                <div className="flex-1 min-w-0">
+                  <label className="block text-[9px] sm:text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1 sm:mb-1.5 ml-1 uppercase tracking-widest truncate">Strain Type</label>
                   <input
                     value={strain}
                     onChange={(e) => setStrain(e.target.value)}
-                    placeholder="e.g. Psilocybe cubensis"
-                    className="w-full px-4 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder-gray-400 dark:text-white"
+                    placeholder="P. cubensis"
+                    className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder-gray-400 dark:text-white"
                   />
                 </div>
               </div>
@@ -150,50 +149,50 @@ export default function Recipes() {
 
                 <div className="space-y-3">
                   {phases.map((p, idx) => (
-                    <div key={idx} className="group relative bg-white/50 dark:bg-gray-800/40 rounded-xl p-4 border border-gray-100 dark:border-gray-700/50 hover:border-emerald-500/30 transition-all">
-                      <div className="flex flex-wrap items-center gap-3 mb-3">
-                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                    <div key={idx} className="group relative bg-white/50 dark:bg-gray-800/40 rounded-xl p-2.5 border border-gray-100 dark:border-gray-700/50 hover:border-emerald-500/30 transition-all">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-black">
                           {idx + 1}
                         </span>
                         <input
                           value={p.name}
                           onChange={(e) => setPhases((arr) => arr.map((it, i) => i === idx ? { ...it, name: e.target.value } : it))}
                           placeholder="Phase Name"
-                          className="flex-1 min-w-[120px] bg-transparent font-bold text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none border-b border-transparent focus:border-emerald-500 px-1 py-0.5 transition-colors"
+                          className="flex-1 min-w-[100px] bg-transparent font-bold text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none border-b border-transparent focus:border-emerald-500 px-1 py-0.5 transition-colors"
                         />
-                        <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700/30 px-2 py-1 rounded-lg">
-                          <Clock className="w-3.5 h-3.5 text-gray-500" />
+                        <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700/30 px-1.5 py-1 rounded-lg">
+                          <Clock className="w-3 h-3 text-gray-500" />
                           <input
                             type="number"
                             min={1}
                             value={p.durationHours}
                             onChange={(e) => setPhases((arr) => arr.map((it, i) => i === idx ? { ...it, durationHours: Number(e.target.value) } : it))}
-                            className="w-12 bg-transparent text-xs font-bold text-gray-700 dark:text-gray-200 focus:outline-none text-center"
+                            className="w-10 bg-transparent text-xs font-black text-gray-700 dark:text-gray-200 focus:outline-none text-center"
                           />
-                          <span className="text-[10px] uppercase font-bold text-gray-400">Hrs</span>
+                          <span className="text-[9px] uppercase font-black text-gray-400">Hrs</span>
                         </div>
-                        <button onClick={() => removePhase(idx)} className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
-                          <Trash2 className="w-4 h-4" />
+                        <button onClick={() => removePhase(idx)} className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-4 gap-1.5">
                         {[
                           { icon: Thermometer, label: 'Temp', key: 'temperature', unit: '°C', color: 'text-orange-500' },
                           { icon: Droplets, label: 'RH', key: 'humidity', unit: '%', color: 'text-blue-500' },
                           { icon: Wind, label: 'CO2', key: 'co2', unit: 'ppm', color: 'text-gray-500' },
                           { icon: Sun, label: 'Light', key: 'light', unit: 'lux', color: 'text-yellow-500' },
                         ].map((metric) => (
-                          <div key={metric.key} className="flex flex-col gap-1 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/20 border border-gray-100 dark:border-gray-700/30">
-                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase">
-                              <metric.icon className={`w-3 h-3 ${metric.color}`} /> {metric.label}
+                          <div key={metric.key} className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-gray-50 dark:bg-gray-700/20 border border-gray-100 dark:border-gray-700/30">
+                            <div className="flex items-center gap-1 text-[9px] font-black text-gray-500 uppercase tracking-tighter">
+                              <metric.icon className={`w-3 h-3 ${metric.color}`} /> <span className="truncate">{metric.label}</span>
                             </div>
                             <div className="flex items-baseline gap-1">
                               <input
                                 type="number"
                                 value={p.setpoints[metric.key]}
                                 onChange={(e) => setPhases((arr) => arr.map((it, i) => i === idx ? { ...it, setpoints: { ...it.setpoints, [metric.key]: Number(e.target.value) } } : it))}
-                                className="w-full bg-transparent text-sm font-bold text-gray-900 dark:text-white focus:outline-none"
+                                className="w-full bg-transparent text-xs font-black text-gray-900 dark:text-white focus:outline-none"
                               />
                             </div>
                           </div>
