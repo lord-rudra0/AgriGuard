@@ -47,6 +47,15 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    // Firebase BoM – keeps all Firebase lib versions in sync
+    implementation platform('com.google.firebase:firebase-bom:34.0.0')
+
+    // Firebase Cloud Messaging (push notifications)
+    implementation 'com.google.firebase:firebase-messaging'
+
+    // Firebase Analytics (optional but recommended)
+    implementation 'com.google.firebase:firebase-analytics'
 }
 
 apply from: 'capacitor.build.gradle'

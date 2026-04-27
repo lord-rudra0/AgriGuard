@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "602716850438",
+    "project_id": "agrigaurd-ff27a",
+    "storage_bucket": "agrigaurd-ff27a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:602716850438:android:e3a36d24fe93cd4478f687",
+        "android_client_info": {
+          "package_name": "com.rudra.agriguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEUfr9d5CuiqM2aSfTPTlFnrXYMPEVUa4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
